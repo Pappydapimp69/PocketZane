@@ -1,0 +1,22 @@
+{
+  "name": "signal",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Signal — longitudinal personal-fragment journaling MVP",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "build": "pnpm -r build",
+    "dev:api": "pnpm --filter @signal/api dev",
+    "dev:mobile": "pnpm --filter @signal/mobile start"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
+  }
+}
