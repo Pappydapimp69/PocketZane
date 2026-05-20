@@ -38,18 +38,24 @@ const EMPTY_STATE = {
   currentPromptId: null,
 };
 
+function clone(o) {
+  return JSON.parse(JSON.stringify(o));
+}
+
 function loadState() {
   try {
+    if (typeof localStorage === "undefined") return clone(EMPTY_STATE);
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return structuredClone(EMPTY_STATE);
-    return { ...structuredClone(EMPTY_STATE), ...JSON.parse(raw) };
+    if (!raw) return clone(EMPTY_STATE);
+    return { ...clone(EMPTY_STATE), ...JSON.parse(raw) };
   } catch {
-    return structuredClone(EMPTY_STATE);
+    return clone(EMPTY_STATE);
   }
 }
 
 function saveState(s) {
   try {
+    if (typeof localStorage === "undefined") return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
   } catch {}
 }
@@ -944,7 +950,44 @@ function SettingsScreen({ state, onBack, onExport, onClear }) {
  *  MAIN
  * ===================================================================== */
 
-export default function Signal() {
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  componentDidCatch(error, info) {
+    console.error("Signal crashed:", error, info);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="w-full h-screen min-h-screen bg-stone-50 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-white border border-red-200 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center gap-2 text-red-700">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="text-sm font-medium">Signal hit an error</span>
+            </div>
+            <pre className="text-[11px] text-stone-700 whitespace-pre-wrap bg-stone-50 rounded p-2 max-h-64 overflow-auto">
+              {String(this.state.error?.stack || this.state.error)}
+            </pre>
+            <button
+              onClick={() => this.setState({ error: null })}
+              className="text-xs bg-stone-900 text-white px-3 py-1.5 rounded"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function SignalApp() {
   const [state, setState] = useState(() => loadState());
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -1165,20 +1208,20 @@ export default function Signal() {
   const handleClear = useCallback(() => {
     if (!confirm("Delete every entry, prompt, insight, and correction stored in this browser? This cannot be undone."))
       return;
-    setState(structuredClone(EMPTY_STATE));
+    setState(clone(EMPTY_STATE));
     setView({ name: "home" });
   }, []);
 
   if (!state.onboarded) {
     return (
-      <div className="relative w-full h-full bg-stone-50 text-stone-900 font-sans flex flex-col overflow-hidden">
+      <div className="relative w-full h-screen min-h-screen bg-stone-50 text-stone-900 font-sans flex flex-col overflow-hidden">
         <OnboardingScreen onDone={() => setState((s) => ({ ...s, onboarded: true }))} />
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full bg-stone-50 text-stone-900 font-sans flex flex-col overflow-hidden">
+    <div className="relative w-full h-screen min-h-screen bg-stone-50 text-stone-900 font-sans flex flex-col overflow-hidden">
       <header className="flex items-center justify-between px-4 py-3 border-b border-stone-200 bg-white">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-stone-950 text-stone-100 flex items-center justify-center">
@@ -1250,5 +1293,13 @@ export default function Signal() {
         />
       )}
     </div>
+  );
+}
+
+export default function Signal() {
+  return (
+    <ErrorBoundary>
+      <SignalApp />
+    </ErrorBoundary>
   );
 }
