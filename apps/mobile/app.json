@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Signal",
+    "slug": "signal",
+    "scheme": "signal",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b0b0d"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.signal.app"
+    },
+    "android": {
+      "package": "com.signal.app"
+    },
+    "newArchEnabled": true,
+    "experiments": {
+      "tsconfigPaths": true
+    }
+  }
+}
