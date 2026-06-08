@@ -17,7 +17,15 @@ const SUBJECTS = [
   "the clerk",
   "the stranger",
   "the one who called it in",
+  "the bartender",
+  "the landlord",
+  "the nightwatchman",
+  "the cousin",
+  "the locksmith",
+  "the ex",
 ];
+
+const NAMES = ["Hale", "Mercer", "Vance", "Doss", "Calloway", "Reyes", "Okafor", "Sloane", "Pryce", "Imai", "Bram", "Quill"];
 
 const CONSTANTS: string[] = [
   "It rained that night. That part holds.",
@@ -91,7 +99,9 @@ export function generateCase(depth: number, rng: () => number = Math.random): Ca
   consts.forEach((t, i) => statements.push({ id: `c${i}`, text: t }));
 
   const ordered = shuffle(statements, rng);
-  const subject = SUBJECTS[Math.floor(rng() * SUBJECTS.length)];
+  const role = SUBJECTS[Math.floor(rng() * SUBJECTS.length)];
+  const name = NAMES[Math.floor(rng() * NAMES.length)];
+  const subject = `${role} — ${name}`;
 
   return {
     id: `gen-${depth}-${Math.floor(Math.random() * 1e6)}`,

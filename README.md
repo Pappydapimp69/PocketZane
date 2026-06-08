@@ -153,3 +153,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v36** — **reduce-motion option**: a persisted accessibility toggle that drops
   the screen shakes, flashes, flicker-shakes, and stamp snap (keeping the
   information, losing the jolt) for comfort and photosensitivity.
+- **v37** — **named subjects**: procedural subjects now carry a name and a wider
+  set of roles (bartender, landlord, the ex…), so the people across the table
+  read as individuals instead of placeholders.
