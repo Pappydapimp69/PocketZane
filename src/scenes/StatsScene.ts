@@ -45,7 +45,7 @@ export class StatsScene extends Phaser.Scene {
     rows.push("");
     rows.push("— the long nights —");
     rows.push(`deepest night reached   ${deepest || "—"}`);
-    rows.push(`today's subject (best)  ${dailyBest != null ? dailyBest + "×" : "—"}`);
+    rows.push(`today's subject (best)  ${dailyBest != null ? dailyBest + " moves" : "—"}`);
 
     this.add
       .text(GAME_WIDTH / 2, 180, rows.join("\n"), { fontFamily: MONO, fontSize: "13px", color: CSS.ink, align: "left", lineSpacing: 6 })

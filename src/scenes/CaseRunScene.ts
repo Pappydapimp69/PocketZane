@@ -12,6 +12,7 @@ import { addAtmosphere, addRain } from "../game/textures";
 import { paintPortrait, suspectName, Mood } from "../game/portrait";
 import { paintScene } from "../game/scenery";
 import { verifyWeb } from "../game/verify";
+import { todayStamp } from "../game/rng";
 import { PAD } from "../input";
 
 const LEFT = 30;
@@ -721,7 +722,8 @@ export class CaseRunScene extends Phaser.Scene {
     const rating = ratio <= 1.12 ? "a clean break" : ratio <= 1.5 ? "workmanlike" : ratio <= 2.1 ? "the long way round" : "you got there in the end";
     let best: number | null = null;
     if (this.mode === "daily" || this.mode === "free") {
-      const key = this.mode === "daily" ? `daily-${this.seedVal}` : `case-${this.seedVal}`;
+      // daily key matches the record screen's lookup (daily-YYYY-MM-DD)
+      const key = this.mode === "daily" ? `daily-${todayStamp()}` : `case-${this.seedVal}`;
       const prev = getBest(key);
       setBest(key, this.moves);
       best = prev != null ? Math.min(prev, this.moves) : null;
