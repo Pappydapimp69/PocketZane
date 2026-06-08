@@ -63,11 +63,8 @@ export class TitleScene extends Phaser.Scene {
       startAmbience();
       this.scene.start("CaseRun", { mode: "daily" });
     };
-    const dailyText = this.add
-      .text(GAME_WIDTH / 2, 358, "» today's subject «", { fontFamily: MONO, fontSize: "12px", color: CSS.slate })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    dailyText.on("pointerup", daily);
+    this.add.text(GAME_WIDTH / 2, 358, "» today's subject «", { fontFamily: MONO, fontSize: "12px", color: CSS.slate }).setOrigin(0.5);
+    this.add.rectangle(GAME_WIDTH / 2, 358, 220, 26, 0x000000, 0).setInteractive({ useHandCursor: true }).on("pointerup", daily);
     this.input.keyboard?.on("keydown-T", daily);
 
     // Today's par-chase status, so the daily reads as an optimization target.
@@ -82,11 +79,8 @@ export class TitleScene extends Phaser.Scene {
       /* generation guard — skip the status line */
     }
 
-    const record = this.add
-      .text(GAME_WIDTH / 2, 392, "» the record «", { fontFamily: MONO, fontSize: "11px", color: CSS.faint })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    record.on("pointerup", () => this.scene.start("Stats"));
+    this.add.text(GAME_WIDTH / 2, 392, "» the record «", { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(0.5);
+    this.add.rectangle(GAME_WIDTH / 2, 392, 180, 24, 0x000000, 0).setInteractive({ useHandCursor: true }).on("pointerup", () => this.scene.start("Stats"));
     this.input.keyboard?.on("keydown-R", () => this.scene.start("Stats"));
 
     // Quiet shortcuts: the crafted case (N) and a fresh generated one (W).
