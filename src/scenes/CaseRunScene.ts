@@ -577,12 +577,13 @@ export class CaseRunScene extends Phaser.Scene {
     o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.96));
     o.add(this.add.text(GAME_WIDTH / 2, 100, "press him with what?", { fontFamily: DISPLAY, fontSize: "23px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
     const rows: Button[] = [];
-    let y = 160;
+    let y = 156;
     leads.forEach((e) => {
-      const b = new Button(this, GAME_WIDTH / 2, y, { w: 430, h: 52, label: e.label, fontSize: 12, accent: COLORS.slate, onClick: () => choose(e.id) });
+      const b = new Button(this, GAME_WIDTH / 2, y, { w: 430, h: 46, label: e.label, fontSize: 12, accent: COLORS.slate, onClick: () => choose(e.id) });
       rows.push(b);
       o.add(b);
-      y += 60;
+      o.add(this.add.text(GAME_WIDTH / 2, y + 27, `bears on  ${this.inq.segmentName(e.targets)}`, { fontFamily: MONO, fontSize: "10px", color: CSS.faint }).setOrigin(0.5));
+      y += 66;
     });
     const cancelBtn = new Button(this, GAME_WIDTH / 2, Math.min(y + 8, GAME_HEIGHT - 56), { w: 180, h: 46, label: "CANCEL  (B)", accent: COLORS.crimson, onClick: () => close() });
     o.add(cancelBtn);
