@@ -580,6 +580,14 @@ export class CaseScene extends Phaser.Scene {
     this.tweens.add({ targets: g, y: g.y - 16, alpha: { from: 0.9, to: 0 }, duration: 1700, ease: "Cubic.easeOut", onComplete: () => g.destroy() });
   }
 
+  /** A quick pulse on the card just pinned. */
+  private pulseCard(id: string): void {
+    if (getReduceMotion()) return;
+    const card = this.cards.find((c) => (c.getData("id") as string) === id);
+    if (!card) return;
+    this.tweens.add({ targets: card, scaleX: 1.04, scaleY: 1.04, duration: 110, yoyo: true, ease: "Quad.easeOut" });
+  }
+
   private doPin(): void {
     if (this.busy || !this.selected) return;
     const id = this.selected;
@@ -595,6 +603,7 @@ export class CaseScene extends Phaser.Scene {
         this.pinBtn.setEnabled(false);
         this.pressBtn.setEnabled(false);
         this.renderCards();
+        this.pulseCard(id);
         this.updateHud();
         if (res.broke) this.time.delayedCall(600, () => this.breakStory());
         else this.passTurn();

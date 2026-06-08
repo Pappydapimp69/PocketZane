@@ -186,3 +186,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v47** — **deeper endless scaling**: past night six the generator leans toward
   harder temperaments (guarded / composed), so the late run keeps tightening
   instead of plateauing once the lie/pin counts cap.
+- **v48** — **pin juice**: the line you pin gives a quick confirming pulse (paired
+  with the existing lamp flicker and strike sound), so landing a contradiction
+  lands physically too. Respects reduce-motion.
