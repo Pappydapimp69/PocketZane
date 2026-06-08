@@ -780,6 +780,19 @@ export class CaseRunScene extends Phaser.Scene {
     return { par, rating, best, clean };
   }
 
+  /** A rotated crimson rubber-stamp, drawn in code. */
+  private inkStamp(cx: number, cy: number, text: string): Phaser.GameObjects.Container {
+    const c = this.add.container(cx, cy).setAngle(-13).setAlpha(0.72);
+    const t = this.add.text(0, 0, text, { fontFamily: DISPLAY, fontSize: "20px", color: "#b23a2e", fontStyle: "bold" }).setOrigin(0.5);
+    const g = this.add.graphics();
+    g.lineStyle(2.5, 0xb23a2e, 0.9);
+    g.strokeRoundedRect(-t.width / 2 - 10, -t.height / 2 - 5, t.width + 20, t.height + 10, 4);
+    c.add([g, t]);
+    c.setScale(0.2);
+    this.tweens.add({ targets: c, scale: 1, duration: getReduceMotion() ? 0 : 260, ease: "Back.easeOut", delay: 360 });
+    return c;
+  }
+
   private solve(): void {
     if (this.vsMode === "versus") return this.versusEnd();
     if (this.vsMode === "coop") return this.coopEnd();
@@ -807,6 +820,8 @@ export class CaseRunScene extends Phaser.Scene {
       reso.add(fr);
       reso.add(this.add.image(GAME_WIDTH / 2, 176, "suspect").setDisplaySize(80, 104));
       reso.add(this.add.text(GAME_WIDTH / 2, 244, this.suspect, { fontFamily: DISPLAY, fontSize: "15px", color: CSS.ink }).setOrigin(0.5));
+      // a struck ink stamp across the photo — case closed (or, if the run ended, unsolved-on-time)
+      if (!runOver) reso.add(this.inkStamp(GAME_WIDTH / 2 + 24, 150, "CASE CLOSED"));
     }
     reso.add(this.add.text(GAME_WIDTH / 2, 272, this.inq.case.resolution, { fontFamily: BODY, fontSize: "14px", color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
 
