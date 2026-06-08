@@ -76,15 +76,19 @@ export class CaseScene extends Phaser.Scene {
       c.id = `daily-${todayStamp()}`;
       c.title = `Today — ${todayStamp()}`;
       this.game_ = new Interrogation(c, mulberry32((seed ^ 0x9e3779b9) >>> 0));
+    } else if (this.mode === "endless") {
+      // Every fifth night is a harder, named "hard case."
+      const isBoss = (this.depth + 1) % 5 === 0;
+      const c = generateCase(this.depth + (isBoss ? 2 : 0));
+      if (isBoss) c.title = `Night ${this.depth + 1} — the hard one`;
+      this.game_ = new Interrogation(c);
     } else {
       const theCase =
-        this.mode === "endless"
-          ? generateCase(this.depth)
-          : this.mode === "versus"
-            ? generateCase(2)
-            : this.mode === "coop"
-              ? generateCase(4) // a hard one, meant for two heads
-              : CASES[this.caseIndex];
+        this.mode === "versus"
+          ? generateCase(2)
+          : this.mode === "coop"
+            ? generateCase(4) // a hard one, meant for two heads
+            : CASES[this.caseIndex];
       this.game_ = new Interrogation(theCase);
     }
     this.ledger = [];

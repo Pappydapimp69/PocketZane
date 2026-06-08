@@ -144,3 +144,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v33** — **detective rank**: a persistent rank (Rookie → Detective → Inspector →
   Closer → The Confessor) that climbs with every story you break, in any mode,
   shown on the title — long-term progression across sittings.
+- **v34** — **endless boss nights**: every fifth night of the endless run is a
+  harder, named "hard case," giving the survival grind a rhythm of escalating
+  set-pieces instead of a flat ramp.
