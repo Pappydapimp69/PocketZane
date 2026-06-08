@@ -451,6 +451,9 @@ export class CaseScene extends Phaser.Scene {
       SFX.pin();
       this.renderCards();
       this.setStatus("Proof. " + r.evidence, CSS.crimsonBright);
+    } else if (r.deflate) {
+      SFX.deny();
+      this.setStatus(tell("deflate"), CSS.slate);
     } else {
       SFX.select();
       this.setStatus(tell(r.ok ? "pressUseful" : "pressBarren"), r.ok ? CSS.amber : CSS.muted);

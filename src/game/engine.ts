@@ -75,6 +75,7 @@ export class Interrogation {
   private pinned = new Set<string>();
   private evidenceShown = new Set<string>();
   private prevShown = new Map<string, string>();
+  private truthPress = new Map<string, number>();
 
   // Dynamics, tilted by the subject's temperament (or sensible defaults).
   private slipBase: number;
@@ -115,11 +116,16 @@ export class Interrogation {
    * (pressure). Lean hard enough on a line that has a hard fact behind it and
    * that fact surfaces — proof, which makes the lie pinnable on the spot.
    */
-  press(id: string): { ok: boolean; evidence?: string } {
+  press(id: string): { ok: boolean; evidence?: string; deflate?: boolean } {
     const s = this.case.statements.find((x) => x.id === id);
     if (!s || this.pinned.has(id)) return { ok: false };
     this.pressure = Math.min(100, this.pressure + PRESS_PRESSURE);
-    if (!s.variants) return { ok: false };
+    if (!s.variants) {
+      // Leaning on a truth gives nothing — and after a while, it says so.
+      const n = (this.truthPress.get(id) ?? 0) + 1;
+      this.truthPress.set(id, n);
+      return { ok: false, deflate: n >= 2 };
+    }
 
     const next = Math.min(1.4, (this.instab.get(id) ?? 0) + this.pressGain);
     this.instab.set(id, next);

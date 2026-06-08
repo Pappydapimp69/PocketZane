@@ -11,7 +11,8 @@ type Event =
   | "pinned"
   | "notYet"
   | "falseStrike"
-  | "recovered";
+  | "recovered"
+  | "deflate";
 
 const LINES: Record<Event, string[]> = {
   againMoved: [
@@ -46,6 +47,11 @@ const LINES: Record<Event, string[]> = {
     "It gathers itself. What you'd worked loose tightens.",
     "Composure returns. The seams close.",
     "Too hard, too fast — it steadies.",
+  ],
+  deflate: [
+    "There's nothing there. You're hearing what you want to hear.",
+    "Press all night. Stone doesn't crack because you need it to.",
+    "Some lines are just true. You keep leaning on this one.",
   ],
 };
 

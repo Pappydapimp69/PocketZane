@@ -135,3 +135,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v30** — **tenth-mark history re-read + asset review**: re-read the source notes
   (banked: a "deflation" reaction to pressing the truth; a Babylon "instructions
   outlive authority" case). Asset/UX pass: buttons now warm on hover/focus.
+- **v31** — **deflation**: lean on a true line more than once and the subject pushes
+  back ("there's nothing there — you're hearing what you want"), nudging you off
+  patterns you're projecting onto noise.
