@@ -752,9 +752,20 @@ export class CaseRunScene extends Phaser.Scene {
     o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 1));
     if (this.textures.exists("grain")) o.add(this.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, "grain").setOrigin(0).setAlpha(0.5));
     if (this.textures.exists("vignette")) o.add(this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, "vignette"));
-    o.add(this.add.text(GAME_WIDTH / 2, 120, title, { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
-    o.add(this.add.text(GAME_WIDTH / 2, 162, score, { fontFamily: MONO, fontSize: "14px", color: CSS.ink }).setOrigin(0.5));
-    o.add(this.add.text(GAME_WIDTH / 2, 206, this.inq.case.resolution, { fontFamily: BODY, fontSize: "14px", color: CSS.muted, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
+    o.add(this.add.text(GAME_WIDTH / 2, 96, title, { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
+    o.add(this.add.text(GAME_WIDTH / 2, 134, score, { fontFamily: MONO, fontSize: "14px", color: CSS.ink }).setOrigin(0.5));
+    if (this.textures.exists("suspect")) {
+      this.paintSuspect("broken");
+      const fr = this.add.graphics();
+      fr.fillStyle(0x000000, 0.5);
+      fr.fillRoundedRect(GAME_WIDTH / 2 - 36, 160, 72, 92, 4);
+      fr.lineStyle(1.5, COLORS.panelEdge, 0.9);
+      fr.strokeRoundedRect(GAME_WIDTH / 2 - 36, 160, 72, 92, 4);
+      o.add(fr);
+      o.add(this.add.image(GAME_WIDTH / 2, 206, "suspect").setDisplaySize(66, 84));
+      o.add(this.inkStamp(GAME_WIDTH / 2 + 20, 188, "CASE CLOSED"));
+    }
+    o.add(this.add.text(GAME_WIDTH / 2, 268, this.inq.case.resolution, { fontFamily: BODY, fontSize: "14px", color: CSS.muted, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
     o.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 150, flavor, { fontFamily: MONO, fontSize: "11px", color: CSS.faint, align: "center", wordWrap: { width: 408 } }).setOrigin(0.5));
     this.overlayClose = onGo;
     o.add(new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 72, { w: 240, h: 50, label: btnLabel, accent: COLORS.crimson, onClick: onGo }));
