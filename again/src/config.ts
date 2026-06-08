@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { COLORS } from "./theme";
+import { TitleScene } from "./scenes/TitleScene";
 import { CaseScene } from "./scenes/CaseScene";
 
 export const GAME_WIDTH = 480;
@@ -15,5 +16,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [CaseScene],
+  scene: [TitleScene, CaseScene],
 };

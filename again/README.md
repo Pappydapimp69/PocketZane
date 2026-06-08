@@ -36,3 +36,6 @@ npm run build                    # type-check + production build
 - **v2** — **PRESS** a line to destabilize it (agency over the loop), a **pressure**
   track as composure gives way, a second case, and the **ledger**: at the break,
   the subject's own words are quoted back, contradiction by contradiction.
+- **v3** — a title screen, a **recovery** mechanic (lean too hard and the subject
+  steadies, resetting the instability you'd built — so timing matters), and a
+  third case that starts bending toward the strange.

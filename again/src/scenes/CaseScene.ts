@@ -216,7 +216,11 @@ export class CaseScene extends Phaser.Scene {
     this.pressBtn.setEnabled(false);
     this.renderCards();
     this.updateHud();
-    if (moved.length > 0) {
+    if (this.game_.recovered) {
+      SFX.deny();
+      this.cameras.main.flash(220, 30, 26, 20);
+      this.setStatus("They gather themselves. Whatever you'd worked loose has tightened.", CSS.slate);
+    } else if (moved.length > 0) {
       SFX.flicker();
       this.setStatus("Something moved.", CSS.amber);
     } else {
@@ -295,7 +299,7 @@ export class CaseScene extends Phaser.Scene {
       body: this.game_.case.resolution,
       button: hasNext
         ? { label: "THE NEXT ONE", onClick: () => this.scene.restart({ caseIndex: this.caseIndex + 1 }) }
-        : { label: "FROM THE TOP", onClick: () => this.scene.restart({ caseIndex: 0 }) },
+        : { label: "THAT'S ALL OF THEM", onClick: () => this.scene.start("TitleScene") },
     });
   }
 

@@ -58,6 +58,7 @@ export class Interrogation {
   telling = 1;
   strikesUsed = 0;
   pressure = 0;
+  recovered = false; // did the subject just steady themselves on the last telling?
 
   private shown = new Map<string, number>();
   private instab = new Map<string, number>();
@@ -102,6 +103,18 @@ export class Interrogation {
   again(): string[] {
     this.telling += 1;
     this.changedNow.clear();
+    this.recovered = false;
+
+    // Lean too hard and they gather themselves: composure resets, and every
+    // line you'd been working loose tightens back up. (What you already caught
+    // stays caught — your ledger keeps it.)
+    if (this.pressure >= 92) {
+      this.recovered = true;
+      this.instab.clear();
+      this.pressure = 45;
+      return [];
+    }
+
     const moved: string[] = [];
     const boost = (this.pressure / 100) * 0.28;
 
