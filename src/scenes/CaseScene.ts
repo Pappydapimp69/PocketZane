@@ -278,7 +278,11 @@ export class CaseScene extends Phaser.Scene {
     const sel = this.selected === v.id;
 
     bg.clear();
-    bg.fillStyle(COLORS.panel, v.pinned ? 0.5 : 1);
+    // Subtle top-lit gradient gives the card a little depth under the lamp.
+    const a = v.pinned ? 0.5 : 1;
+    bg.fillStyle(COLORS.panel, a);
+    bg.fillRoundedRect(-CARD_W / 2, -h / 2, CARD_W, h, 8);
+    bg.fillGradientStyle(COLORS.panelEdge, COLORS.panelEdge, COLORS.panel, COLORS.panel, v.pinned ? 0.12 : 0.28);
     bg.fillRoundedRect(-CARD_W / 2, -h / 2, CARD_W, h, 8);
     const edge = sel ? COLORS.amber : v.pinned ? COLORS.crimson : COLORS.panelEdge;
     bg.lineStyle(sel ? 2 : 1.5, edge, 1);

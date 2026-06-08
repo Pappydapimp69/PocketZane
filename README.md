@@ -74,3 +74,6 @@ Touch, gamepad, and keyboard are all supported.
   person. It claims it cannot contradict itself — and proving it can is the point.
 - **v9** — the subject gets **presence**: varied, characterful "tells" replace
   fixed status text for every action, and the subject is named in the header.
+- **v10** — **asset review pass** (every-fifth): film grain now drifts and breathes,
+  dust motes turn over in the lamp's cone, and statement cards carry a soft
+  top-lit gradient for depth. New generated `mote` texture; all still code-only.
