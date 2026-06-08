@@ -1,22 +1,19 @@
 {
-  "name": "signal",
-  "private": true,
+  "name": "again",
   "version": "0.1.0",
-  "description": "Signal — longitudinal personal-fragment journaling MVP",
-  "engines": {
-    "node": ">=22",
-    "pnpm": ">=10"
-  },
+  "description": "AGAIN — a looping cross-examination (evolving)",
+  "type": "module",
   "scripts": {
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test",
-    "lint": "pnpm -r lint",
-    "build": "pnpm -r build",
-    "dev:api": "pnpm --filter @signal/api dev",
-    "dev:mobile": "pnpm --filter @signal/mobile start"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "phaser": "^3.88.2"
   },
   "devDependencies": {
-    "prettier": "^3.3.3",
-    "typescript": "^5.6.3"
+    "tsx": "^4.22.4",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.7"
   }
 }
