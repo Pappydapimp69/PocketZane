@@ -103,3 +103,7 @@ Touch, gamepad, and keyboard are all supported.
   persisted mute toggle on the title — quiet room, your call.
 - **v19** — **colorblind-safe marks**: caught (▲) and pinned (✕) lines now carry a
   glyph alongside the amber/crimson, so state reads without relying on hue.
+- **v20** — **tenth-mark history re-read + asset review**: re-read the source notes
+  for fresh directions (banked: subject *temperaments*, a Ship-of-Theseus case);
+  end-screen overlays now keep the room's grain and vignette with a dossier
+  divider rule, and the selected line shows a pointer.

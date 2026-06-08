@@ -356,6 +356,12 @@ export class CaseScene extends Phaser.Scene {
       marker.fillStyle(COLORS.amber, 1); // ▲
       marker.fillTriangle(gx, gy - 4, gx - 4, gy + 3, gx + 4, gy + 3);
     }
+
+    // Selected-line pointer on the right edge.
+    if (sel) {
+      marker.fillStyle(COLORS.amber, 1);
+      marker.fillTriangle(CARD_W / 2 - 6, 0, CARD_W / 2 - 13, -5, CARD_W / 2 - 13, 5);
+    }
   }
 
   // ---- interaction -----------------------------------------------------------
@@ -647,13 +653,22 @@ export class CaseScene extends Phaser.Scene {
     const c = this.add.container(0, 0).setDepth(100);
     const dim = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.95);
     c.add(dim);
+    // Keep the room's texture over the end screen rather than flat black.
+    if (this.textures.exists("grain")) c.add(this.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, "grain").setOrigin(0).setAlpha(0.5));
+    if (this.textures.exists("vignette")) c.add(this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, "vignette"));
 
     let y = 150;
     const head = this.add
       .text(GAME_WIDTH / 2, y, opts.heading, { fontFamily: DISPLAY, fontSize: "26px", color: opts.headColor, fontStyle: "italic" })
       .setOrigin(0.5, 0);
     c.add(head);
-    y += head.height + 14;
+    y += head.height + 12;
+
+    const rule = this.add.graphics();
+    rule.fillStyle(opts.headColor === CSS.slate ? COLORS.slate : COLORS.amber, 0.7);
+    rule.fillRect(GAME_WIDTH / 2 - 55, y, 110, 1);
+    c.add(rule);
+    y += 14;
 
     if (opts.stats) {
       const st = this.add
