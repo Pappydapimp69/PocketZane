@@ -5,8 +5,7 @@ import { Button } from "../ui";
 import { addAtmosphere, addRain } from "../game/textures";
 import { startAmbience, isMuted, toggleMute, SFX, stopSpeech } from "../game/audio";
 import { getReduceMotion, toggleReduceMotion, getNarration, toggleNarration, getDifficulty, cycleDifficulty, DIFFS, getWeirdness, cycleWeirdness, WEIRDS } from "../game/save";
-import { getCleared, getDeepest, hasSeenIntro, markSeenIntro, getTotalBreaks, rankFor } from "../game/save";
-import { CASES } from "../game/cases";
+import { getDeepest, hasSeenIntro, markSeenIntro, getTotalBreaks, rankFor } from "../game/save";
 import { PAD } from "../input";
 
 export class TitleScene extends Phaser.Scene {
@@ -193,12 +192,11 @@ export class TitleScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
     settings.on("pointerup", () => this.showSettings());
 
-    const cleared = getCleared();
     const deepest = getDeepest();
     const total = getTotalBreaks();
     const lines: string[] = [];
     if (total > 0) lines.push(`rank: ${rankFor(total)}`);
-    if (cleared > 0) lines.push(`story ${Math.min(cleared, CASES.length)}/${CASES.length}`);
+    if (total > 0) lines.push(`${total} broken`);
     if (deepest > 0) lines.push(`deepest ${deepest}`);
     if (lines.length > 0) {
       this.add

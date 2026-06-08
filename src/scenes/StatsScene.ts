@@ -3,8 +3,10 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../dimensions";
 import { COLORS, CSS, DISPLAY, MONO } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere } from "../game/textures";
-import { CASES } from "../game/cases";
-import { getTotalBreaks, rankFor, getCleared, getBest, getDeepest, getCleanCount } from "../game/save";
+import { generateMergedCase } from "../game/generateweb";
+import { freeOpts } from "../game/ladder";
+import { COLD_CASES } from "./CaseSelectScene";
+import { getTotalBreaks, rankFor, getBest, getDeepest, getCleanCount } from "../game/save";
 import { todayStamp } from "../game/rng";
 import { PAD } from "../input";
 
@@ -25,7 +27,6 @@ export class StatsScene extends Phaser.Scene {
       .setLetterSpacing(6);
 
     const total = getTotalBreaks();
-    const cleared = getCleared();
     const deepest = getDeepest();
     const dailyBest = getBest(`daily-${todayStamp()}`);
 
@@ -36,11 +37,12 @@ export class StatsScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, 138, `${total} broken, all told   ·   ${getCleanCount()} clean ✦`, { fontFamily: MONO, fontSize: "12px", color: CSS.muted })
       .setOrigin(0.5);
 
-    const rows: string[] = ["", "— the cases —"];
-    CASES.forEach((c, i) => {
-      const best = getBest(c.id);
-      const state = i <= cleared ? (best != null ? `best ${best}×` : "unbroken") : "sealed";
-      rows.push(`${c.title.padEnd(20, " ")}${state}`);
+    const rows: string[] = ["— the cold files —"];
+    const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
+    COLD_CASES.forEach((seed, i) => {
+      const c = generateMergedCase(seed, freeOpts(seed));
+      const best = getBest(`case-${seed}`);
+      rows.push(`${(ROMAN[i] + ".  " + c.title).padEnd(26, " ")}${best != null ? `best ${best}` : "— open —"}`);
     });
     rows.push("");
     rows.push("— the long nights —");

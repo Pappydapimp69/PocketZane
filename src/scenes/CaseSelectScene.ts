@@ -12,7 +12,7 @@ import { PAD } from "../input";
 
 // Curated cold-case seeds — hand-picked for variety (a couple hide a keystone).
 // Fixed, so they always play exactly as listed and you can chase your best.
-const COLD_CASES = [2, 11, 23, 47, 88, 134];
+export const COLD_CASES = [2, 11, 23, 47, 88, 134];
 
 /** The cold files: a gallery of fixed cases to replay and break tighter. */
 export class CaseSelectScene extends Phaser.Scene {
