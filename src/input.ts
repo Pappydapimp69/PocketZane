@@ -4,13 +4,15 @@
  * lives in one place.
  */
 export const PAD = {
-  A: 0, // confirm / again
+  A: 0, // again
   B: 1, // back / deselect
-  X: 2, // press
-  Y: 3, // pin
-  LB: 4,
+  X: 2, // press (alt)
+  Y: 3, // pin (alt)
+  LB: 4, // ledger
   RB: 5,
-  START: 9,
+  LT: 6, // press
+  RT: 7, // pin
+  START: 9, // leave
   UP: 12,
   DOWN: 13,
   LEFT: 14,

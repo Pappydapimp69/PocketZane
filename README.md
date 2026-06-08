@@ -196,3 +196,16 @@ Touch, gamepad, and keyboard are all supported.
   confidence-quirk idea and shipped it — a wry "confidence" line on each break
   ("airtight" on a clean one, "it stopped agreeing with itself" otherwise). Asset
   pass: the lamp glow now lights the Case Files and Record screens too.
+- **v51** — **fix the black screen**: a circular-import temporal-dead-zone bug
+  (`CaseScene` used `GAME_WIDTH` from `config` at module top-level, before it was
+  initialized) crashed the game on load. Moved the dimensions to a leaf module;
+  verified in a real headless browser. Added a browser test harness.
+- **v52** — **desktop fixes**: stopped the canvas being centered twice (off to the
+  right); added a **fullscreen** toggle (title link + F key) for readable
+  projector/desktop play; made the controller dismiss the how-it-works and
+  settings panels (A/B/Start, Enter/Esc) instead of poking the menu behind them.
+- **v53** — **flowing testimony + trigger controls**: the statements are no longer
+  separate cards — the account now reads as one continuous paragraph, with each
+  clause individually selectable; a slip flickers and re-flows in place, a caught
+  clause is underlined inline, a pinned one struck through. PRESS → left trigger,
+  PIN → right trigger, AGAIN → A, labeled on the buttons.

@@ -12,10 +12,20 @@ import { mulberry32, todaySeed, todayStamp } from "../game/rng";
 import { tell } from "../game/reactions";
 import { PAD, STICK_THRESHOLD, STICK_REPEAT_MS } from "../input";
 
-const CARD_X = GAME_WIDTH / 2;
-const CARD_W = 432;
-const WRAP = 392;
-const LIST_TOP = 150;
+// Flowing-testimony layout.
+const PROSE_LEFT = 28;
+const PROSE_RIGHT = GAME_WIDTH - 28;
+const PROSE_TOP = 158;
+const FONT_SIZE = 16;
+const LINE_H = 28;
+
+/** One clause laid out as a run of word objects, with the line-segments it spans. */
+interface ClauseLayout {
+  id: string;
+  view: LineView;
+  words: Phaser.GameObjects.Text[];
+  runs: { y: number; x0: number; x1: number; top: number; bottom: number }[];
+}
 
 export class CaseScene extends Phaser.Scene {
   private game_!: Interrogation;
@@ -29,7 +39,10 @@ export class CaseScene extends Phaser.Scene {
   private hud!: Phaser.GameObjects.Text;
   private status!: Phaser.GameObjects.Text;
   private pressureBar!: Phaser.GameObjects.Graphics;
-  private cards: Phaser.GameObjects.Container[] = [];
+  private clauses: ClauseLayout[] = [];
+  private marks!: Phaser.GameObjects.Graphics;
+  private spaceW = 6;
+  private spaceMeasured = false;
   private selected: string | null = null;
   private pressBtn!: Button;
   private pinBtn!: Button;
@@ -102,7 +115,7 @@ export class CaseScene extends Phaser.Scene {
 
     this.buildHeader();
     this.buildControls();
-    this.renderCards();
+    this.renderTestimony();
     this.updateHud();
     this.setupDeviceInput();
 
@@ -194,9 +207,11 @@ export class CaseScene extends Phaser.Scene {
       case PAD.A:
         this.doAgain();
         break;
+      case PAD.LT:
       case PAD.X:
         this.doPress();
         break;
+      case PAD.RT:
       case PAD.Y:
         this.doPin();
         break;
@@ -276,7 +291,7 @@ export class CaseScene extends Phaser.Scene {
     this.selected = ids[next];
     this.pinBtn.setEnabled(true);
     this.pressBtn.setEnabled(true);
-    this.repaintCards();
+    this.drawMarks();
     SFX.select();
   }
 
@@ -284,15 +299,7 @@ export class CaseScene extends Phaser.Scene {
     this.selected = null;
     this.pinBtn.setEnabled(false);
     this.pressBtn.setEnabled(false);
-    this.repaintCards();
-  }
-
-  private repaintCards(): void {
-    const views = this.game_.view();
-    this.cards.forEach((card) => {
-      const cv = views.find((x) => x.id === (card.getData("id") as string))!;
-      this.paintCard(card, cv);
-    });
+    this.drawMarks();
   }
 
   private buildHeader(): void {
@@ -372,7 +379,8 @@ export class CaseScene extends Phaser.Scene {
     this.pressBtn = new Button(this, 84, 810, {
       w: 144,
       h: 50,
-      label: "PRESS",
+      label: "PRESS  LT",
+      fontSize: 13,
       accent: COLORS.amber,
       onClick: () => this.doPress(),
     }).setEnabled(false);
@@ -380,7 +388,8 @@ export class CaseScene extends Phaser.Scene {
     this.pinBtn = new Button(this, 240, 810, {
       w: 144,
       h: 50,
-      label: "PIN",
+      label: "PIN  RT",
+      fontSize: 13,
       accent: COLORS.crimson,
       onClick: () => this.doPin(),
     }).setEnabled(false);
@@ -388,133 +397,105 @@ export class CaseScene extends Phaser.Scene {
     new Button(this, 396, 810, {
       w: 144,
       h: 50,
-      label: "AGAIN",
+      label: "AGAIN  A",
+      fontSize: 13,
       accent: COLORS.slate,
       onClick: () => this.doAgain(),
     });
   }
 
-  // ---- rendering -------------------------------------------------------------
+  // ---- rendering (flowing testimony) ----------------------------------------
 
-  private renderCards(): void {
-    this.cards.forEach((c) => c.destroy());
-    this.cards = [];
+  private renderTestimony(): void {
+    if (!this.marks) this.marks = this.add.graphics().setDepth(5);
+    this.measureSpace();
+    this.clauses.forEach((c) => c.words.forEach((w) => w.destroy()));
+    this.clauses = [];
+
     const views = this.game_.view();
+    let x = PROSE_LEFT;
+    let y = PROSE_TOP;
 
-    let y = LIST_TOP;
     for (const v of views) {
-      const card = this.makeCard(v, y);
-      this.cards.push(card);
-      y += (card.getData("h") as number) + 7;
+      const words = v.text.split(/\s+/).filter(Boolean);
+      const objs: Phaser.GameObjects.Text[] = [];
+      const runs: ClauseLayout["runs"] = [];
+      let run: ClauseLayout["runs"][number] | null = null;
+
+      for (const w of words) {
+        const t = this.add
+          .text(0, 0, w, { fontFamily: BODY, fontSize: `${FONT_SIZE}px`, color: v.pinned ? CSS.faint : CSS.ink })
+          .setDepth(6);
+        if (x + t.width > PROSE_RIGHT && x > PROSE_LEFT) {
+          x = PROSE_LEFT;
+          y += LINE_H;
+          run = null;
+        }
+        t.setPosition(x, y);
+        t.setInteractive({ useHandCursor: true });
+        t.on("pointerup", () => this.onClauseTap(v.id));
+        objs.push(t);
+        if (!run || run.y !== y) {
+          run = { y, x0: x, x1: x + t.width, top: y, bottom: y + t.height };
+          runs.push(run);
+        } else {
+          run.x1 = x + t.width;
+        }
+        x += t.width + this.spaceW;
+      }
+      x += this.spaceW; // a breath between sentences, still one paragraph
+
+      this.clauses.push({ id: v.id, view: v, words: objs, runs });
+
+      if (v.changedNow) {
+        objs.forEach((o) => o.setColor(CSS.amber));
+        this.time.delayedCall(750, () => objs.forEach((o) => o.setColor(v.pinned ? CSS.faint : CSS.ink)));
+        this.floatGhost(v.id, this.game_.previousText(v.id));
+      }
     }
+    this.drawMarks();
   }
 
-  private makeCard(v: LineView, top: number): Phaser.GameObjects.Container {
-    const txt = this.add.text(0, 0, v.text, {
-      fontFamily: BODY,
-      fontSize: "14px",
-      color: v.pinned ? CSS.faint : CSS.ink,
-      wordWrap: { width: WRAP },
-      lineSpacing: 2,
-    });
-    let ev: Phaser.GameObjects.Text | undefined;
-    if (v.evidence) {
-      ev = this.add.text(0, 0, "⟐ " + v.evidence, {
-        fontFamily: MONO,
-        fontSize: "11px",
-        color: CSS.crimsonBright,
-        wordWrap: { width: WRAP },
-        lineSpacing: 1,
-      });
-    }
-    const h = ev ? txt.height + ev.height + 24 : Math.max(42, txt.height + 18);
-    txt.setPosition(-WRAP / 2, -h / 2 + 10);
-    ev?.setPosition(-WRAP / 2, -h / 2 + txt.height + 16);
-
-    const bg = this.add.graphics();
-    const marker = this.add.graphics();
-
-    const children: Phaser.GameObjects.GameObject[] = [bg, marker, txt];
-    if (ev) children.push(ev);
-    const container = this.add.container(CARD_X, top + h / 2, children);
-    container.setData("h", h);
-    container.setData("id", v.id);
-    container.setSize(CARD_W, h);
-    container.setInteractive(
-      new Phaser.Geom.Rectangle(-CARD_W / 2, -h / 2, CARD_W, h),
-      Phaser.Geom.Rectangle.Contains,
-    );
-    container.on("pointerup", () => this.onCardTap(v.id));
-
-    this.paintCard(container, v);
-
-    // Flash if this line moved on the latest telling.
-    if (v.changedNow) {
-      txt.setColor(CSS.amber);
-      if (!getReduceMotion())
-        this.tweens.add({ targets: container, x: { from: CARD_X - 5, to: CARD_X }, duration: 90, yoyo: true, repeat: 1 });
-      this.time.delayedCall(420, () => txt.setColor(v.pinned ? CSS.faint : CSS.ink));
-    }
-    return container;
+  private measureSpace(): void {
+    if (this.spaceMeasured) return;
+    const a = this.add.text(0, 0, "n n", { fontFamily: BODY, fontSize: `${FONT_SIZE}px` });
+    const b = this.add.text(0, 0, "nn", { fontFamily: BODY, fontSize: `${FONT_SIZE}px` });
+    this.spaceW = Math.max(3, a.width - b.width);
+    a.destroy();
+    b.destroy();
+    this.spaceMeasured = true;
   }
 
-  private paintCard(container: Phaser.GameObjects.Container, v: LineView): void {
-    const bg = container.list[0] as Phaser.GameObjects.Graphics;
-    const marker = container.list[1] as Phaser.GameObjects.Graphics;
-    const h = container.getData("h") as number;
-    const sel = this.selected === v.id;
-
-    bg.clear();
-    // Subtle top-lit gradient gives the card a little depth under the lamp.
-    const a = v.pinned ? 0.5 : 1;
-    bg.fillStyle(COLORS.panel, a);
-    bg.fillRoundedRect(-CARD_W / 2, -h / 2, CARD_W, h, 8);
-    bg.fillGradientStyle(COLORS.panelEdge, COLORS.panelEdge, COLORS.panel, COLORS.panel, v.pinned ? 0.12 : 0.28);
-    bg.fillRoundedRect(-CARD_W / 2, -h / 2, CARD_W, h, 8);
-    const edge = sel ? COLORS.amber : v.pinned ? COLORS.crimson : COLORS.panelEdge;
-    bg.lineStyle(sel ? 2 : 1.5, edge, 1);
-    bg.strokeRoundedRect(-CARD_W / 2, -h / 2, CARD_W, h, 8);
-
-    // Left marker: caught (amber) or pinned (crimson) — your ledger remembers.
-    // A glyph backs up the color so the state reads without relying on hue.
-    marker.clear();
-    const gx = -CARD_W / 2 + 13;
-    const gy = -h / 2 + 13;
-    if (v.pinned) {
-      marker.fillStyle(COLORS.crimson, 1);
-      marker.fillRoundedRect(-CARD_W / 2, -h / 2, 4, h, 2);
-      marker.lineStyle(1.6, COLORS.crimsonBright, 1); // ✕
-      marker.lineBetween(gx - 3, gy - 3, gx + 3, gy + 3);
-      marker.lineBetween(gx - 3, gy + 3, gx + 3, gy - 3);
-    } else if (v.caught) {
-      marker.fillStyle(COLORS.amber, 0.9);
-      marker.fillRoundedRect(-CARD_W / 2, -h / 2, 4, h, 2);
-      marker.fillStyle(COLORS.amber, 1); // ▲
-      marker.fillTriangle(gx, gy - 4, gx - 4, gy + 3, gx + 4, gy + 3);
-    }
-
-    // Selected-line pointer on the right edge.
-    if (sel) {
-      marker.fillStyle(COLORS.amber, 1);
-      marker.fillTriangle(CARD_W / 2 - 6, 0, CARD_W / 2 - 13, -5, CARD_W / 2 - 13, 5);
-    }
-
-    // Instability pips — how worked-loose a pressed line is, so PRESS reads.
-    if (!v.pinned && v.pressed > 0) {
-      const pips = Math.min(3, Math.ceil(v.pressed / 0.5));
-      marker.fillStyle(COLORS.amber, 0.85);
-      for (let i = 0; i < pips; i++) marker.fillCircle(CARD_W / 2 - 14 - i * 8, h / 2 - 9, 2);
+  /** Selection highlight, caught underlines, pinned strikes — drawn behind the words. */
+  private drawMarks(): void {
+    if (!this.marks) return;
+    const g = this.marks;
+    g.clear();
+    const fontH = FONT_SIZE + 4;
+    for (const cl of this.clauses) {
+      const v = cl.view;
+      if (this.selected === v.id) {
+        g.fillStyle(COLORS.amber, 0.16);
+        for (const r of cl.runs) g.fillRoundedRect(r.x0 - 4, r.top - 2, r.x1 - r.x0 + 8, fontH + 6, 4);
+      }
+      if (v.pinned) {
+        g.lineStyle(1.6, COLORS.crimson, 0.95);
+        for (const r of cl.runs) g.lineBetween(r.x0, r.top + fontH / 2, r.x1, r.top + fontH / 2);
+      } else if (v.caught) {
+        g.lineStyle(1.4, COLORS.amber, 0.8);
+        for (const r of cl.runs) g.lineBetween(r.x0, r.bottom + 1, r.x1, r.bottom + 1);
+      }
     }
   }
 
   // ---- interaction -----------------------------------------------------------
 
-  private onCardTap(id: string): void {
+  private onClauseTap(id: string): void {
     if (this.busy) return;
     const v = this.game_.view().find((x) => x.id === id)!;
     if (v.pinned) return;
     this.selected = this.selected === id ? null : id;
-    this.repaintCards();
+    this.drawMarks();
     this.pinBtn.setEnabled(this.selected !== null);
     this.pressBtn.setEnabled(this.selected !== null);
     SFX.select();
@@ -526,7 +507,7 @@ export class CaseScene extends Phaser.Scene {
     this.updateHud();
     if (r.evidence) {
       SFX.pin();
-      this.renderCards();
+      this.renderTestimony();
       this.setStatus("Proof. " + r.evidence, CSS.crimsonBright);
     } else if (r.deflate) {
       SFX.deny();
@@ -535,7 +516,7 @@ export class CaseScene extends Phaser.Scene {
       SFX.select();
       this.setStatus(tell(r.ok ? "pressUseful" : "pressBarren"), r.ok ? CSS.amber : CSS.muted);
     }
-    this.repaintCards();
+    this.drawMarks();
     this.passTurn();
   }
 
@@ -546,7 +527,7 @@ export class CaseScene extends Phaser.Scene {
     this.selected = null;
     this.pinBtn.setEnabled(false);
     this.pressBtn.setEnabled(false);
-    this.renderCards();
+    this.renderTestimony();
     this.updateHud();
     if (this.game_.recovered) {
       SFX.deny();
@@ -565,31 +546,32 @@ export class CaseScene extends Phaser.Scene {
     this.passTurn();
   }
 
-  /** A fading echo of what a line said a moment ago, so the change is legible. */
+  /** A fading echo of what a clause said a moment ago, so the change is legible. */
   private floatGhost(id: string, prev?: string): void {
-    if (!prev) return;
-    const card = this.cards.find((c) => (c.getData("id") as string) === id);
-    if (!card) return;
-    const h = card.getData("h") as number;
+    if (!prev || getReduceMotion()) return;
+    const cl = this.clauses.find((c) => c.id === id);
+    if (!cl || cl.runs.length === 0) return;
+    const r = cl.runs[0];
     const g = this.add
-      .text(card.x - CARD_W / 2 + 12, card.y - h / 2 - 4, "a moment ago:  " + prev, {
+      .text(r.x0, r.top - 4, "was: " + prev, {
         fontFamily: BODY,
         fontSize: "11px",
         color: CSS.faint,
         fontStyle: "italic",
-        wordWrap: { width: WRAP },
+        wordWrap: { width: PROSE_RIGHT - PROSE_LEFT },
       })
       .setOrigin(0, 1)
       .setDepth(40);
-    this.tweens.add({ targets: g, y: g.y - 16, alpha: { from: 0.9, to: 0 }, duration: 1700, ease: "Cubic.easeOut", onComplete: () => g.destroy() });
+    this.tweens.add({ targets: g, y: g.y - 14, alpha: { from: 0.9, to: 0 }, duration: 1700, ease: "Cubic.easeOut", onComplete: () => g.destroy() });
   }
 
-  /** A quick pulse on the card just pinned. */
-  private pulseCard(id: string): void {
+  /** A quick crimson flash on the clause just pinned. */
+  private pulseClause(id: string): void {
     if (getReduceMotion()) return;
-    const card = this.cards.find((c) => (c.getData("id") as string) === id);
-    if (!card) return;
-    this.tweens.add({ targets: card, scaleX: 1.04, scaleY: 1.04, duration: 110, yoyo: true, ease: "Quad.easeOut" });
+    const cl = this.clauses.find((c) => c.id === id);
+    if (!cl) return;
+    cl.words.forEach((w) => w.setColor(CSS.crimsonBright));
+    this.time.delayedCall(170, () => cl.words.forEach((w) => w.setColor(CSS.faint)));
   }
 
   private doPin(): void {
@@ -606,8 +588,8 @@ export class CaseScene extends Phaser.Scene {
         this.selected = null;
         this.pinBtn.setEnabled(false);
         this.pressBtn.setEnabled(false);
-        this.renderCards();
-        this.pulseCard(id);
+        this.renderTestimony();
+        this.pulseClause(id);
         this.updateHud();
         if (res.broke) this.time.delayedCall(600, () => this.breakStory());
         else this.passTurn();
