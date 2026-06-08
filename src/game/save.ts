@@ -171,6 +171,41 @@ export function cycleDifficulty(): number {
   return next;
 }
 
+const WEIRD_KEY = "again:weird";
+
+/** How strange the cases run — a player bias added to generation's weirdness
+ * dial (which also governs how often a case hides a keystone bluff). */
+export const WEIRDS = [
+  { label: "settled", w: 0 },
+  { label: "off-kilter", w: 0.2 },
+  { label: "strange", w: 0.4 },
+  { label: "lurid", w: 0.65 },
+];
+
+export function getWeirdness(): number {
+  try {
+    const v = parseInt(localStorage.getItem(WEIRD_KEY) ?? "1", 10);
+    return v >= 0 && v < WEIRDS.length ? v : 1;
+  } catch {
+    return 1;
+  }
+}
+
+export function cycleWeirdness(): number {
+  const next = (getWeirdness() + 1) % WEIRDS.length;
+  try {
+    localStorage.setItem(WEIRD_KEY, String(next));
+  } catch {
+    /* ignore */
+  }
+  return next;
+}
+
+/** The current weirdness bias to fold into generation. */
+export function weirdnessBias(): number {
+  return WEIRDS[getWeirdness()].w;
+}
+
 const NARR_KEY = "again:narration";
 
 export function getNarration(): boolean {

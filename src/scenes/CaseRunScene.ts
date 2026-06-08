@@ -6,7 +6,7 @@ import { MergedInquiry, PHASE_STRIKES, MergedCase } from "../game/merged";
 import { WELLS } from "../game/mergedcase";
 import { generateMergedCase } from "../game/generateweb";
 import { dailySeed, DAILY_OPTS, optsForNight, nightSeed, randomSeed, freeOpts } from "../game/ladder";
-import { incBreaks, markDeepest, rankFor, getTotalBreaks } from "../game/save";
+import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias } from "../game/save";
 import { SFX, startAmbience, stopSpeech } from "../game/audio";
 import { addAtmosphere, addRain } from "../game/textures";
 import { paintPortrait, suspectName, Mood } from "../game/portrait";
@@ -74,6 +74,11 @@ export class CaseRunScene extends Phaser.Scene {
     super("CaseRun");
   }
 
+  /** Fold the player's weirdness preference into a case's generation opts. */
+  private withWeirdness<T extends { weirdness?: number }>(opts: T): T {
+    return { ...opts, weirdness: Math.min(0.92, (opts.weirdness ?? 0) + weirdnessBias()) };
+  }
+
   init(data: { generate?: boolean; seed?: number; mode?: "free" | "daily" | "endless"; night?: number; runBase?: number; vsMode?: "versus" | "coop"; matchSeed?: number; playerIdx?: number; scores?: number[] }): void {
     this.mode = data?.mode ?? "free";
     this.recorded = false;
@@ -96,10 +101,10 @@ export class CaseRunScene extends Phaser.Scene {
       this.night = Math.max(1, data?.night ?? 1);
       this.runBase = data?.runBase ?? ((Date.now() & 0x7fffffff) >>> 0);
       this.seedVal = nightSeed(this.runBase, this.night);
-      this.theCase = generateMergedCase(this.seedVal, optsForNight(this.night));
+      this.theCase = generateMergedCase(this.seedVal, this.withWeirdness(optsForNight(this.night)));
     } else if (data?.generate) {
       this.seedVal = data?.seed ?? randomSeed();
-      this.theCase = generateMergedCase(this.seedVal, freeOpts(this.seedVal));
+      this.theCase = generateMergedCase(this.seedVal, this.withWeirdness(freeOpts(this.seedVal)));
     } else {
       // The crafted reference case (reachable via the N shortcut).
       this.seedVal = data?.seed ?? 1;
