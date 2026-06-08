@@ -18,6 +18,7 @@ const ASSERT: Record<string, string[]> = {
   bath: ["I was in the bath with the door shut", "I'd run a hot bath and shut the world out", "I was soaking, deaf to everything through the door", "I had the taps going, I'd not have heard a thing"],
   partner: ["my partner was right beside me", "she was with me the whole of it", "I had her there beside me all night", "she never once left my side"],
   brother: ["my brother sat with me the whole evening", "he was here — he saw all of it", "I had my brother for company", "he was right here, he'll swear to it"],
+  lodger: ["my lodger was in his room all night", "the man who rooms with me saw it all", "I'd a lodger here who'll vouch for me", "my lodger never went out either"],
 };
 
 const DISMISS = [
@@ -74,6 +75,7 @@ const CLAIM: Record<string, string[]> = {
   bath: ["I was in the bath half the evening, the door shut.", "I'd run a long hot bath and heard nothing of it.", "I was soaking in the tub with the taps running."],
   partner: ["My partner was beside me the whole night. She'll tell you so.", "She was with me every hour of it — ask her yourself.", "My partner never left my side that night, and she'll swear it."],
   brother: ["My brother was here all evening — he saw the whole of it.", "My brother sat with me the night through; he watched it all.", "I had my brother for company all evening — ask him."],
+  lodger: ["My lodger was in his room all evening — he'll vouch for me.", "The man who rooms upstairs was here the whole night.", "I've a lodger; he was in, and he'll swear I never left."],
 };
 
 // The fold — each gestures at the seam that broke the support.
@@ -87,6 +89,7 @@ const CONCEDE: Record<string, string[]> = {
   bath: ["...There was no bath. The water never ran that night.", "...Fine. I wasn't in the tub. I made that up.", "...The meter would show it — I ran no bath at all."],
   partner: ["...There was no partner beside me. I made her up to fill the bed.", "...She wasn't here. I invented her to fill the empty side.", "...Fine. No one shared my bed. I made her up."],
   brother: ["...My brother wasn't here. He'd cover for me, but he wasn't here.", "...He wasn't here. He'd lie for me, but he stayed away.", "...Fine. My brother was nowhere near. I borrowed his name."],
+  lodger: ["...There's no lodger. That room's been empty for weeks.", "...I made the lodger up. No one's taken that room.", "...Fine. The room's empty. There was never any lodger."],
 };
 
 const CORE_CLAIM = ["I never left my flat that night. Not once.", "I never went up those stairs. Not once.", "I was nowhere near his door all evening.", "I didn't set foot outside my own door that night.", "I stayed in my flat the whole night. I never moved."];
@@ -121,6 +124,7 @@ const SHIFT: Record<string, { deny: string[]; hedge: string[]; admit: string[] }
   water: { deny: ["I was in the bath the whole while.", "I'd run a bath and sat in it an hour.", "I was soaking in the tub right through it."], hedge: ["I'd half a mind to bathe, anyhow.", "I ran the taps a while, at least.", "I was near the bath, in any case."], admit: ["I ran no bath. I made it up.", "Fine — there was no bath that night.", "The water never ran. I wasn't bathing at all."] },
   sister: { deny: ["My partner was beside me every minute.", "She never left my side all night.", "She was with me the whole night through."], hedge: ["She was in and out, but mostly with me.", "She stepped away once or twice, that's all.", "She was about, near enough the whole time."], admit: ["She... she wasn't there. I'll say it.", "Fine. She wasn't with me at all.", "She wasn't here. I'll admit that much."] },
   ticket: { deny: ["My brother watched the whole evening with me.", "My brother was here the night through.", "My brother sat with me all evening."], hedge: ["He was around, in any case.", "He was here a while, anyhow.", "He came by, at least for a time."], admit: ["He wasn't here. I only wished he were.", "Fine. My brother was nowhere near.", "He never came. I made it up."] },
+  rent: { deny: ["My lodger was here the whole evening.", "The man upstairs saw I never left.", "My lodger will vouch for every minute."], hedge: ["He was about, in any case.", "He was in his room, I think.", "He came and went, but he was here."], admit: ["There's no lodger. The room's been empty.", "Fine — no one rooms there. I made him up.", "The room's bare. There was never a lodger."] },
   iou: { deny: ["There was nothing between us.", "We'd no quarrel at all.", "We were on the best of terms."], hedge: ["We'd had words, once or twice.", "There was something, maybe, long ago.", "Nothing that would ever come to this."], admit: ["Alright — there was bad blood between us.", "We were enemies, if you want the word.", "He'd wronged me, and I never forgot it."] },
 };
 
@@ -135,6 +139,7 @@ const TRUTHS: Record<string, string[]> = {
   water: ["I take a bath most nights.", "The plumbing here is loud as anything.", "I like the door shut when I bathe.", "I keep to my own rooms, mostly."],
   sister: ["We've been together some years now.", "She sleeps lighter than I do.", "We keep separate hours, mostly.", "She'd tell you herself if she could."],
   ticket: ["My brother and I are close.", "He visits when he can.", "We grew up two streets apart.", "He'd come if I asked him to."],
+  rent: ["I let the upstairs room, on and off.", "The rent book's in the desk drawer.", "I could use the extra few shillings.", "People come and go from that room."],
   iou: ["We'd been neighbors a long time.", "We argued about noise, nothing more.", "We passed on the stairs, said little.", "Whatever was between us was years old."],
 };
 

@@ -58,6 +58,7 @@ const HERRINGS = [
 const KEYSTONES: SupportT[] = [
   { id: "partner", name: "the partner", seam: { id: "sister", short: "her sister", label: "Her sister puts her across town the whole night." } },
   { id: "brother", name: "the brother's word", seam: { id: "ticket", short: "the ticket stub", label: "A train stub: his brother was three towns over that night." } },
+  { id: "lodger", name: "the lodger's word", seam: { id: "rent", short: "the rent book", label: "The rent book: that room sat empty all month — no lodger at all." } },
 ];
 
 const VICTIMS = ["Edmund Carr", "Walter Brill", "Sam Okafor", "Henry Vance", "Leon Pryce", "Arthur Mosely", "Desmond Hale", "Conrad Webb", "Marcus Lyle", "Tobias Renn", "Gideon Frost", "Niall Ackroyd"];
@@ -81,6 +82,7 @@ const PHASES_BY_SEAM: Record<string, PhaseT> = {
   water: { title: "The Bath", prompt: "What he heard from the tub. Press what the water would have drowned." },
   sister: { title: "The Corroboration", prompt: "The one who'll vouch for him. Find the crack." },
   ticket: { title: "The Witness", prompt: "His witness. Press until it bends." },
+  rent: { title: "The Lodger", prompt: "The man who rooms with him. Find the room that's empty." },
   iou: { title: "The Bad Blood", prompt: "What stood between them. Catch the thing he smooths over." },
 };
 const ROMAN = ["I", "II", "III", "IV"];
