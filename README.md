@@ -171,3 +171,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v42** — **difficulty**: a persisted Lenient / Standard / Relentless setting that
   shifts the strike allowance across every mode, for a gentler ride or a knife's
   edge.
+- **v43** — **settings panel**: the scattered toggles (sound, motion, narration,
+  difficulty) are consolidated behind one "settings ⚙" link, decluttering the
+  title.

@@ -138,58 +138,12 @@ export class TitleScene extends Phaser.Scene {
       this.showHelp();
     }
 
-    // Sound toggle (persisted).
-    const sound = this.add
-      .text(GAME_WIDTH - 16, 22, isMuted() ? "sound: off" : "sound: on", {
-        fontFamily: MONO,
-        fontSize: "11px",
-        color: CSS.faint,
-      })
+    // Settings, consolidated behind one link (top-right).
+    const settings = this.add
+      .text(GAME_WIDTH - 16, 22, "settings  ⚙", { fontFamily: MONO, fontSize: "11px", color: CSS.faint })
       .setOrigin(1, 0)
       .setInteractive({ useHandCursor: true });
-    sound.on("pointerup", () => {
-      const m = toggleMute();
-      sound.setText(m ? "sound: off" : "sound: on");
-    });
-
-    const motion = this.add
-      .text(GAME_WIDTH - 16, 40, getReduceMotion() ? "motion: reduced" : "motion: full", {
-        fontFamily: MONO,
-        fontSize: "11px",
-        color: CSS.faint,
-      })
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true });
-    motion.on("pointerup", () => {
-      const r = toggleReduceMotion();
-      motion.setText(r ? "motion: reduced" : "motion: full");
-    });
-
-    const narr = this.add
-      .text(GAME_WIDTH - 16, 58, getNarration() ? "narration: on" : "narration: off", {
-        fontFamily: MONO,
-        fontSize: "11px",
-        color: CSS.faint,
-      })
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true });
-    narr.on("pointerup", () => {
-      const n = toggleNarration();
-      narr.setText(n ? "narration: on" : "narration: off");
-    });
-
-    const diff = this.add
-      .text(GAME_WIDTH - 16, 76, `difficulty: ${DIFFS[getDifficulty()].label}`, {
-        fontFamily: MONO,
-        fontSize: "11px",
-        color: CSS.faint,
-      })
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true });
-    diff.on("pointerup", () => {
-      const d = cycleDifficulty();
-      diff.setText(`difficulty: ${DIFFS[d].label}`);
-    });
+    settings.on("pointerup", () => this.showSettings());
 
     const cleared = getCleared();
     const deepest = getDeepest();
@@ -211,6 +165,39 @@ export class TitleScene extends Phaser.Scene {
         color: CSS.faint,
       })
       .setOrigin(0.5);
+  }
+
+  private showSettings(): void {
+    const c = this.add.container(0, 0).setDepth(200);
+    c.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.96));
+    c.add(
+      this.add
+        .text(GAME_WIDTH / 2, 180, "settings", { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" })
+        .setOrigin(0.5),
+    );
+
+    const rows: { label: () => string; act: () => void }[] = [
+      { label: () => `sound        ${isMuted() ? "off" : "on"}`, act: () => void toggleMute() },
+      { label: () => `motion       ${getReduceMotion() ? "reduced" : "full"}`, act: () => void toggleReduceMotion() },
+      { label: () => `narration    ${getNarration() ? "on" : "off"}`, act: () => void toggleNarration() },
+      { label: () => `difficulty   ${DIFFS[getDifficulty()].label}`, act: () => void cycleDifficulty() },
+    ];
+    let y = 270;
+    for (const r of rows) {
+      const t = this.add
+        .text(GAME_WIDTH / 2, y, r.label(), { fontFamily: MONO, fontSize: "16px", color: CSS.ink })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
+      t.on("pointerup", () => {
+        SFX.select();
+        r.act();
+        t.setText(r.label());
+      });
+      c.add(t);
+      y += 44;
+    }
+
+    c.add(new Button(this, GAME_WIDTH / 2, y + 24, { w: 200, h: 48, label: "DONE", accent: COLORS.crimson, onClick: () => c.destroy() }));
   }
 
   private showHelp(): void {
