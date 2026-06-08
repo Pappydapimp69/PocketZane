@@ -64,6 +64,20 @@ export class TitleScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
     record.on("pointerup", () => this.scene.start("Stats"));
 
+    // The redesign prototype — a real case, evidence, the new loop.
+    const beta = this.add
+      .text(GAME_WIDTH / 2, 486, "❖  THE NEW CASE  (beta)  ❖", { fontFamily: MONO, fontSize: "12px", color: CSS.crimsonBright })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+    beta.on("pointerup", () => {
+      startAmbience();
+      this.scene.start("Interrogation");
+    });
+    this.input.keyboard?.on("keydown-N", () => {
+      startAmbience();
+      this.scene.start("Interrogation");
+    });
+
     this.add
       .text(
         GAME_WIDTH / 2,
