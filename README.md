@@ -119,3 +119,6 @@ Touch, gamepad, and keyboard are all supported.
   a mode.
 - **v24** — **Case Files**: a revisit screen to replay any reached story case and
   chase a better best-telling count, with later cases sealed until you reach them.
+- **v25** — **asset review pass** (every-fifth): soft camera fade-ins on every
+  scene transition and a faint rule separating header from testimony — quieter,
+  more composed motion between rooms.

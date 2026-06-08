@@ -53,6 +53,7 @@ export class CaseScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.cameras.main.fadeIn(380);
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
     this.lamp = addAtmosphere(this, { lamp: true }).lamp;
     startAmbience();
@@ -204,6 +205,10 @@ export class CaseScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, 118, "", { fontFamily: MONO, fontSize: "12px", color: CSS.faint })
       .setOrigin(0.5);
     this.pressureBar = this.add.graphics();
+    // A faint rule separating the header from the testimony.
+    const rule = this.add.graphics();
+    rule.fillStyle(COLORS.panelEdge, 0.6);
+    rule.fillRect(40, 144, GAME_WIDTH - 80, 1);
     if (this.mode === "versus") {
       this.turnBanner = this.add
         .text(GAME_WIDTH / 2, GAME_HEIGHT - 8, "", { fontFamily: DISPLAY, fontSize: "15px", fontStyle: "italic" })

@@ -14,6 +14,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.cameras.main.fadeIn(500);
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
     const { lamp } = addAtmosphere(this, { lamp: true });
     if (lamp) {
