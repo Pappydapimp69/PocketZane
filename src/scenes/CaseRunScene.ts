@@ -172,8 +172,27 @@ export class CaseRunScene extends Phaser.Scene {
     this.btnR = new Button(this, 332, 810, { w: 200, h: 50, label: "", fontSize: 13, accent: COLORS.crimson, onClick: () => this.actR() });
 
     this.setupInput();
+    this.startIdle();
     this.enterMode();
     this.showFile(true);
+  }
+
+  /** Small involuntary life: the suspect breathes, and blinks now and then. */
+  private startIdle(): void {
+    const p = this.portrait;
+    if (!p) return;
+    this.breathe();
+    this.time.addEvent({
+      delay: 3400,
+      loop: true,
+      callback: () => {
+        if (this.busy || this.mood !== "neutral") return;
+        paintPortrait(this, "suspect", this.seedVal, "neutral", true);
+        this.time.delayedCall(120, () => {
+          if (this.mood === "neutral") paintPortrait(this, "suspect", this.seedVal, "neutral", false);
+        });
+      },
+    });
   }
 
   private enterMode(): void {
@@ -233,8 +252,16 @@ export class CaseRunScene extends Phaser.Scene {
     } else if (m === "broken") {
       this.tweens.add({ targets: p, x: b.x, y: b.y + 7, angle: 4, alpha: 0.9, duration: 440, ease: "Sine.easeOut" });
     } else {
-      this.tweens.add({ targets: p, x: b.x, y: b.y, angle: 0, alpha: 1, duration: 300, ease: "Sine.easeOut" });
+      this.tweens.add({ targets: p, x: b.x, y: b.y, angle: 0, alpha: 1, duration: 300, ease: "Sine.easeOut", onComplete: () => this.breathe() });
     }
+  }
+
+  private breathe(): void {
+    const p = this.portrait;
+    if (!p) return;
+    const base = 108 / 280; // the displaySize scaleY
+    p.scaleY = base;
+    this.tweens.add({ targets: p, scaleY: { from: base, to: base * 1.02 }, duration: 2600, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
   }
 
   private updateHud(): void {
@@ -687,8 +714,19 @@ export class CaseRunScene extends Phaser.Scene {
     SFX.break();
 
     const reso = this.add.container(0, 0);
-    reso.add(this.add.text(GAME_WIDTH / 2, 110, "the story breaks", { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
-    reso.add(this.add.text(GAME_WIDTH / 2, 158, this.inq.case.resolution, { fontFamily: BODY, fontSize: "15px", color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
+    reso.add(this.add.text(GAME_WIDTH / 2, 84, "the story breaks", { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
+    if (this.textures.exists("suspect")) {
+      paintPortrait(this, "suspect", this.seedVal, "broken");
+      const fr = this.add.graphics();
+      fr.fillStyle(0x000000, 0.5);
+      fr.fillRoundedRect(GAME_WIDTH / 2 - 44, 120, 88, 112, 4);
+      fr.lineStyle(1.5, COLORS.panelEdge, 0.9);
+      fr.strokeRoundedRect(GAME_WIDTH / 2 - 44, 120, 88, 112, 4);
+      reso.add(fr);
+      reso.add(this.add.image(GAME_WIDTH / 2, 176, "suspect").setDisplaySize(80, 104));
+      reso.add(this.add.text(GAME_WIDTH / 2, 244, this.suspect, { fontFamily: DISPLAY, fontSize: "15px", color: CSS.ink }).setOrigin(0.5));
+    }
+    reso.add(this.add.text(GAME_WIDTH / 2, 272, this.inq.case.resolution, { fontFamily: BODY, fontSize: "14px", color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
     if (this.mode === "endless") {
       reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 150, `night ${this.night} closed  ·  rank ${rankFor(getTotalBreaks())}`, { fontFamily: MONO, fontSize: "11px", color: CSS.amber }).setOrigin(0.5));
     }

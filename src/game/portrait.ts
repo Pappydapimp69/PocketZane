@@ -44,14 +44,14 @@ function rollFace(rng: () => number): Face {
   return {
     skin: pick(SKINS),
     grey: rng() < 0.32 ? 0.4 + rng() * 0.6 : 0,
-    headW: 0.30 + rng() * 0.06,
-    jaw: 0.66 + rng() * 0.24,
+    headW: 0.28 + rng() * 0.1,
+    jaw: 0.58 + rng() * 0.34,
     hair: Math.floor(rng() * 5),
-    brow: 3 + rng() * 3,
-    eyeGap: 0.20 + rng() * 0.05,
-    eyeR: 7 + rng() * 2.5,
-    noseLen: 26 + rng() * 16,
-    mouthW: 30 + rng() * 14,
+    brow: 2.5 + rng() * 4,
+    eyeGap: 0.185 + rng() * 0.07,
+    eyeR: 6.5 + rng() * 3.5,
+    noseLen: 24 + rng() * 20,
+    mouthW: 26 + rng() * 20,
     beard: rng() < 0.5 ? 0 : Math.floor(1 + rng() * 3),
     collar: ["#1a1712", "#241d16", "#15110d", "#20242a"][Math.floor(rng() * 4)],
     tie: rng() < 0.6,
@@ -90,7 +90,7 @@ const shade = (hex: string, f: number): string => {
   return `rgb(${r | 0},${g | 0},${b | 0})`;
 };
 
-export function drawPortrait(ctx: CanvasRenderingContext2D, W: number, H: number, seed: number, mood: Mood): void {
+export function drawPortrait(ctx: CanvasRenderingContext2D, W: number, H: number, seed: number, mood: Mood, blink = false): void {
   const f = rollFace(mulberry32(seed >>> 0));
   const e = exprFor(mood);
   const cx = W / 2;
@@ -176,11 +176,17 @@ export function drawPortrait(ctx: CanvasRenderingContext2D, W: number, H: number
   const sx = f.lit; // shadow falls opposite the light
   const sg = ctx.createLinearGradient(cx - sx * hw, 0, cx + sx * hw, 0);
   sg.addColorStop(0, "rgba(0,0,0,0)");
-  sg.addColorStop(0.5, "rgba(0,0,0,0.05)");
-  sg.addColorStop(0.72, "rgba(8,6,4,0.5)");
-  sg.addColorStop(1, "rgba(4,3,2,0.74)");
+  sg.addColorStop(0.42, "rgba(0,0,0,0.06)");
+  sg.addColorStop(0.62, "rgba(8,6,4,0.42)");
+  sg.addColorStop(0.82, "rgba(5,4,2,0.74)");
+  sg.addColorStop(1, "rgba(2,1,1,0.9)");
   ctx.fillStyle = sg;
   ctx.fillRect(0, 0, W, H);
+  // a hard brow-ridge / eye-socket cast shadow for bone structure
+  ctx.fillStyle = "rgba(0,0,0,0.22)";
+  ctx.beginPath();
+  ctx.ellipse(cx, midY - faceH * 0.04, hw * 0.86, faceH * 0.1, 0, Math.PI, Math.PI * 2);
+  ctx.fill();
   // lit-side cheekbone highlight
   const hg = ctx.createRadialGradient(cx - sx * hw * 0.5, midY + 6, 4, cx - sx * hw * 0.5, midY + 6, hw);
   hg.addColorStop(0, "rgba(240,214,150,0.22)");
@@ -221,10 +227,19 @@ export function drawPortrait(ctx: CanvasRenderingContext2D, W: number, H: number
     ctx.beginPath();
     ctx.arc(x + e.gazeX * f.eyeR * 0.6, eyeY + e.gazeY * f.eyeR * 0.4, f.eyeR * 0.55, 0, Math.PI * 2);
     ctx.fill();
-    // lid (skin) drops from the top by e.lid
-    if (e.lid > 0.01) {
+    // lid (skin) drops from the top by e.lid; a blink shuts it fully
+    const lid = blink ? 1 : e.lid;
+    if (lid > 0.01) {
       ctx.fillStyle = shade(f.skin, -6);
-      ctx.fillRect(x - f.eyeR - 1, eyeY - f.eyeR * 0.62 - 1, f.eyeR * 2 + 2, f.eyeR * 1.24 * e.lid + 1);
+      ctx.fillRect(x - f.eyeR - 1, eyeY - f.eyeR * 0.62 - 1, f.eyeR * 2 + 2, f.eyeR * 1.24 * lid + 1);
+      if (blink) {
+        ctx.strokeStyle = "rgba(0,0,0,0.4)";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(x - f.eyeR, eyeY + 1);
+        ctx.lineTo(x + f.eyeR, eyeY + 1);
+        ctx.stroke();
+      }
     }
     // lower lid line
     ctx.strokeStyle = "rgba(0,0,0,0.3)";
@@ -233,6 +248,18 @@ export function drawPortrait(ctx: CanvasRenderingContext2D, W: number, H: number
     ctx.moveTo(x - f.eyeR, eyeY + f.eyeR * 0.5);
     ctx.lineTo(x + f.eyeR, eyeY + f.eyeR * 0.5);
     ctx.stroke();
+  }
+
+  // ---- age lines on the lit side (only when older) ----
+  if (f.grey > 0.3) {
+    ctx.strokeStyle = "rgba(0,0,0,0.16)";
+    ctx.lineWidth = 1;
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(cx + s * ex - f.eyeR, eyeY + f.eyeR * 0.7);
+      ctx.quadraticCurveTo(cx + s * ex, eyeY + f.eyeR * 1.05, cx + s * ex + f.eyeR, eyeY + f.eyeR * 0.7);
+      ctx.stroke();
+    }
   }
 
   // ---- nose ----
@@ -348,12 +375,12 @@ const PW = 220;
 const PH = 280;
 
 /** Paint (or repaint) a portrait texture in place, so mood changes update it. */
-export function paintPortrait(scene: Phaser.Scene, key: string, seed: number, mood: Mood): void {
-  let tex = scene.textures.exists(key) ? (scene.textures.get(key) as Phaser.Textures.CanvasTexture) : scene.textures.createCanvas(key, PW, PH);
+export function paintPortrait(scene: Phaser.Scene, key: string, seed: number, mood: Mood, blink = false): void {
+  const tex = scene.textures.exists(key) ? (scene.textures.get(key) as Phaser.Textures.CanvasTexture) : scene.textures.createCanvas(key, PW, PH);
   if (!tex) return;
   const ctx = tex.getContext();
   if (!ctx) return;
   ctx.clearRect(0, 0, PW, PH);
-  drawPortrait(ctx, PW, PH, seed, mood);
+  drawPortrait(ctx, PW, PH, seed, mood, blink);
   tex.refresh();
 }
