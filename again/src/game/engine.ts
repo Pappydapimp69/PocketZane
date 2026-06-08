@@ -1,19 +1,20 @@
 /**
- * The interrogation engine. Deliberately small. One real rule:
+ * The interrogation engine. Small, and honest about its one real rule:
  *
  *   The truth holds still. A lie cannot tell itself the same way twice.
  *
- * Constant statements never change. "Unstable" statements (the lies) re-roll
- * their wording when you ask the subject to tell it AGAIN. Once you have *seen*
- * a statement change, you have caught it and may pin it. Pinning a constant is a
- * false accusation — the subject steadies, and it costs you.
+ * Constant statements never change. "Unstable" statements (the lies) slip
+ * between phrasings when the subject is made to repeat — and the more you PRESS
+ * a particular line, the less able it is to hold its shape. Once you have *seen*
+ * a line move, it is caught and may be pinned. Pinning a line that never moved
+ * is an accusation against the truth, and it costs you.
  */
 
 export interface Statement {
   id: string;
-  /** A constant line — context or a truth that never moves. */
+  /** A constant line — context, or a truth that never moves. */
   text?: string;
-  /** A lie: two (or more) phrasings it slips between under repetition. */
+  /** A lie: phrasings it slips between under repetition. */
   variants?: string[];
 }
 
@@ -22,13 +23,9 @@ export interface Case {
   title: string;
   subject: string;
   intro: string;
-  /** Lines spoken, in order. */
   statements: Statement[];
-  /** Contradictions needed to break the story. */
   pinsToBreak: number;
-  /** Strikes (false accusations) allowed before the subject walks. */
   strikes: number;
-  /** The truth, revealed when the story breaks. Declarative. */
   resolution: string;
 }
 
@@ -36,37 +33,51 @@ export interface LineView {
   id: string;
   text: string;
   unstable: boolean;
-  changedNow: boolean; // moved on the most recent telling
-  caught: boolean; // has ever moved (pinnable)
+  changedNow: boolean;
+  caught: boolean;
   pinned: boolean;
+  pressed: number; // how hard you've leaned on it (for UI)
 }
 
 export type PinResult =
-  | { kind: "pinned"; broke: boolean }
-  | { kind: "not-yet" } // it's a lie but you haven't seen it move
-  | { kind: "false"; out: boolean } // you accused the truth
+  | { kind: "pinned"; broke: boolean; lines: string[] }
+  | { kind: "not-yet" }
+  | { kind: "false"; out: boolean }
   | { kind: "already" };
 
-/** Chance an unstable line slips on a given retelling. */
-const SLIP = 0.6;
+export type Pressure = "LOW" | "MEDIUM" | "HIGH";
+
+const BASE_SLIP = 0.32;
+const PRESS_GAIN = 0.5;
+const PRESS_SPEND = 0.34; // instability spent each time a line slips
+const AGAIN_PRESSURE = 5;
+const PRESS_PRESSURE = 11;
 
 export class Interrogation {
   readonly case: Case;
   telling = 1;
   strikesUsed = 0;
+  pressure = 0;
 
-  private shown = new Map<string, number>(); // variant index currently displayed
+  private shown = new Map<string, number>();
+  private instab = new Map<string, number>();
+  private seen = new Map<string, string[]>(); // distinct phrasings heard, in order
   private changedNow = new Set<string>();
   private caught = new Set<string>();
   private pinned = new Set<string>();
 
   constructor(c: Case, private rng: () => number = Math.random) {
     this.case = c;
-    for (const s of c.statements) if (s.variants) this.shown.set(s.id, 0);
+    for (const s of c.statements) {
+      if (s.variants) {
+        this.shown.set(s.id, 0);
+        this.seen.set(s.id, [s.variants[0]]);
+      }
+    }
   }
 
-  get pinsLeft(): number {
-    return Math.max(0, this.case.pinsToBreak - this.pinned.size);
+  get pinsDone(): number {
+    return this.pinned.size;
   }
   get broken(): boolean {
     return this.pinned.size >= this.case.pinsToBreak;
@@ -74,15 +85,30 @@ export class Interrogation {
   get lost(): boolean {
     return this.strikesUsed >= this.case.strikes;
   }
+  get state(): Pressure {
+    return this.pressure >= 66 ? "HIGH" : this.pressure >= 33 ? "MEDIUM" : "LOW";
+  }
 
-  /** Ask the subject to tell it again; lies may slip. Returns lines that moved. */
+  /** Lean on a line so it can't keep its story straight. Costs composure (pressure). */
+  press(id: string): boolean {
+    const s = this.case.statements.find((x) => x.id === id);
+    if (!s || this.pinned.has(id)) return false;
+    if (s.variants) this.instab.set(id, Math.min(1.4, (this.instab.get(id) ?? 0) + PRESS_GAIN));
+    this.pressure = Math.min(100, this.pressure + PRESS_PRESSURE);
+    return !!s.variants;
+  }
+
+  /** Make them tell it again. Lies may slip; pressed lines slip harder. */
   again(): string[] {
     this.telling += 1;
     this.changedNow.clear();
     const moved: string[] = [];
+    const boost = (this.pressure / 100) * 0.28;
+
     for (const s of this.case.statements) {
       if (!s.variants || this.pinned.has(s.id)) continue;
-      if (this.rng() < SLIP) {
+      const chance = Math.min(0.95, BASE_SLIP + (this.instab.get(s.id) ?? 0) + boost);
+      if (this.rng() < chance) {
         const cur = this.shown.get(s.id) ?? 0;
         const next = this.pickOther(s.variants.length, cur);
         if (next !== cur) {
@@ -90,26 +116,31 @@ export class Interrogation {
           this.changedNow.add(s.id);
           this.caught.add(s.id);
           moved.push(s.id);
+          const heard = this.seen.get(s.id)!;
+          if (!heard.includes(s.variants[next])) heard.push(s.variants[next]);
+          this.instab.set(s.id, Math.max(0, (this.instab.get(s.id) ?? 0) - PRESS_SPEND));
         }
       }
     }
+    this.pressure = Math.min(100, this.pressure + AGAIN_PRESSURE);
     return moved;
   }
 
   pin(id: string): PinResult {
     const s = this.case.statements.find((x) => x.id === id);
-    if (!s) return { kind: "already" };
-    if (this.pinned.has(id)) return { kind: "already" };
-
-    const isLie = !!s.variants;
-    if (!isLie) {
+    if (!s || this.pinned.has(id)) return { kind: "already" };
+    if (!s.variants) {
       this.strikesUsed += 1;
       return { kind: "false", out: this.lost };
     }
     if (!this.caught.has(id)) return { kind: "not-yet" };
-
     this.pinned.add(id);
-    return { kind: "pinned", broke: this.broken };
+    return { kind: "pinned", broke: this.broken, lines: this.contradiction(id) };
+  }
+
+  /** The distinct phrasings heard for a line — the ledger's quotation. */
+  contradiction(id: string): string[] {
+    return [...(this.seen.get(id) ?? [])];
   }
 
   view(): LineView[] {
@@ -120,6 +151,7 @@ export class Interrogation {
       changedNow: this.changedNow.has(s.id),
       caught: this.caught.has(s.id),
       pinned: this.pinned.has(s.id),
+      pressed: this.instab.get(s.id) ?? 0,
     }));
   }
 

@@ -48,4 +48,57 @@ export const CASES: Case[] = [
     resolution:
       "The rain was the only thing that held.\n\nThe coat was wet when they found it. He went out at ten, in the rain he told you about, and came back before the car he eventually remembered. A lie has to be carried. He set his down, once, and it was a different weight every time he picked it up.\n\nAn arrow travels in only one direction. So does a night. He kept trying to walk his backward, and it kept landing him somewhere new.",
   },
+
+  {
+    id: "the-favor",
+    title: "II. The Favor",
+    subject: "the friend",
+    intro: "She came to vouch for him. Loyalty is steady. An alibi built to order is not.",
+    pinsToBreak: 4,
+    strikes: 3,
+    statements: [
+      { id: "knew", text: "I've known him fifteen years. That doesn't change." },
+      {
+        id: "where",
+        variants: [
+          "We were at my place the whole evening.",
+          "We were at the bar on Fifth, then my place.",
+          "We were at his place, mostly. Then mine.",
+        ],
+      },
+      {
+        id: "what",
+        variants: [
+          "We watched the game. He never left my sight.",
+          "We played cards. I'd have noticed if he stepped out.",
+        ],
+      },
+      { id: "ask", text: "He didn't ask me to say any of this. I came on my own." },
+      {
+        id: "left",
+        variants: [
+          "He left a little after eleven.",
+          "He left near one. I walked him down.",
+          "He left when the rain started. I didn't check the clock.",
+        ],
+      },
+      {
+        id: "drink",
+        variants: [
+          "Neither of us drank. It was a quiet night.",
+          "We had a couple. Nothing serious.",
+        ],
+      },
+      {
+        id: "call",
+        variants: [
+          "My phone was off. We weren't to be disturbed.",
+          "My phone rang once. I didn't answer it.",
+        ],
+      },
+      { id: "sure", text: "I'm sure of all of it. Ask me however many times you need." },
+    ],
+    resolution:
+      "Fifteen years was true. So was the part where he never asked — he didn't have to. She built the rest in the doorway on her way over, and a thing built that fast has no floor under it.\n\nThe place moved. The hour moved. The drink she swore off appeared. Loyalty doesn't rehearse, and it doesn't need to. Only the invented does, and it never gets the lines the same.\n\nShe came to give him a night. What she gave you was the shape of one, redrawn each time you asked.",
+  },
 ];

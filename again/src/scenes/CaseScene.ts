@@ -13,20 +13,31 @@ const LIST_TOP = 150;
 
 export class CaseScene extends Phaser.Scene {
   private game_!: Interrogation;
+  private caseIndex = 0;
   private hud!: Phaser.GameObjects.Text;
   private status!: Phaser.GameObjects.Text;
+  private pressureBar!: Phaser.GameObjects.Graphics;
   private cards: Phaser.GameObjects.Container[] = [];
   private selected: string | null = null;
+  private pressBtn!: Button;
   private pinBtn!: Button;
+  private ledger: string[][] = [];
   private busy = false;
 
   constructor() {
     super("CaseScene");
   }
 
+  init(data: { caseIndex?: number }): void {
+    this.caseIndex = data?.caseIndex ?? 0;
+  }
+
   create(): void {
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
-    this.game_ = new Interrogation(CASES[0]);
+    this.game_ = new Interrogation(CASES[this.caseIndex]);
+    this.ledger = [];
+    this.selected = null;
+    this.busy = false;
 
     this.buildHeader();
     this.buildControls();
@@ -53,27 +64,43 @@ export class CaseScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.hud = this.add
-      .text(GAME_WIDTH / 2, 122, "", { fontFamily: MONO, fontSize: "12px", color: CSS.faint })
+      .text(GAME_WIDTH / 2, 118, "", { fontFamily: MONO, fontSize: "12px", color: CSS.faint })
       .setOrigin(0.5);
+    this.pressureBar = this.add.graphics();
   }
 
   private buildControls(): void {
     this.status = this.add
-      .text(GAME_WIDTH / 2, 762, "", { fontFamily: BODY, fontSize: "14px", color: CSS.muted, fontStyle: "italic" })
+      .text(GAME_WIDTH / 2, 752, "", {
+        fontFamily: BODY,
+        fontSize: "14px",
+        color: CSS.muted,
+        fontStyle: "italic",
+        align: "center",
+        wordWrap: { width: 448 },
+      })
       .setOrigin(0.5);
 
-    this.pinBtn = new Button(this, 124, 808, {
-      w: 208,
+    this.pressBtn = new Button(this, 84, 810, {
+      w: 144,
       h: 50,
-      label: "PIN THE LIE",
+      label: "PRESS",
+      accent: COLORS.amber,
+      onClick: () => this.doPress(),
+    }).setEnabled(false);
+
+    this.pinBtn = new Button(this, 240, 810, {
+      w: 144,
+      h: 50,
+      label: "PIN",
       accent: COLORS.crimson,
       onClick: () => this.doPin(),
     }).setEnabled(false);
 
-    new Button(this, 356, 808, {
-      w: 208,
+    new Button(this, 396, 810, {
+      w: 144,
       h: 50,
-      label: "TELL ME AGAIN",
+      label: "AGAIN",
       accent: COLORS.slate,
       onClick: () => this.doAgain(),
     });
@@ -97,12 +124,12 @@ export class CaseScene extends Phaser.Scene {
   private makeCard(v: LineView, top: number): Phaser.GameObjects.Container {
     const txt = this.add.text(0, 0, v.text, {
       fontFamily: BODY,
-      fontSize: "15px",
+      fontSize: "14px",
       color: v.pinned ? CSS.faint : CSS.ink,
       wordWrap: { width: WRAP },
-      lineSpacing: 3,
+      lineSpacing: 2,
     });
-    const h = Math.max(46, txt.height + 22);
+    const h = Math.max(42, txt.height + 18);
     txt.setPosition(-WRAP / 2, -h / 2 + 11);
 
     const bg = this.add.graphics();
@@ -165,7 +192,19 @@ export class CaseScene extends Phaser.Scene {
       this.paintCard(card, cv);
     });
     this.pinBtn.setEnabled(this.selected !== null);
+    this.pressBtn.setEnabled(this.selected !== null);
     SFX.select();
+  }
+
+  private doPress(): void {
+    if (this.busy || !this.selected) return;
+    const useful = this.game_.press(this.selected);
+    SFX.select();
+    this.updateHud();
+    this.setStatus(
+      useful ? "You lean on it. It will be harder to keep straight." : "It doesn't give. Maybe there's nothing there.",
+      useful ? CSS.amber : CSS.muted,
+    );
   }
 
   private doAgain(): void {
@@ -174,6 +213,7 @@ export class CaseScene extends Phaser.Scene {
     const moved = this.game_.again();
     this.selected = null;
     this.pinBtn.setEnabled(false);
+    this.pressBtn.setEnabled(false);
     this.renderCards();
     this.updateHud();
     if (moved.length > 0) {
@@ -191,9 +231,11 @@ export class CaseScene extends Phaser.Scene {
     switch (res.kind) {
       case "pinned":
         SFX.pin();
+        this.ledger.push(res.lines);
         this.setStatus("Pinned. It can't take that back.", CSS.crimsonBright);
         this.selected = null;
         this.pinBtn.setEnabled(false);
+        this.pressBtn.setEnabled(false);
         this.renderCards();
         this.updateHud();
         if (res.broke) this.time.delayedCall(600, () => this.breakStory());
@@ -223,7 +265,18 @@ export class CaseScene extends Phaser.Scene {
     const g = this.game_;
     const strikes =
       "●".repeat(g.strikesUsed) + "○".repeat(Math.max(0, g.case.strikes - g.strikesUsed));
-    this.hud.setText(`telling ${g.telling}    ·    pinned ${g.case.pinsToBreak - g.pinsLeft}/${g.case.pinsToBreak}    ·    ${strikes}`);
+    this.hud.setText(`telling ${g.telling}    ·    pinned ${g.pinsDone}/${g.case.pinsToBreak}    ·    ${strikes}`);
+
+    // Pressure bar — composure giving way. Reddens as it climbs.
+    const bw = 300;
+    const x = (GAME_WIDTH - bw) / 2;
+    const y = 134;
+    const col = g.state === "HIGH" ? COLORS.crimson : g.state === "MEDIUM" ? COLORS.amber : COLORS.slate;
+    this.pressureBar.clear();
+    this.pressureBar.fillStyle(COLORS.panel, 1);
+    this.pressureBar.fillRoundedRect(x, y, bw, 4, 2);
+    this.pressureBar.fillStyle(col, 1);
+    this.pressureBar.fillRoundedRect(x, y, (bw * g.pressure) / 100, 4, 2);
   }
 
   private setStatus(msg: string, color: string): void {
@@ -233,45 +286,84 @@ export class CaseScene extends Phaser.Scene {
   private breakStory(): void {
     this.busy = true;
     SFX.break();
-    this.showOverlay(this.game_.case.resolution, "the story breaks", CSS.amber);
+    const ledger = this.ledger.map((p) => "“" + p.join("”\n   …  “") + "”").join("\n\n");
+    const hasNext = this.caseIndex + 1 < CASES.length;
+    this.showOverlay({
+      heading: "the story breaks",
+      headColor: CSS.amber,
+      ledger,
+      body: this.game_.case.resolution,
+      button: hasNext
+        ? { label: "THE NEXT ONE", onClick: () => this.scene.restart({ caseIndex: this.caseIndex + 1 }) }
+        : { label: "FROM THE TOP", onClick: () => this.scene.restart({ caseIndex: 0 }) },
+    });
   }
 
   private endLost(): void {
     this.busy = true;
-    this.showOverlay(
-      "He stands, buttons his coat, and leaves.\n\nYou pressed where there was nothing to give, and the one thread that would have held went slack. Some nights keep their shape no matter how often you ask.",
-      "he walks",
-      CSS.slate,
-    );
+    this.showOverlay({
+      heading: "they walk",
+      headColor: CSS.slate,
+      body: "They stand, and leave.\n\nYou pressed where there was nothing to give, and the one thread that would have held went slack. Some nights keep their shape no matter how often you ask.",
+      button: { label: "AGAIN", onClick: () => this.scene.restart({ caseIndex: this.caseIndex }) },
+    });
   }
 
-  private showOverlay(body: string, heading: string, headColor: string): void {
+  private showOverlay(opts: {
+    heading: string;
+    headColor: string;
+    body: string;
+    ledger?: string;
+    button: { label: string; onClick: () => void };
+  }): void {
     const c = this.add.container(0, 0).setDepth(100);
-    const dim = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.93);
+    const dim = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.95);
+    c.add(dim);
+
+    let y = 150;
     const head = this.add
-      .text(GAME_WIDTH / 2, 220, heading, { fontFamily: DISPLAY, fontSize: "24px", color: headColor, fontStyle: "italic" })
-      .setOrigin(0.5);
+      .text(GAME_WIDTH / 2, y, opts.heading, { fontFamily: DISPLAY, fontSize: "26px", color: opts.headColor, fontStyle: "italic" })
+      .setOrigin(0.5, 0);
+    c.add(head);
+    y += head.height + 22;
+
+    if (opts.ledger) {
+      const led = this.add
+        .text(GAME_WIDTH / 2, y, opts.ledger, {
+          fontFamily: MONO,
+          fontSize: "12px",
+          color: CSS.amber,
+          align: "left",
+          wordWrap: { width: 396 },
+          lineSpacing: 3,
+        })
+        .setOrigin(0.5, 0);
+      c.add(led);
+      y += led.height + 22;
+    }
+
     const text = this.add
-      .text(GAME_WIDTH / 2, 270, body, {
+      .text(GAME_WIDTH / 2, y, opts.body, {
         fontFamily: BODY,
-        fontSize: "16px",
+        fontSize: "15px",
         color: CSS.ink,
         align: "left",
         wordWrap: { width: 400 },
         lineSpacing: 6,
       })
       .setOrigin(0.5, 0);
-    c.add([dim, head, text]);
+    c.add(text);
+
     c.setAlpha(0);
     this.tweens.add({ targets: c, alpha: 1, duration: 600 });
 
-    const again = new Button(this, GAME_WIDTH / 2, 800, {
+    const btn = new Button(this, GAME_WIDTH / 2, 812, {
       w: 260,
       h: 50,
-      label: "AGAIN, FROM THE TOP",
+      label: opts.button.label,
       accent: COLORS.slate,
-      onClick: () => this.scene.restart(),
+      onClick: opts.button.onClick,
     });
-    c.add(again);
+    c.add(btn);
   }
 }

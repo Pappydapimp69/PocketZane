@@ -33,3 +33,6 @@ npm run build                    # type-check + production build
 ## Versions
 
 - **v1** — the core loop: one case, tell-again, catch the flicker, pin, break.
+- **v2** — **PRESS** a line to destabilize it (agency over the loop), a **pressure**
+  track as composure gives way, a second case, and the **ledger**: at the break,
+  the subject's own words are quoted back, contradiction by contradiction.
