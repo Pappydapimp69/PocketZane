@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { GAME_WIDTH, GAME_HEIGHT } from "../config";
+import { GAME_WIDTH, GAME_HEIGHT } from "../dimensions";
 
 /**
  * All art in AGAIN is generated at runtime — no image files. These build a

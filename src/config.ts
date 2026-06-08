@@ -1,13 +1,13 @@
 import Phaser from "phaser";
 import { COLORS } from "./theme";
+import { GAME_WIDTH, GAME_HEIGHT } from "./dimensions";
 import { BootScene } from "./scenes/BootScene";
 import { TitleScene } from "./scenes/TitleScene";
 import { CaseSelectScene } from "./scenes/CaseSelectScene";
 import { StatsScene } from "./scenes/StatsScene";
 import { CaseScene } from "./scenes/CaseScene";
 
-export const GAME_WIDTH = 480;
-export const GAME_HEIGHT = 854;
+export { GAME_WIDTH, GAME_HEIGHT } from "./dimensions";
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
