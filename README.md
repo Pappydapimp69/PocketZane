@@ -67,3 +67,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v6** — **evidence**: lean hard enough on a line with a hard fact behind it and
   the proof surfaces, making that lie pinnable on the spot — a deterministic
   second route to the truth alongside catching the flicker.
+- **v7** — **persistence + a room that reacts**: broken stories are remembered
+  (the title tracks how many), and the overhead lamp breathes with the pressure —
+  brightening, reddening, flickering when a pin lands.

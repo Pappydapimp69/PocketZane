@@ -6,6 +6,7 @@ import { Interrogation, LineView } from "../game/engine";
 import { CASES } from "../game/cases";
 import { SFX, startAmbience } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
+import { markCleared } from "../game/save";
 import { PAD, STICK_THRESHOLD, STICK_REPEAT_MS } from "../input";
 
 const CARD_X = GAME_WIDTH / 2;
@@ -27,6 +28,7 @@ export class CaseScene extends Phaser.Scene {
   private busy = false;
   private overlayAction: (() => void) | null = null;
   private stickCooldown = 0;
+  private lamp?: Phaser.GameObjects.Image;
 
   constructor() {
     super("CaseScene");
@@ -38,7 +40,7 @@ export class CaseScene extends Phaser.Scene {
 
   create(): void {
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
-    addAtmosphere(this, { lamp: true });
+    this.lamp = addAtmosphere(this, { lamp: true }).lamp;
     startAmbience();
     this.game_ = new Interrogation(CASES[this.caseIndex]);
     this.ledger = [];
@@ -345,6 +347,7 @@ export class CaseScene extends Phaser.Scene {
     switch (res.kind) {
       case "pinned":
         SFX.pin();
+        this.lampFlicker();
         this.ledger.push(res.lines);
         this.setStatus("Pinned. It can't take that back.", CSS.crimsonBright);
         this.selected = null;
@@ -391,6 +394,20 @@ export class CaseScene extends Phaser.Scene {
     this.pressureBar.fillRoundedRect(x, y, bw, 4, 2);
     this.pressureBar.fillStyle(col, 1);
     this.pressureBar.fillRoundedRect(x, y, (bw * g.pressure) / 100, 4, 2);
+
+    // The lamp breathes with the pressure in the room.
+    if (this.lamp) {
+      const t = g.pressure / 100;
+      this.lamp.setAlpha(0.85 + 0.15 * t);
+      this.lamp.setScale(1 + 0.12 * t);
+      this.lamp.setTint(g.state === "HIGH" ? 0xffb38f : g.state === "MEDIUM" ? 0xffe0b8 : 0xffffff);
+    }
+  }
+
+  private lampFlicker(): void {
+    if (!this.lamp) return;
+    const a = this.lamp.alpha;
+    this.tweens.add({ targets: this.lamp, alpha: a * 0.4, duration: 60, yoyo: true, repeat: 1 });
   }
 
   private setStatus(msg: string, color: string): void {
@@ -399,6 +416,7 @@ export class CaseScene extends Phaser.Scene {
 
   private breakStory(): void {
     this.busy = true;
+    markCleared(this.caseIndex + 1);
     SFX.break();
     const ledger = this.ledger.map((p) => "“" + p.join("”\n   …  “") + "”").join("\n\n");
     const hasNext = this.caseIndex + 1 < CASES.length;

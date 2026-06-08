@@ -4,6 +4,8 @@ import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere } from "../game/textures";
 import { startAmbience } from "../game/audio";
+import { getCleared } from "../game/save";
+import { CASES } from "../game/cases";
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -68,6 +70,17 @@ export class TitleScene extends Phaser.Scene {
         color: CSS.faint,
       })
       .setOrigin(0.5);
+
+    const cleared = getCleared();
+    if (cleared > 0) {
+      this.add
+        .text(GAME_WIDTH / 2, 690, `stories broken: ${Math.min(cleared, CASES.length)} / ${CASES.length}`, {
+          fontFamily: MONO,
+          fontSize: "11px",
+          color: CSS.amber,
+        })
+        .setOrigin(0.5);
+    }
 
     this.add
       .text(GAME_WIDTH / 2, 800, "an arrow travels in only one direction", {

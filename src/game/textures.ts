@@ -57,15 +57,23 @@ function makeVignette(scene: Phaser.Scene, key: string, w: number, h: number): v
   tex.refresh();
 }
 
-/** Lay the generated atmosphere into a scene: grain, optional lamp, vignette. */
-export function addAtmosphere(scene: Phaser.Scene, opts: { lamp?: boolean } = {}): void {
+/**
+ * Lay the generated atmosphere into a scene: grain, optional lamp, vignette.
+ * Returns the lamp image so a scene can make it react (it breathes with pressure).
+ */
+export function addAtmosphere(
+  scene: Phaser.Scene,
+  opts: { lamp?: boolean } = {},
+): { lamp?: Phaser.GameObjects.Image } {
   if (scene.textures.exists("grain")) {
     scene.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, "grain").setOrigin(0).setDepth(-1).setAlpha(0.5);
   }
+  let lamp: Phaser.GameObjects.Image | undefined;
   if (opts.lamp && scene.textures.exists("lamp")) {
-    scene.add.image(GAME_WIDTH / 2, 0, "lamp").setOrigin(0.5, 0).setDepth(-1);
+    lamp = scene.add.image(GAME_WIDTH / 2, 0, "lamp").setOrigin(0.5, 0).setDepth(-1);
   }
   if (scene.textures.exists("vignette")) {
     scene.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, "vignette").setDepth(90);
   }
+  return { lamp };
 }
