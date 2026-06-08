@@ -7,6 +7,7 @@ import { CASES } from "../game/cases";
 import { SFX, startAmbience } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
 import { markCleared } from "../game/save";
+import { tell } from "../game/reactions";
 import { PAD, STICK_THRESHOLD, STICK_REPEAT_MS } from "../input";
 
 const CARD_X = GAME_WIDTH / 2;
@@ -148,7 +149,12 @@ export class CaseScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setLetterSpacing(6);
     this.add
-      .text(GAME_WIDTH / 2, 66, c.title, { fontFamily: DISPLAY, fontSize: "15px", color: CSS.amber, fontStyle: "italic" })
+      .text(GAME_WIDTH / 2, 66, `${c.title}  ·  ${c.subject}`, {
+        fontFamily: DISPLAY,
+        fontSize: "15px",
+        color: CSS.amber,
+        fontStyle: "italic",
+      })
       .setOrigin(0.5);
     this.add
       .text(GAME_WIDTH / 2, 92, c.intro, {
@@ -312,10 +318,7 @@ export class CaseScene extends Phaser.Scene {
       this.setStatus("Proof. " + r.evidence, CSS.crimsonBright);
     } else {
       SFX.select();
-      this.setStatus(
-        r.ok ? "You lean on it. It will be harder to keep straight." : "It doesn't give. Maybe there's nothing there.",
-        r.ok ? CSS.amber : CSS.muted,
-      );
+      this.setStatus(tell(r.ok ? "pressUseful" : "pressBarren"), r.ok ? CSS.amber : CSS.muted);
     }
   }
 
@@ -331,12 +334,12 @@ export class CaseScene extends Phaser.Scene {
     if (this.game_.recovered) {
       SFX.deny();
       this.cameras.main.flash(220, 30, 26, 20);
-      this.setStatus("They gather themselves. Whatever you'd worked loose has tightened.", CSS.slate);
+      this.setStatus(tell("recovered"), CSS.slate);
     } else if (moved.length > 0) {
       SFX.flicker();
-      this.setStatus("Something moved.", CSS.amber);
+      this.setStatus(tell("againMoved"), CSS.amber);
     } else {
-      this.setStatus("It held, that time.", CSS.muted);
+      this.setStatus(tell("againHeld"), CSS.muted);
     }
   }
 
@@ -349,7 +352,7 @@ export class CaseScene extends Phaser.Scene {
         SFX.pin();
         this.lampFlicker();
         this.ledger.push(res.lines);
-        this.setStatus("Pinned. It can't take that back.", CSS.crimsonBright);
+        this.setStatus(tell("pinned"), CSS.crimsonBright);
         this.selected = null;
         this.pinBtn.setEnabled(false);
         this.pressBtn.setEnabled(false);
@@ -359,15 +362,12 @@ export class CaseScene extends Phaser.Scene {
         break;
       case "not-yet":
         SFX.deny();
-        this.setStatus("You haven't caught it move. Make it tell again.", CSS.muted);
+        this.setStatus(tell("notYet"), CSS.muted);
         break;
       case "false":
         SFX.wrong();
         this.cameras.main.shake(160, 0.004);
-        this.setStatus(
-          res.out ? "That was the truth. He's done talking." : "That one was true. He steadies.",
-          CSS.slate,
-        );
+        this.setStatus(res.out ? "That was the truth. It's done talking." : tell("falseStrike"), CSS.slate);
         this.updateHud();
         if (res.out) this.time.delayedCall(700, () => this.endLost());
         break;

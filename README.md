@@ -72,3 +72,5 @@ Touch, gamepad, and keyboard are all supported.
   brightening, reddening, flickering when a pin lands.
 - **v8** — a fourth case that breaks the frame: the thing across the table isn't a
   person. It claims it cannot contradict itself — and proving it can is the point.
+- **v9** — the subject gets **presence**: varied, characterful "tells" replace
+  fixed status text for every action, and the subject is named in the header.
