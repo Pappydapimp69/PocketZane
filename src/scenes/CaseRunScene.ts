@@ -6,8 +6,8 @@ import { MergedInquiry, PHASE_STRIKES, MergedCase } from "../game/merged";
 import { WELLS } from "../game/mergedcase";
 import { generateMergedCase } from "../game/generateweb";
 import { dailySeed, DAILY_OPTS, optsForNight, nightSeed, randomSeed, freeOpts } from "../game/ladder";
-import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias, getBest, setBest } from "../game/save";
-import { SFX, startAmbience, stopSpeech } from "../game/audio";
+import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias, getBest, setBest, getNarration } from "../game/save";
+import { SFX, startAmbience, stopSpeech, speak } from "../game/audio";
 import { addAtmosphere, addRain } from "../game/textures";
 import { paintPortrait, suspectName, temperament, Mood, Temperament } from "../game/portrait";
 import { paintScene } from "../game/scenery";
@@ -422,11 +422,13 @@ export class CaseRunScene extends Phaser.Scene {
       return;
     }
     this.tick();
+    const sel = this.selected;
     if (this.inq.question(this.selected).shifted) {
       SFX.flicker();
       SFX.murmur(this.seedVal);
       this.renderPhase();
       this.setMood("evasive");
+      this.say(this.inq.phaseLines().find((l) => l.id === sel)?.text ?? "");
       this.setStatus("Something in it moves.", CSS.amber);
     } else {
       SFX.again();
@@ -542,6 +544,7 @@ export class CaseRunScene extends Phaser.Scene {
         this.setMood("evasive");
         const via = this.inq.segmentName(r.via);
         const tgt = this.inq.segmentName(r.target);
+        this.say(r.text);
         this.setStatus(`He slips it. ${tgt} hides behind ${via} — so take ${via} apart first.`, CSS.amber);
         if (r.revealed) this.time.delayedCall(900, () => this.centerToast("That shakes loose:  " + r.revealed!.label));
         break;
@@ -576,6 +579,11 @@ export class CaseRunScene extends Phaser.Scene {
   }
 
   // ---- overlays --------------------------------------------------------------
+
+  /** Voice a suspect's line when narration is on (accessibility / immersion). */
+  private say(line: string): void {
+    if (getNarration() && line) speak(line);
+  }
 
   /** A brief full-screen colour wash — for the moment the floor gives out. */
   private flash(color: number, alpha: number): void {
