@@ -79,16 +79,16 @@ export class TitleScene extends Phaser.Scene {
     });
 
     const web = this.add
-      .text(GAME_WIDTH / 2, 424, "❖  THE WEB  (beta)  ❖", { fontFamily: MONO, fontSize: "12px", color: CSS.crimsonBright })
+      .text(GAME_WIDTH / 2, 424, "❖  GENERATED  (beta)  ❖", { fontFamily: MONO, fontSize: "12px", color: CSS.crimsonBright })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
     web.on("pointerup", () => {
       startAmbience();
-      this.scene.start("Web");
+      this.scene.start("Web", { generate: true });
     });
     this.input.keyboard?.on("keydown-W", () => {
       startAmbience();
-      this.scene.start("Web");
+      this.scene.start("Web", { generate: true });
     });
 
     this.add

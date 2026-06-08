@@ -2,8 +2,9 @@ import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../dimensions";
 import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
 import { Button } from "../ui";
-import { WebInquiry } from "../game/web";
+import { WebInquiry, WebCase } from "../game/web";
 import { WELLS_WEB } from "../game/webcase";
+import { generateWeb } from "../game/generateweb";
 import { SFX, startAmbience, stopSpeech } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
 import { PAD } from "../input";
@@ -21,8 +22,18 @@ export class WebScene extends Phaser.Scene {
   private overlayClose: (() => void) | null = null;
   private pickHandler: ((i: number) => void) | null = null;
 
+  private theCase: WebCase = WELLS_WEB;
+  private seedVal = 1;
+
   constructor() {
     super("Web");
+  }
+
+  init(data: { generate?: boolean; seed?: number; supports?: number; depth?: number }): void {
+    this.seedVal = data?.seed ?? (Date.now() & 0xffff) + 1;
+    this.theCase = data?.generate
+      ? generateWeb(this.seedVal, { supports: data.supports ?? 2, depth: data.depth ?? 2, herring: true })
+      : WELLS_WEB;
   }
 
   create(): void {
@@ -31,7 +42,7 @@ export class WebScene extends Phaser.Scene {
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
     addAtmosphere(this, { lamp: true });
     startAmbience();
-    this.inq = new WebInquiry(WELLS_WEB, (Date.now() & 0xffff) + 1);
+    this.inq = new WebInquiry(this.theCase, this.seedVal);
     this.busy = false;
 
     const c = this.inq.case;
@@ -144,9 +155,11 @@ export class WebScene extends Phaser.Scene {
       case "deflect": {
         SFX.flicker();
         this.renderWeb();
+        this.updateHud();
         const via = this.inq.segmentName(r.via);
         const tgt = this.inq.segmentName(r.target);
         this.setStatus(`He slips it. ${tgt} hides behind ${via} — so take ${via} apart first.`, CSS.amber);
+        if (r.revealed) this.time.delayedCall(800, () => this.centerToast("That shakes loose:  " + r.revealed!.label));
         break;
       }
       case "break": {
@@ -172,6 +185,11 @@ export class WebScene extends Phaser.Scene {
   }
 
   // ---- overlays --------------------------------------------------------------
+
+  private centerToast(msg: string): void {
+    const t = this.add.text(GAME_WIDTH / 2, 700, msg, { fontFamily: MONO, fontSize: "12px", color: CSS.amber, align: "center", wordWrap: { width: 440 } }).setOrigin(0.5).setDepth(60);
+    this.tweens.add({ targets: t, alpha: { from: 1, to: 0 }, delay: 2200, duration: 700, onComplete: () => t.destroy() });
+  }
 
   private showPicker(): void {
     this.busy = true;

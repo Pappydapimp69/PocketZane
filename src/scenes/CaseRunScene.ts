@@ -354,6 +354,7 @@ export class CaseRunScene extends Phaser.Scene {
       case "deflect": {
         SFX.flicker();
         this.renderWeb();
+        this.updateHud();
         const via = this.inq.segmentName(r.via);
         const tgt = this.inq.segmentName(r.target);
         this.setStatus(`He slips it. ${tgt} hides behind ${via} — so take ${via} apart first.`, CSS.amber);
