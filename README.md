@@ -165,3 +165,6 @@ Touch, gamepad, and keyboard are all supported.
   (banked: a wry "confidence" readout). Added **narration** — an optional toggle
   that reads each resolution aloud via the browser's built-in speech synthesis
   (no files), nodding to the voice-as-instrument thread.
+- **v41** — **the record**: a dossier screen collecting rank, total breaks, per-case
+  bests, deepest endless night, and today's best — the optimizer's scoreboard in
+  one place.

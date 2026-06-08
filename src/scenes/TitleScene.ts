@@ -50,6 +50,12 @@ export class TitleScene extends Phaser.Scene {
     dailyText.on("pointerup", daily);
     this.input.keyboard?.on("keydown-T", daily);
 
+    const record = this.add
+      .text(GAME_WIDTH / 2, 384, "» the record «", { fontFamily: MONO, fontSize: "11px", color: CSS.faint })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+    record.on("pointerup", () => this.scene.start("Stats"));
+
     this.add
       .text(
         GAME_WIDTH / 2,
