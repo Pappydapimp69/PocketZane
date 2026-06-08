@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../dimensions";
 import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
 import { Button } from "../ui";
-import { addAtmosphere } from "../game/textures";
+import { addAtmosphere, addRain } from "../game/textures";
 import { startAmbience, isMuted, toggleMute, SFX, stopSpeech } from "../game/audio";
 import { getReduceMotion, toggleReduceMotion, getNarration, toggleNarration, getDifficulty, cycleDifficulty, DIFFS } from "../game/save";
 import { getCleared, getDeepest, hasSeenIntro, markSeenIntro, getTotalBreaks, rankFor } from "../game/save";
@@ -28,6 +28,7 @@ export class TitleScene extends Phaser.Scene {
     this.cameras.main.fadeIn(500);
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
     const { lamp } = addAtmosphere(this, { lamp: true });
+    addRain(this, -1, 1);
     if (lamp) {
       this.tweens.add({ targets: lamp, alpha: { from: 0.7, to: 1 }, scale: { from: 0.98, to: 1.05 }, duration: 3600, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     }

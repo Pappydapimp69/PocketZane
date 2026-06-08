@@ -8,7 +8,7 @@ import { generateMergedCase } from "../game/generateweb";
 import { dailySeed, DAILY_OPTS, optsForNight, nightSeed, randomSeed, freeOpts } from "../game/ladder";
 import { incBreaks, markDeepest, rankFor, getTotalBreaks } from "../game/save";
 import { SFX, startAmbience, stopSpeech } from "../game/audio";
-import { addAtmosphere } from "../game/textures";
+import { addAtmosphere, addRain } from "../game/textures";
 import { paintPortrait, suspectName, Mood } from "../game/portrait";
 import { paintScene } from "../game/scenery";
 import { PAD } from "../input";
@@ -112,6 +112,7 @@ export class CaseRunScene extends Phaser.Scene {
     this.cameras.main.fadeIn(360);
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
     addAtmosphere(this, { lamp: true });
+    addRain(this, -1, 1);
     startAmbience();
     this.inq = new MergedInquiry(this.theCase, this.seedVal);
     this.marks = this.add.graphics().setDepth(5);

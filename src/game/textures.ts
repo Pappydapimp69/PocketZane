@@ -12,6 +12,41 @@ export function generateTextures(scene: Phaser.Scene): void {
   makeLamp(scene, "lamp", 360, 240);
   makeVignette(scene, "vignette", GAME_WIDTH, GAME_HEIGHT);
   makeMote(scene, "mote", 24);
+  makeRaindrop(scene, "raindrop", 3, 26);
+}
+
+/** A thin vertical streak — a single fall of rain on glass. */
+function makeRaindrop(scene: Phaser.Scene, key: string, w: number, h: number): void {
+  if (scene.textures.exists(key)) return;
+  const tex = scene.textures.createCanvas(key, w, h);
+  const ctx = tex?.getContext();
+  if (!ctx || !tex) return;
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, "rgba(200,212,228,0)");
+  g.addColorStop(0.6, "rgba(200,212,228,0.5)");
+  g.addColorStop(1, "rgba(220,230,245,0.8)");
+  ctx.fillStyle = g;
+  ctx.fillRect(w / 2 - 0.5, 0, 1, h);
+  tex.refresh();
+}
+
+/** A sheet of rain falling across the scene — depth-sorted faint, for atmosphere. */
+export function addRain(scene: Phaser.Scene, depth = 88, quantity = 2): void {
+  if (!scene.textures.exists("raindrop")) return;
+  scene.add
+    .particles(0, -20, "raindrop", {
+      x: { min: -20, max: GAME_WIDTH + 20 },
+      y: -20,
+      speedY: { min: 620, max: 920 },
+      speedX: { min: -40, max: -20 },
+      lifespan: 1500,
+      scaleX: { min: 0.6, max: 1.1 },
+      scaleY: { min: 0.7, max: 1.6 },
+      alpha: { min: 0.08, max: 0.22 },
+      frequency: 40,
+      quantity,
+    })
+    .setDepth(depth);
 }
 
 /** A soft round dot — a dust mote catching the lamp. */
