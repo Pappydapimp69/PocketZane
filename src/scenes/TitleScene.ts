@@ -4,7 +4,7 @@ import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere } from "../game/textures";
 import { startAmbience } from "../game/audio";
-import { getCleared } from "../game/save";
+import { getCleared, getDeepest } from "../game/save";
 import { CASES } from "../game/cases";
 
 export class TitleScene extends Phaser.Scene {
@@ -48,23 +48,35 @@ export class TitleScene extends Phaser.Scene {
 
     const begin = () => {
       startAmbience();
-      this.scene.start("CaseScene", { caseIndex: 0 });
+      this.scene.start("CaseScene", { mode: "story", caseIndex: 0 });
     };
-    new Button(this, GAME_WIDTH / 2, 600, {
+    const endless = () => {
+      startAmbience();
+      this.scene.start("CaseScene", { mode: "endless", depth: 0 });
+    };
+
+    new Button(this, GAME_WIDTH / 2, 576, {
       w: 240,
-      h: 56,
+      h: 54,
       label: "SIT DOWN",
       accent: COLORS.crimson,
       onClick: begin,
     });
+    new Button(this, GAME_WIDTH / 2, 640, {
+      w: 240,
+      h: 50,
+      label: "AN ENDLESS NIGHT",
+      accent: COLORS.slate,
+      onClick: endless,
+    });
 
-    // Gamepad / keyboard: any face button or Enter/Space begins.
+    // Gamepad / keyboard: A / Enter takes the story; Space / X takes the endless night.
     this.input.gamepad?.once("down", begin);
     this.input.keyboard?.once("keydown-ENTER", begin);
-    this.input.keyboard?.once("keydown-SPACE", begin);
+    this.input.keyboard?.once("keydown-SPACE", endless);
 
     this.add
-      .text(GAME_WIDTH / 2, 660, "touch · gamepad · keyboard", {
+      .text(GAME_WIDTH / 2, 696, "touch · gamepad · keyboard", {
         fontFamily: MONO,
         fontSize: "10px",
         color: CSS.faint,
@@ -72,13 +84,13 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     const cleared = getCleared();
-    if (cleared > 0) {
+    const deepest = getDeepest();
+    const lines: string[] = [];
+    if (cleared > 0) lines.push(`stories broken: ${Math.min(cleared, CASES.length)} / ${CASES.length}`);
+    if (deepest > 0) lines.push(`deepest night: ${deepest}`);
+    if (lines.length > 0) {
       this.add
-        .text(GAME_WIDTH / 2, 690, `stories broken: ${Math.min(cleared, CASES.length)} / ${CASES.length}`, {
-          fontFamily: MONO,
-          fontSize: "11px",
-          color: CSS.amber,
-        })
+        .text(GAME_WIDTH / 2, 724, lines.join("      "), { fontFamily: MONO, fontSize: "11px", color: CSS.amber })
         .setOrigin(0.5);
     }
 

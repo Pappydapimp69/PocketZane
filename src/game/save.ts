@@ -44,3 +44,22 @@ export function setBest(caseId: string, tellings: number): void {
     /* storage unavailable — ignore */
   }
 }
+
+const DEEP_KEY = "again:deepest";
+
+/** Furthest night reached in the endless mode. */
+export function getDeepest(): number {
+  try {
+    return parseInt(localStorage.getItem(DEEP_KEY) ?? "0", 10) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function markDeepest(night: number): void {
+  try {
+    if (night > getDeepest()) localStorage.setItem(DEEP_KEY, String(night));
+  } catch {
+    /* storage unavailable — ignore */
+  }
+}

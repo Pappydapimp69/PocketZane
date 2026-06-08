@@ -6,7 +6,8 @@ import { Interrogation, LineView } from "../game/engine";
 import { CASES } from "../game/cases";
 import { SFX, startAmbience } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
-import { markCleared, getBest, setBest } from "../game/save";
+import { markCleared, getBest, setBest, markDeepest, getDeepest } from "../game/save";
+import { generateCase } from "../game/generator";
 import { tell } from "../game/reactions";
 import { PAD, STICK_THRESHOLD, STICK_REPEAT_MS } from "../input";
 
@@ -18,6 +19,8 @@ const LIST_TOP = 150;
 export class CaseScene extends Phaser.Scene {
   private game_!: Interrogation;
   private caseIndex = 0;
+  private mode: "story" | "endless" = "story";
+  private depth = 0;
   private hud!: Phaser.GameObjects.Text;
   private status!: Phaser.GameObjects.Text;
   private pressureBar!: Phaser.GameObjects.Graphics;
@@ -35,15 +38,17 @@ export class CaseScene extends Phaser.Scene {
     super("CaseScene");
   }
 
-  init(data: { caseIndex?: number }): void {
+  init(data: { caseIndex?: number; mode?: "story" | "endless"; depth?: number }): void {
+    this.mode = data?.mode ?? "story";
     this.caseIndex = data?.caseIndex ?? 0;
+    this.depth = data?.depth ?? 0;
   }
 
   create(): void {
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
     this.lamp = addAtmosphere(this, { lamp: true }).lamp;
     startAmbience();
-    this.game_ = new Interrogation(CASES[this.caseIndex]);
+    this.game_ = new Interrogation(this.mode === "endless" ? generateCase(this.depth) : CASES[this.caseIndex]);
     this.ledger = [];
     this.selected = null;
     this.busy = false;
@@ -454,6 +459,21 @@ export class CaseScene extends Phaser.Scene {
     const stats = `${verdict}\ntold again ${g.telling}×  ·  ${g.strikesUsed} strike${g.strikesUsed === 1 ? "" : "s"}  ·  best ${best}×${fresh}`;
 
     const ledger = this.ledger.map((p) => "“" + p.join("”\n   …  “") + "”").join("\n\n");
+
+    if (this.mode === "endless") {
+      const night = this.depth + 1;
+      markDeepest(night);
+      this.showOverlay({
+        heading: "it breaks",
+        headColor: CSS.amber,
+        stats: `night ${night} broken  ·  told again ${g.telling}×  ·  ${g.strikesUsed} strike${g.strikesUsed === 1 ? "" : "s"}\nthe next one will be harder`,
+        ledger,
+        body: g.case.resolution,
+        button: { label: "ONE MORE", onClick: () => this.scene.restart({ mode: "endless", depth: this.depth + 1 }) },
+      });
+      return;
+    }
+
     const hasNext = this.caseIndex + 1 < CASES.length;
     this.showOverlay({
       heading: "the story breaks",
@@ -469,6 +489,18 @@ export class CaseScene extends Phaser.Scene {
 
   private endLost(): void {
     this.busy = true;
+    if (this.mode === "endless") {
+      const reached = this.depth + 1;
+      markDeepest(this.depth); // nights fully broken before this one
+      this.showOverlay({
+        heading: "they walk",
+        headColor: CSS.slate,
+        stats: `you broke ${this.depth} night${this.depth === 1 ? "" : "s"}  ·  deepest ${getDeepest()}\nnight ${reached} kept its shape`,
+        body: "They stand, and leave. The chair is cold before the door closes.\n\nYou accused the truth one too many times, and the night that would have held went slack in your hands.",
+        button: { label: "FROM THE FIRST NIGHT", onClick: () => this.scene.start("TitleScene") },
+      });
+      return;
+    }
     this.showOverlay({
       heading: "they walk",
       headColor: CSS.slate,

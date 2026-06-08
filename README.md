@@ -85,3 +85,7 @@ Touch, gamepad, and keyboard are all supported.
   and fast, not just breaking it.
 - **v13** — a fifth and final case that turns the lamp around: the account on the
   table is *yours*, and it won't hold still either. The climax of the arc.
+- **v14** — **an endless night**: a second mode that procedurally assembles cases
+  from a pool of claims, ratcheting difficulty (more lies, fewer strikes) each
+  night, until you accuse the truth one too many times. The title tracks how deep
+  you got.
