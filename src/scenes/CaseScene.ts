@@ -2,11 +2,11 @@ import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config";
 import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
 import { Button } from "../ui";
-import { Interrogation, LineView } from "../game/engine";
+import { Interrogation, LineView, Case } from "../game/engine";
 import { CASES } from "../game/cases";
 import { SFX, startAmbience, speak, stopSpeech } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
-import { markCleared, getBest, setBest, markDeepest, getDeepest, incBreaks, getReduceMotion, getNarration } from "../game/save";
+import { markCleared, getBest, setBest, markDeepest, getDeepest, incBreaks, getReduceMotion, getNarration, getDifficulty, DIFFS } from "../game/save";
 import { generateCase } from "../game/generator";
 import { mulberry32, todaySeed, todayStamp } from "../game/rng";
 import { tell } from "../game/reactions";
@@ -70,28 +70,32 @@ export class CaseScene extends Phaser.Scene {
     }
     this.prevHigh = false;
 
+    let chosen: Case;
+    let playRng: (() => number) | undefined;
     if (this.mode === "daily") {
       // Same subject for everyone, all day; deterministic case and slips.
       const seed = todaySeed();
-      const c = generateCase(2, mulberry32(seed));
-      c.id = `daily-${todayStamp()}`;
-      c.title = `Today — ${todayStamp()}`;
-      this.game_ = new Interrogation(c, mulberry32((seed ^ 0x9e3779b9) >>> 0));
+      chosen = generateCase(2, mulberry32(seed));
+      chosen.id = `daily-${todayStamp()}`;
+      chosen.title = `Today — ${todayStamp()}`;
+      playRng = mulberry32((seed ^ 0x9e3779b9) >>> 0);
     } else if (this.mode === "endless") {
       // Every fifth night is a harder, named "hard case."
       const isBoss = (this.depth + 1) % 5 === 0;
-      const c = generateCase(this.depth + (isBoss ? 2 : 0));
-      if (isBoss) c.title = `Night ${this.depth + 1} — the hard one`;
-      this.game_ = new Interrogation(c);
+      chosen = generateCase(this.depth + (isBoss ? 2 : 0));
+      if (isBoss) chosen.title = `Night ${this.depth + 1} — the hard one`;
     } else {
-      const theCase =
+      chosen =
         this.mode === "versus"
           ? generateCase(2)
           : this.mode === "coop"
             ? generateCase(4) // a hard one, meant for two heads
             : CASES[this.caseIndex];
-      this.game_ = new Interrogation(theCase);
     }
+    // Apply the chosen difficulty's strike modifier (copy so shared cases aren't mutated).
+    const off = DIFFS[getDifficulty()].strikes;
+    chosen = { ...chosen, strikes: Phaser.Math.Clamp(chosen.strikes + off, 1, 9) };
+    this.game_ = new Interrogation(chosen, playRng);
     this.ledger = [];
     this.selected = null;
     this.busy = false;

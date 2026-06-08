@@ -117,6 +117,34 @@ export function toggleReduceMotion(): boolean {
   return next;
 }
 
+const DIFF_KEY = "again:difficulty";
+
+/** Strike modifier per difficulty (applied to every case's strike allowance). */
+export const DIFFS = [
+  { label: "lenient", strikes: 1 },
+  { label: "standard", strikes: 0 },
+  { label: "relentless", strikes: -1 },
+];
+
+export function getDifficulty(): number {
+  try {
+    const v = parseInt(localStorage.getItem(DIFF_KEY) ?? "1", 10);
+    return v >= 0 && v < DIFFS.length ? v : 1;
+  } catch {
+    return 1;
+  }
+}
+
+export function cycleDifficulty(): number {
+  const next = (getDifficulty() + 1) % DIFFS.length;
+  try {
+    localStorage.setItem(DIFF_KEY, String(next));
+  } catch {
+    /* ignore */
+  }
+  return next;
+}
+
 const NARR_KEY = "again:narration";
 
 export function getNarration(): boolean {

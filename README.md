@@ -168,3 +168,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v41** — **the record**: a dossier screen collecting rank, total breaks, per-case
   bests, deepest endless night, and today's best — the optimizer's scoreboard in
   one place.
+- **v42** — **difficulty**: a persisted Lenient / Standard / Relentless setting that
+  shifts the strike allowance across every mode, for a gentler ride or a knife's
+  edge.
