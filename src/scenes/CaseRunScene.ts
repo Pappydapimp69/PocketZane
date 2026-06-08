@@ -81,7 +81,7 @@ export class CaseRunScene extends Phaser.Scene {
     return { ...opts, weirdness: Math.min(0.92, (opts.weirdness ?? 0) + weirdnessBias()) };
   }
 
-  init(data: { generate?: boolean; seed?: number; mode?: "free" | "daily" | "endless"; night?: number; runBase?: number; vsMode?: "versus" | "coop"; matchSeed?: number; playerIdx?: number; scores?: number[] }): void {
+  init(data: { generate?: boolean; seed?: number; fixed?: boolean; mode?: "free" | "daily" | "endless"; night?: number; runBase?: number; vsMode?: "versus" | "coop"; matchSeed?: number; playerIdx?: number; scores?: number[] }): void {
     this.mode = data?.mode ?? "free";
     this.recorded = false;
     this.moves = 0;
@@ -106,7 +106,9 @@ export class CaseRunScene extends Phaser.Scene {
       this.theCase = generateMergedCase(this.seedVal, this.withWeirdness(optsForNight(this.night)));
     } else if (data?.generate) {
       this.seedVal = data?.seed ?? randomSeed();
-      this.theCase = generateMergedCase(this.seedVal, this.withWeirdness(freeOpts(this.seedVal)));
+      // a curated file (fixed) plays exactly as listed; a fresh one folds in weirdness
+      const opts = freeOpts(this.seedVal);
+      this.theCase = generateMergedCase(this.seedVal, data?.fixed ? opts : this.withWeirdness(opts));
     } else {
       // The crafted reference case (reachable via the N shortcut).
       this.seedVal = data?.seed ?? 1;

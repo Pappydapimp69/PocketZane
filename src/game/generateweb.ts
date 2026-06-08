@@ -88,6 +88,10 @@ function shuffle<T>(a: T[], rng: () => number): T[] {
 }
 const pick = <T>(a: T[], rng: () => number): T => a[Math.floor(rng() * a.length)];
 
+// "the Macklin building" -> title "The Macklin building Stairs" (no doubled "the")
+const caseTitle = (place: string): string => `The ${place.replace(/^the\s+/i, "")} Stairs`;
+const locWhere = (place: string): string => (/building/i.test(place) ? `At ${place}.` : `His building on ${place}.`);
+
 export interface GenOpts {
   supports?: number; // how many supports prop the alibi (default 2)
   depth?: number; // 1 = flat supports, 2 = one support propped by a deeper one
@@ -131,11 +135,11 @@ function buildKeystone(seed: number, rng: () => number, opts: GenOpts): { web: W
   const web: WebCase = {
     id: `gen-k-${seed}`,
     weirdness: opts.weirdness ?? 0.6,
-    title: `The ${place} Stairs`,
+    title: caseTitle(place),
     subject,
     brief: {
       ...premise(victim, rng),
-      where: `His building on ${place}.`,
+      where: locWhere(place),
       why: `${subject} lived below ${victimShort}. They argued that evening — and his whole account rests on one corroboration that won't bear weight.`,
       goal: "His story leans hard on one claim. Find the seam in that, and the rest comes down together.",
     },
@@ -221,11 +225,11 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
     const web: WebCase = {
       id: `gen-${seed}`,
       weirdness: opts.weirdness ?? 0.1,
-      title: `The ${place} Stairs`,
+      title: caseTitle(place),
       subject: `${subject}`,
       brief: {
         ...premise(victim, rng),
-        where: `His building on ${place}.`,
+        where: locWhere(place),
         why: `${subject} lived below ${victimShort}. They argued that evening — he swears he never left his flat.`,
         goal: "Work him for leads, then break his statement. A head-on hit will only deflect.",
       },
