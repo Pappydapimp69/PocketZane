@@ -23,6 +23,6 @@ export const TEMPERAMENTS: Record<string, Temperament> = {
 
 const KEYS = Object.keys(TEMPERAMENTS);
 
-export function randomTemperament(): Temperament {
-  return TEMPERAMENTS[KEYS[Math.floor(Math.random() * KEYS.length)]];
+export function randomTemperament(rng: () => number = Math.random): Temperament {
+  return TEMPERAMENTS[KEYS[Math.floor(rng() * KEYS.length)]];
 }

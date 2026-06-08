@@ -50,31 +50,31 @@ const LIES: LieTemplate[] = [
   { variants: ["I don't have a key.", "I had a key, but I never used it."], evidence: "A key with your tag was in the lock." },
 ];
 
-function shuffle<T>(arr: T[]): T[] {
+function shuffle<T>(arr: T[], rng: () => number): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
 
-/** Build a fresh case. `depth` (0+) ratchets difficulty. */
-export function generateCase(depth: number): Case {
+/** Build a fresh case. `depth` (0+) ratchets difficulty. Pass a seeded `rng` for reproducible cases. */
+export function generateCase(depth: number, rng: () => number = Math.random): Case {
   const lieCount = Math.min(7, 4 + depth);
   const constCount = 3;
   const pins = Math.min(lieCount - 1, 3 + Math.floor(depth / 2));
   const strikes = Math.max(2, 3 - Math.floor(depth / 3));
 
-  const lies = shuffle(LIES).slice(0, lieCount);
-  const consts = shuffle(CONSTANTS).slice(0, constCount);
+  const lies = shuffle(LIES, rng).slice(0, lieCount);
+  const consts = shuffle(CONSTANTS, rng).slice(0, constCount);
 
   const statements: Statement[] = [];
   lies.forEach((l, i) => statements.push({ id: `l${i}`, variants: l.variants, evidence: l.evidence }));
   consts.forEach((t, i) => statements.push({ id: `c${i}`, text: t }));
 
-  const ordered = shuffle(statements);
-  const subject = SUBJECTS[Math.floor(Math.random() * SUBJECTS.length)];
+  const ordered = shuffle(statements, rng);
+  const subject = SUBJECTS[Math.floor(rng() * SUBJECTS.length)];
 
   return {
     id: `gen-${depth}-${Math.floor(Math.random() * 1e6)}`,
@@ -84,7 +84,7 @@ export function generateCase(depth: number): Case {
     statements: ordered,
     pinsToBreak: pins,
     strikes,
-    temperament: randomTemperament(),
+    temperament: randomTemperament(rng),
     resolution:
       `The truth held. The rest did not.\n\nYou asked, and asked again, and the account rearranged itself each time — ${pins} details that couldn't agree with themselves, and under them the shape of a night someone needed to be a different night.\n\nAn arrow travels in only one direction. This telling kept trying to travel back.`,
   };

@@ -122,3 +122,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v25** — **asset review pass** (every-fifth): soft camera fade-ins on every
   scene transition and a faint rule separating header from testimony — quieter,
   more composed motion between rooms.
+- **v26** — **today's subject**: a seeded daily challenge — the same procedurally
+  generated subject (and the same slips) for everyone until midnight, with a best
+  saved per day. Backed by a small reproducible PRNG.

@@ -36,6 +36,18 @@ export class TitleScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    // Daily challenge — distinct from the main menu, same subject for everyone.
+    const daily = () => {
+      startAmbience();
+      this.scene.start("CaseScene", { mode: "daily" });
+    };
+    const dailyText = this.add
+      .text(GAME_WIDTH / 2, 360, "» today's subject «", { fontFamily: MONO, fontSize: "12px", color: CSS.slate })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+    dailyText.on("pointerup", daily);
+    this.input.keyboard?.on("keydown-T", daily);
+
     this.add
       .text(
         GAME_WIDTH / 2,

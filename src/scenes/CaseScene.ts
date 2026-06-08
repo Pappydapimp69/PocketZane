@@ -8,6 +8,7 @@ import { SFX, startAmbience } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
 import { markCleared, getBest, setBest, markDeepest, getDeepest } from "../game/save";
 import { generateCase } from "../game/generator";
+import { mulberry32, todaySeed, todayStamp } from "../game/rng";
 import { tell } from "../game/reactions";
 import { PAD, STICK_THRESHOLD, STICK_REPEAT_MS } from "../input";
 
@@ -19,7 +20,7 @@ const LIST_TOP = 150;
 export class CaseScene extends Phaser.Scene {
   private game_!: Interrogation;
   private caseIndex = 0;
-  private mode: "story" | "endless" | "versus" | "coop" = "story";
+  private mode: "story" | "endless" | "versus" | "coop" | "daily" = "story";
   private depth = 0;
   private activePlayer = 0;
   private scores = [0, 0];
@@ -44,7 +45,7 @@ export class CaseScene extends Phaser.Scene {
     super("CaseScene");
   }
 
-  init(data: { caseIndex?: number; mode?: "story" | "endless" | "versus" | "coop"; depth?: number }): void {
+  init(data: { caseIndex?: number; mode?: "story" | "endless" | "versus" | "coop" | "daily"; depth?: number }): void {
     this.mode = data?.mode ?? "story";
     this.caseIndex = data?.caseIndex ?? 0;
     this.depth = data?.depth ?? 0;
@@ -68,15 +69,24 @@ export class CaseScene extends Phaser.Scene {
     }
     this.prevHigh = false;
 
-    const theCase =
-      this.mode === "endless"
-        ? generateCase(this.depth)
-        : this.mode === "versus"
-          ? generateCase(2)
-          : this.mode === "coop"
-            ? generateCase(4) // a hard one, meant for two heads
-            : CASES[this.caseIndex];
-    this.game_ = new Interrogation(theCase);
+    if (this.mode === "daily") {
+      // Same subject for everyone, all day; deterministic case and slips.
+      const seed = todaySeed();
+      const c = generateCase(2, mulberry32(seed));
+      c.id = `daily-${todayStamp()}`;
+      c.title = `Today — ${todayStamp()}`;
+      this.game_ = new Interrogation(c, mulberry32((seed ^ 0x9e3779b9) >>> 0));
+    } else {
+      const theCase =
+        this.mode === "endless"
+          ? generateCase(this.depth)
+          : this.mode === "versus"
+            ? generateCase(2)
+            : this.mode === "coop"
+              ? generateCase(4) // a hard one, meant for two heads
+              : CASES[this.caseIndex];
+      this.game_ = new Interrogation(theCase);
+    }
     this.ledger = [];
     this.selected = null;
     this.busy = false;
@@ -193,7 +203,7 @@ export class CaseScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(GAME_WIDTH / 2, 92, this.mode === "versus" ? "Two detectives, one room. Take turns. Most pins when it breaks wins." : this.mode === "coop" ? "Partners. One hard subject, two heads. Break it together." : c.intro, {
+      .text(GAME_WIDTH / 2, 92, this.mode === "versus" ? "Two detectives, one room. Take turns. Most pins when it breaks wins." : this.mode === "coop" ? "Partners. One hard subject, two heads. Break it together." : this.mode === "daily" ? "Today's subject — the same one everyone gets, until midnight. Break it clean." : c.intro, {
         fontFamily: BODY,
         fontSize: "13px",
         color: CSS.muted,
@@ -567,6 +577,18 @@ export class CaseScene extends Phaser.Scene {
       return;
     }
 
+    if (this.mode === "daily") {
+      this.showOverlay({
+        heading: "today, broken",
+        headColor: CSS.amber,
+        stats,
+        ledger,
+        body: g.case.resolution,
+        button: { label: "TRY TODAY AGAIN", onClick: () => this.scene.restart({ mode: "daily" }) },
+      });
+      return;
+    }
+
     if (this.mode === "coop") {
       this.showOverlay({
         heading: "you break it",
@@ -638,6 +660,15 @@ export class CaseScene extends Phaser.Scene {
         headColor: CSS.slate,
         body: "They stand, and leave. Between the two of you, the truth got accused one time too many, and the night went slack.",
         button: { label: "AGAIN, TOGETHER", onClick: () => this.scene.restart({ mode: "coop" }) },
+      });
+      return;
+    }
+    if (this.mode === "daily") {
+      this.showOverlay({
+        heading: "they walk",
+        headColor: CSS.slate,
+        body: "They stand, and leave. Today's subject keeps its secret — at least until you sit down with it again.",
+        button: { label: "TRY TODAY AGAIN", onClick: () => this.scene.restart({ mode: "daily" }) },
       });
       return;
     }
