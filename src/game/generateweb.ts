@@ -43,6 +43,9 @@ const ATTACKS: AttackT[] = [
   { id: "prints", short: "the prints", label: "His prints on the upstairs latch." },
   { id: "shout", short: "the argument", label: "Two tenants heard them shouting at nine." },
   { id: "key", short: "the key", label: "A key with his tag, found in the upstairs lock." },
+  { id: "cab", short: "the cab", label: "A cabman set a fare down at the door near eleven." },
+  { id: "glove", short: "the glove", label: "A glove of his, dropped on the upstairs landing." },
+  { id: "watch", short: "the stopped watch", label: "The victim's watch stopped at 10:40, smashed in the fall." },
 ];
 
 const HERRINGS = [
