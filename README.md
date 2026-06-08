@@ -180,3 +180,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v45** — **asset review pass** (every-fifth): a soft "page" sound when panels
   open (ledger, settings, how-it-works) and a faint offset echo behind the title
   wordmark for depth.
+- **v46** — **case intro card**: a brief, non-blocking title beat (case + subject)
+  fades in as each subject sits down, giving every interrogation a small opening
+  frame.

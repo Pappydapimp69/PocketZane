@@ -108,6 +108,27 @@ export class CaseScene extends Phaser.Scene {
 
     const t = this.game_.case.temperament;
     if (t) this.setStatus(`reads as: ${t.label} — ${t.hint}`, CSS.slate);
+
+    this.showIntroCard();
+  }
+
+  /** A brief title beat as the subject sits down. Non-blocking. */
+  private showIntroCard(): void {
+    const c = this.game_.case;
+    const card = this.add.container(GAME_WIDTH / 2, 312).setDepth(80);
+    const t1 = this.add
+      .text(0, -16, c.title, { fontFamily: DISPLAY, fontSize: "24px", color: CSS.amber, fontStyle: "italic" })
+      .setOrigin(0.5);
+    const t2 = this.add
+      .text(0, 16, c.subject, { fontFamily: BODY, fontSize: "16px", color: CSS.ink })
+      .setOrigin(0.5);
+    card.add([t1, t2]);
+    if (getReduceMotion()) {
+      this.time.delayedCall(900, () => card.destroy());
+      return;
+    }
+    card.setAlpha(0);
+    this.tweens.add({ targets: card, alpha: 1, duration: 350, yoyo: true, hold: 700, onComplete: () => card.destroy() });
   }
 
   // ---- gamepad + keyboard ----------------------------------------------------
