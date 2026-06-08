@@ -6,7 +6,7 @@ import { Interrogation, LineView } from "../game/engine";
 import { CASES } from "../game/cases";
 import { SFX, startAmbience } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
-import { markCleared, getBest, setBest, markDeepest, getDeepest, incBreaks } from "../game/save";
+import { markCleared, getBest, setBest, markDeepest, getDeepest, incBreaks, getReduceMotion } from "../game/save";
 import { generateCase } from "../game/generator";
 import { mulberry32, todaySeed, todayStamp } from "../game/rng";
 import { tell } from "../game/reactions";
@@ -386,7 +386,8 @@ export class CaseScene extends Phaser.Scene {
     // Flash if this line moved on the latest telling.
     if (v.changedNow) {
       txt.setColor(CSS.amber);
-      this.tweens.add({ targets: container, x: { from: CARD_X - 5, to: CARD_X }, duration: 90, yoyo: true, repeat: 1 });
+      if (!getReduceMotion())
+        this.tweens.add({ targets: container, x: { from: CARD_X - 5, to: CARD_X }, duration: 90, yoyo: true, repeat: 1 });
       this.time.delayedCall(420, () => txt.setColor(v.pinned ? CSS.faint : CSS.ink));
     }
     return container;
@@ -476,7 +477,7 @@ export class CaseScene extends Phaser.Scene {
     this.updateHud();
     if (this.game_.recovered) {
       SFX.deny();
-      this.cameras.main.flash(220, 30, 26, 20);
+      if (!getReduceMotion()) this.cameras.main.flash(220, 30, 26, 20);
       this.setStatus(tell("recovered"), CSS.slate);
     } else if (moved.length > 0) {
       SFX.flicker();
@@ -533,7 +534,7 @@ export class CaseScene extends Phaser.Scene {
         break;
       case "false":
         SFX.wrong();
-        this.cameras.main.shake(160, 0.004);
+        if (!getReduceMotion()) this.cameras.main.shake(160, 0.004);
         this.lastStriker = this.activePlayer;
         this.setStatus(res.out ? "That was the truth. It's done talking." : tell("falseStrike"), CSS.slate);
         this.updateHud();
@@ -584,7 +585,8 @@ export class CaseScene extends Phaser.Scene {
     // Tension vignette + a single heartbeat the moment the room tips into HIGH.
     if (this.tension) {
       const target = g.state === "HIGH" ? 0.36 : g.state === "MEDIUM" ? 0.12 : 0;
-      this.tweens.add({ targets: this.tension, alpha: target, duration: 300 });
+      if (getReduceMotion()) this.tension.setAlpha(target);
+      else this.tweens.add({ targets: this.tension, alpha: target, duration: 300 });
     }
     const high = g.state === "HIGH";
     if (high && !this.prevHigh) SFX.heart();
@@ -592,7 +594,7 @@ export class CaseScene extends Phaser.Scene {
   }
 
   private lampFlicker(): void {
-    if (!this.lamp) return;
+    if (!this.lamp || getReduceMotion()) return;
     const a = this.lamp.alpha;
     this.tweens.add({ targets: this.lamp, alpha: a * 0.4, duration: 60, yoyo: true, repeat: 1 });
   }
@@ -769,9 +771,14 @@ export class CaseScene extends Phaser.Scene {
       .setStrokeStyle(2.5, stampColor, 0.9)
       .setRotation(-0.22);
     c.add([box, stamp]);
-    stamp.setScale(2).setAlpha(0);
-    box.setScale(2).setAlpha(0);
-    this.tweens.add({ targets: [stamp, box], scale: 1, alpha: 0.9, duration: 220, ease: "Back.easeIn" });
+    if (getReduceMotion()) {
+      stamp.setAlpha(0.9);
+      box.setAlpha(0.9);
+    } else {
+      stamp.setScale(2).setAlpha(0);
+      box.setScale(2).setAlpha(0);
+      this.tweens.add({ targets: [stamp, box], scale: 1, alpha: 0.9, duration: 220, ease: "Back.easeIn" });
+    }
 
     let y = 150;
     const head = this.add

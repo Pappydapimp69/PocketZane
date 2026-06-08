@@ -4,6 +4,7 @@ import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere } from "../game/textures";
 import { startAmbience, isMuted, toggleMute, SFX } from "../game/audio";
+import { getReduceMotion, toggleReduceMotion } from "../game/save";
 import { getCleared, getDeepest, hasSeenIntro, markSeenIntro, getTotalBreaks, rankFor } from "../game/save";
 import { CASES } from "../game/cases";
 import { PAD } from "../input";
@@ -142,6 +143,19 @@ export class TitleScene extends Phaser.Scene {
     sound.on("pointerup", () => {
       const m = toggleMute();
       sound.setText(m ? "sound: off" : "sound: on");
+    });
+
+    const motion = this.add
+      .text(GAME_WIDTH - 16, 40, getReduceMotion() ? "motion: reduced" : "motion: full", {
+        fontFamily: MONO,
+        fontSize: "11px",
+        color: CSS.faint,
+      })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true });
+    motion.on("pointerup", () => {
+      const r = toggleReduceMotion();
+      motion.setText(r ? "motion: reduced" : "motion: full");
     });
 
     const cleared = getCleared();

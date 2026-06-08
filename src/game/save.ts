@@ -97,6 +97,26 @@ export function rankFor(total: number): string {
   return title;
 }
 
+const MOTION_KEY = "again:reduceMotion";
+
+export function getReduceMotion(): boolean {
+  try {
+    return localStorage.getItem(MOTION_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function toggleReduceMotion(): boolean {
+  const next = !getReduceMotion();
+  try {
+    localStorage.setItem(MOTION_KEY, next ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+  return next;
+}
+
 const INTRO_KEY = "again:seenIntro";
 
 export function hasSeenIntro(): boolean {

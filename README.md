@@ -150,3 +150,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v35** — **asset review pass** (every-fifth): end screens now get a case-file
   stamp — a crimson **CLOSED** when you break it, a slate **WALKED** when they
   leave — slapped on at an angle with a little snap.
+- **v36** — **reduce-motion option**: a persisted accessibility toggle that drops
+  the screen shakes, flashes, flicker-shakes, and stamp snap (keeping the
+  information, losing the jolt) for comfort and photosensitivity.
