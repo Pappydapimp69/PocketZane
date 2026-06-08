@@ -43,8 +43,11 @@ export function temperament(seed: number): Temperament {
   return TEMPERAMENTS[Math.floor(r() * TEMPERAMENTS.length)];
 }
 
+const HAIRS = ["#100e0a", "#241a10", "#3a2817", "#52402a", "#1a1a20", "#0d0d0f"];
+
 interface Face {
   skin: string;
+  hairCol: string;
   grey: number; // 0 dark hair .. 1 grey (age)
   headW: number; // half-width as fraction of W
   jaw: number; // chin width vs head
@@ -64,6 +67,7 @@ function rollFace(rng: () => number): Face {
   const pick = <T>(a: T[]) => a[Math.floor(rng() * a.length)];
   return {
     skin: pick(SKINS),
+    hairCol: pick(HAIRS),
     grey: rng() < 0.32 ? 0.4 + rng() * 0.6 : 0,
     headW: 0.28 + rng() * 0.1,
     jaw: 0.58 + rng() * 0.34,
@@ -120,7 +124,7 @@ export function drawPortrait(ctx: CanvasRenderingContext2D, W: number, H: number
   const faceH = chinY - headTop;
   const hw = f.headW * W; // head half-width
   const midY = headTop + faceH * 0.46;
-  const hairCol = shade("#12100c", Math.round(f.grey * 110));
+  const hairCol = shade(f.hairCol, Math.round(f.grey * 120));
 
   // ---- backdrop: a dark cell with a spill of lamp light behind the head ----
   const bg = ctx.createLinearGradient(0, 0, 0, H);
