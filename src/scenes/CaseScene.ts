@@ -340,13 +340,21 @@ export class CaseScene extends Phaser.Scene {
     bg.strokeRoundedRect(-CARD_W / 2, -h / 2, CARD_W, h, 8);
 
     // Left marker: caught (amber) or pinned (crimson) — your ledger remembers.
+    // A glyph backs up the color so the state reads without relying on hue.
     marker.clear();
+    const gx = -CARD_W / 2 + 13;
+    const gy = -h / 2 + 13;
     if (v.pinned) {
       marker.fillStyle(COLORS.crimson, 1);
       marker.fillRoundedRect(-CARD_W / 2, -h / 2, 4, h, 2);
+      marker.lineStyle(1.6, COLORS.crimsonBright, 1); // ✕
+      marker.lineBetween(gx - 3, gy - 3, gx + 3, gy + 3);
+      marker.lineBetween(gx - 3, gy + 3, gx + 3, gy - 3);
     } else if (v.caught) {
       marker.fillStyle(COLORS.amber, 0.9);
       marker.fillRoundedRect(-CARD_W / 2, -h / 2, 4, h, 2);
+      marker.fillStyle(COLORS.amber, 1); // ▲
+      marker.fillTriangle(gx, gy - 4, gx - 4, gy + 3, gx + 4, gy + 3);
     }
   }
 

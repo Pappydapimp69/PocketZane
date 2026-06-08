@@ -101,3 +101,5 @@ Touch, gamepad, and keyboard are all supported.
   the win or the walk.
 - **v18** — **sound control**: all audio now routes through a master bus with a
   persisted mute toggle on the title — quiet room, your call.
+- **v19** — **colorblind-safe marks**: caught (▲) and pinned (✕) lines now carry a
+  glyph alongside the amber/crimson, so state reads without relying on hue.
