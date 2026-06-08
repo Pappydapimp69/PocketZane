@@ -99,3 +99,5 @@ Touch, gamepad, and keyboard are all supported.
 - **v17** — **multiplayer: Partners (co-op)** — the second option: two heads
   against one deliberately hard procedural subject, breaking it together, sharing
   the win or the walk.
+- **v18** — **sound control**: all audio now routes through a master bus with a
+  persisted mute toggle on the title — quiet room, your call.

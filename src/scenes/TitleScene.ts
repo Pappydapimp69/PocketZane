@@ -3,7 +3,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../config";
 import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere } from "../game/textures";
-import { startAmbience } from "../game/audio";
+import { startAmbience, isMuted, toggleMute } from "../game/audio";
 import { getCleared, getDeepest } from "../game/save";
 import { CASES } from "../game/cases";
 
@@ -84,6 +84,20 @@ export class TitleScene extends Phaser.Scene {
         color: CSS.faint,
       })
       .setOrigin(0.5);
+
+    // Sound toggle (persisted).
+    const sound = this.add
+      .text(GAME_WIDTH - 16, 22, isMuted() ? "sound: off" : "sound: on", {
+        fontFamily: MONO,
+        fontSize: "11px",
+        color: CSS.faint,
+      })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true });
+    sound.on("pointerup", () => {
+      const m = toggleMute();
+      sound.setText(m ? "sound: off" : "sound: on");
+    });
 
     const cleared = getCleared();
     const deepest = getDeepest();

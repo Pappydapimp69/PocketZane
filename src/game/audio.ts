@@ -4,11 +4,47 @@
  * you accuse the truth.
  */
 let ctx: AudioContext | null = null;
+let master: GainNode | null = null;
+let muted = loadMuted();
+
+function loadMuted(): boolean {
+  try {
+    return localStorage.getItem("again:muted") === "1";
+  } catch {
+    return false;
+  }
+}
 
 function ac(): AudioContext {
   if (!ctx) ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  if (!master) {
+    master = ctx.createGain();
+    master.gain.value = muted ? 0 : 1;
+    master.connect(ctx.destination);
+  }
   if (ctx.state === "suspended") void ctx.resume();
   return ctx;
+}
+
+/** Master bus — everything routes through here so one toggle mutes it all. */
+function out(): AudioNode {
+  ac();
+  return master!;
+}
+
+export function isMuted(): boolean {
+  return muted;
+}
+
+export function toggleMute(): boolean {
+  muted = !muted;
+  if (master) master.gain.value = muted ? 0 : 1;
+  try {
+    localStorage.setItem("again:muted", muted ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+  return muted;
 }
 
 interface Tone {
@@ -34,7 +70,7 @@ function play(tones: Tone[]): void {
     gain.gain.setValueAtTime(0.0001, start);
     gain.gain.exponentialRampToValueAtTime(vol, start + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.0001, start + t.dur);
-    osc.connect(gain).connect(a.destination);
+    osc.connect(gain).connect(out());
     osc.start(start);
     osc.stop(start + t.dur + 0.02);
   }
@@ -56,7 +92,7 @@ function knock(vol = 0.18): void {
   const gain = a.createGain();
   gain.gain.setValueAtTime(vol, now);
   gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-  src.connect(filt).connect(gain).connect(a.destination);
+  src.connect(filt).connect(gain).connect(out());
   src.start(now);
   src.stop(now + dur);
 }
@@ -67,9 +103,9 @@ export function startAmbience(): void {
   if (ambienceOn) return;
   const a = ac();
   ambienceOn = true;
-  const out = a.createGain();
-  out.gain.value = 0.5;
-  out.connect(a.destination);
+  const bus = a.createGain();
+  bus.gain.value = 0.5;
+  bus.connect(out());
 
   for (const f of [54, 54.4]) {
     const osc = a.createOscillator();
@@ -77,7 +113,7 @@ export function startAmbience(): void {
     osc.frequency.value = f;
     const g = a.createGain();
     g.gain.value = 0.02;
-    osc.connect(g).connect(out);
+    osc.connect(g).connect(bus);
     osc.start();
   }
 
@@ -92,7 +128,7 @@ export function startAmbience(): void {
   nf.frequency.value = 220;
   const ng = a.createGain();
   ng.gain.value = 0.012;
-  noise.connect(nf).connect(ng).connect(out);
+  noise.connect(nf).connect(ng).connect(bus);
   noise.start();
 }
 
