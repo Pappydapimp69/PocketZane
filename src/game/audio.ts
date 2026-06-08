@@ -3,6 +3,8 @@
  * deliberate: a knock to say "again", a clean strike to pin, a dull thud when
  * you accuse the truth.
  */
+import { mulberry32 } from "./rng";
+
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let muted = loadMuted();
@@ -239,4 +241,35 @@ export const SFX = {
       { freq: 52, dur: 0.2, type: "sine", vol: 0.1, delay: 0.22 },
     ]),
   page: () => play([{ freq: 1200, to: 560, dur: 0.13, type: "sine", vol: 0.04 }]),
+  /** A low, brief muttered "tell" — a seeded timbre so each suspect's evasion
+   * sounds a touch his own. Two detuned formants under a lowpass, no words. */
+  murmur: (seed: number) => {
+    if (muted) return;
+    const a = ac();
+    const now = a.currentTime;
+    const r = mulberry32((seed ^ 0x2545f491) >>> 0);
+    const base = 90 + r() * 60; // a voice in the chest register
+    const filt = a.createBiquadFilter();
+    filt.type = "bandpass";
+    filt.frequency.value = 320 + r() * 360;
+    filt.Q.value = 4;
+    const bus = a.createGain();
+    bus.gain.value = 0.9;
+    filt.connect(bus).connect(out());
+    const dur = 0.26 + r() * 0.16;
+    for (const mult of [1, 1.5 + r() * 0.3, 2.01]) {
+      const o = a.createOscillator();
+      o.type = "sawtooth";
+      const f0 = base * mult;
+      o.frequency.setValueAtTime(f0, now);
+      o.frequency.linearRampToValueAtTime(f0 * (0.92 + r() * 0.1), now + dur); // a falling, mumbled cadence
+      const g = a.createGain();
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(0.05, now + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+      o.connect(g).connect(filt);
+      o.start(now);
+      o.stop(now + dur + 0.03);
+    }
+  },
 };

@@ -419,6 +419,7 @@ export class CaseRunScene extends Phaser.Scene {
     this.tick();
     if (this.inq.question(this.selected).shifted) {
       SFX.flicker();
+      SFX.murmur(this.seedVal);
       this.renderPhase();
       this.setMood("evasive");
       this.setStatus("Something in it moves.", CSS.amber);
@@ -527,6 +528,7 @@ export class CaseRunScene extends Phaser.Scene {
     switch (r.kind) {
       case "deflect": {
         SFX.flicker();
+        SFX.murmur(this.seedVal ^ 0x55);
         this.renderWeb();
         this.updateHud();
         this.setMood("evasive");
