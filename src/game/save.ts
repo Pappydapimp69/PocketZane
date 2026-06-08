@@ -63,3 +63,21 @@ export function markDeepest(night: number): void {
     /* storage unavailable — ignore */
   }
 }
+
+const INTRO_KEY = "again:seenIntro";
+
+export function hasSeenIntro(): boolean {
+  try {
+    return localStorage.getItem(INTRO_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function markSeenIntro(): void {
+  try {
+    localStorage.setItem(INTRO_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}

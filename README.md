@@ -127,3 +127,5 @@ Touch, gamepad, and keyboard are all supported.
   saved per day. Backed by a small reproducible PRNG.
 - **v27** — **share the daily**: a spoiler-free "copy result" on the daily end
   screen (date + tellings + strikes), so the shared puzzle is actually shareable.
+- **v28** — **onboarding**: a "how it works" panel (again / press / pin, strikes,
+  pressure) reachable from the title and shown once automatically on first launch.

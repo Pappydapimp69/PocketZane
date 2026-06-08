@@ -4,7 +4,7 @@ import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere } from "../game/textures";
 import { startAmbience, isMuted, toggleMute, SFX } from "../game/audio";
-import { getCleared, getDeepest } from "../game/save";
+import { getCleared, getDeepest, hasSeenIntro, markSeenIntro } from "../game/save";
 import { CASES } from "../game/cases";
 import { PAD } from "../input";
 
@@ -119,6 +119,17 @@ export class TitleScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    // How-it-works, top-left (auto-opens on first ever launch).
+    const help = this.add
+      .text(16, 22, "?  how it works", { fontFamily: MONO, fontSize: "11px", color: CSS.faint })
+      .setOrigin(0, 0)
+      .setInteractive({ useHandCursor: true });
+    help.on("pointerup", () => this.showHelp());
+    if (!hasSeenIntro()) {
+      markSeenIntro();
+      this.showHelp();
+    }
+
     // Sound toggle (persisted).
     const sound = this.add
       .text(GAME_WIDTH - 16, 22, isMuted() ? "sound: off" : "sound: on", {
@@ -151,5 +162,35 @@ export class TitleScene extends Phaser.Scene {
         color: CSS.faint,
       })
       .setOrigin(0.5);
+  }
+
+  private showHelp(): void {
+    const c = this.add.container(0, 0).setDepth(200);
+    c.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.96));
+    c.add(
+      this.add
+        .text(GAME_WIDTH / 2, 150, "how it works", { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" })
+        .setOrigin(0.5),
+    );
+    c.add(
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          200,
+          "A subject tells their story. The truth holds still — but a lie cannot tell itself the same way twice.\n\n• AGAIN — make them retell it. Watch what moves.\n• PRESS — lean on a line so it slips sooner; lean hard and its evidence may surface.\n• PIN — accuse a line you've seen move (or proven by evidence). Pin enough to break the story.\n\nPin a line that never moved and you've accused the truth — that costs a strike.\n\nMind the pressure: lean too hard and the subject steadies, undoing your work.",
+          { fontFamily: BODY, fontSize: "15px", color: CSS.ink, align: "left", wordWrap: { width: 400 }, lineSpacing: 6 },
+        )
+        .setOrigin(0.5, 0),
+    );
+    const close = new Button(this, GAME_WIDTH / 2, 720, {
+      w: 200,
+      h: 50,
+      label: "GOT IT",
+      accent: COLORS.crimson,
+      onClick: () => c.destroy(),
+    });
+    c.add(close);
+    c.setAlpha(0);
+    this.tweens.add({ targets: c, alpha: 1, duration: 300 });
   }
 }
