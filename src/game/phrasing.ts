@@ -86,8 +86,23 @@ const CONCEDE: Record<string, string[]> = {
 const CORE_CLAIM = ["I never left my flat that night. Not once.", "I never went up those stairs. Not once.", "I was nowhere near his door all evening.", "I didn't set foot outside my own door that night.", "I stayed in my flat the whole night. I never moved."];
 const CORE_CONCEDE = ["...Fine. I went up. He was standing when I left him.", "...Alright. I went up. Only to talk to him.", "...I was at his door. I knocked. That's all.", "...I went up those stairs. He was alive when I left.", "...Fine. I was at his door that night. We talked."];
 
-const MOTIVE_CLAIM = ["We were square. I'd no reason to touch him.", "There was nothing between us. Why would I?", "We'd no quarrel. I'd no cause to hurt him."];
-const MOTIVE_CONCEDE = ["...He held a marker of mine. Months overdue, and he'd stopped pretending he'd pay.", "...I owed him, and he'd come to collecting. That's the truth of it.", "...There was money between us — my debt, long past due."];
+// What stood between them — picked whole so the motive, its fold, and the tell
+// that breaks it all agree (a debt, a woman, an old ruin).
+interface MotiveT {
+  claim: string;
+  concession: string;
+  evShort: string;
+  evLabel: string;
+}
+const MOTIVES: MotiveT[] = [
+  { claim: "We were square. I'd no reason to touch him.", concession: "...He held a marker of mine. Months overdue, and he'd stopped pretending he'd pay.", evShort: "the IOU", evLabel: "An unpaid IOU — his name on it — in the desk." },
+  { claim: "There was no bad blood. We barely spoke.", concession: "...He'd been seeing her. The woman I meant to marry.", evShort: "the letter", evLabel: "A letter in her hand, found folded in the victim's coat." },
+  { claim: "We'd no quarrel. Why would I want him hurt?", concession: "...He ruined me, years back. I never once let it go.", evShort: "the threat", evLabel: "A note in the suspect's hand: 'You'll answer for it.'" },
+  { claim: "Money never came between us. Nor anything else.", concession: "...He'd been bleeding me for months. I'd had my fill of paying.", evShort: "the ledger", evLabel: "A ledger of cash drawn out, dated to the week he died." },
+];
+export function motivePick(rng: () => number): MotiveT {
+  return pick(MOTIVES, rng);
+}
 
 // Phase lies escalate deny → hedge → admit. Vary each rung but keep the arc.
 const SHIFT: Record<string, { deny: string[]; hedge: string[]; admit: string[] }> = {
@@ -98,7 +113,7 @@ const SHIFT: Record<string, { deny: string[]; hedge: string[]; admit: string[] }
   sober: { deny: ["I'd drunk too much to recall a thing.", "I was too far gone to remember.", "The drink wiped the night clean from me."], hedge: ["I'd had a couple, that's all.", "A drink or two, nothing that clouds me.", "I wasn't so far gone, I suppose."], admit: ["I was stone sober. I just didn't want to say.", "Fine. I was sober. I remember it all.", "I'd not touched a drop. I recall everything."] },
   sister: { deny: ["My partner was beside me every minute.", "She never left my side all night.", "She was with me the whole night through."], hedge: ["She was in and out, but mostly with me.", "She stepped away once or twice, that's all.", "She was about, near enough the whole time."], admit: ["She... she wasn't there. I'll say it.", "Fine. She wasn't with me at all.", "She wasn't here. I'll admit that much."] },
   ticket: { deny: ["My brother watched the whole evening with me.", "My brother was here the night through.", "My brother sat with me all evening."], hedge: ["He was around, in any case.", "He was here a while, anyhow.", "He came by, at least for a time."], admit: ["He wasn't here. I only wished he were.", "Fine. My brother was nowhere near.", "He never came. I made it up."] },
-  iou: { deny: ["Money never came up between us.", "There was no debt between us.", "We owed each other nothing."], hedge: ["We may have spoken of it, once.", "Money came up, maybe, in passing.", "There was some talk of it, perhaps."], admit: ["He held a marker of mine. Months old.", "Fine — he held my marker, long overdue.", "I owed him. An old debt, unpaid."] },
+  iou: { deny: ["There was nothing between us.", "We'd no quarrel at all.", "We were on the best of terms."], hedge: ["We'd had words, once or twice.", "There was something, maybe, long ago.", "Nothing that would ever come to this."], admit: ["Alright — there was bad blood between us.", "We were enemies, if you want the word.", "He'd wronged me, and I never forgot it."] },
 };
 
 // Small, true asides for the phases — the lines that don't move.
@@ -142,12 +157,6 @@ export function coreClaim(rng: () => number): string {
 }
 export function coreConcession(rng: () => number): string {
   return pick(CORE_CONCEDE, rng);
-}
-export function motiveClaim(rng: () => number): string {
-  return pick(MOTIVE_CLAIM, rng);
-}
-export function motiveConcession(rng: () => number): string {
-  return pick(MOTIVE_CONCEDE, rng);
 }
 
 /** The three escalating tellings of a phase lie, keyed by its seam. */

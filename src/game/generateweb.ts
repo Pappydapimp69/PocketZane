@@ -1,7 +1,7 @@
 import { WebCase, WebSegment, WebEvidence } from "./web";
 import { MergedCase, Phase, PhaseStatement } from "./merged";
 import { verifyWeb } from "./verify";
-import { deflectionPool, claimLine, concessionLine, coreClaim, coreConcession, motiveClaim, motiveConcession, shiftTriple, phaseTruths, premise } from "./phrasing";
+import { deflectionPool, claimLine, concessionLine, coreClaim, coreConcession, motivePick, shiftTriple, phaseTruths, premise } from "./phrasing";
 import { mulberry32 } from "./rng";
 
 /**
@@ -109,11 +109,12 @@ function buildKeystone(seed: number, rng: () => number, opts: GenOpts): { web: W
   const subject = pick(SUBJECTS, rng);
   const victimShort = victim.split(" ").slice(-1)[0];
 
+  const mot = motivePick(rng);
   const segments: WebSegment[] = [
     { id: "home", name: "the alibi", key: true, base: coreClaim(rng) },
     { id: dep.id, name: dep.name, base: claimLine(dep.id, rng) },
     { id: K.id, name: K.name, keystone: true, base: claimLine(K.id, rng) },
-    { id: "square", name: "the motive", base: motiveClaim(rng) },
+    { id: "square", name: "the motive", base: mot.claim },
   ];
   const evidence: WebEvidence[] = [];
   const deflections: Record<string, string[]> = {};
@@ -121,7 +122,7 @@ function buildKeystone(seed: number, rng: () => number, opts: GenOpts): { web: W
     home: coreConcession(rng),
     [dep.id]: concessionLine(dep.id, rng),
     [K.id]: concessionLine(K.id, rng),
-    square: motiveConcession(rng),
+    square: mot.concession,
   };
   for (const a of homeAttacks) {
     evidence.push({ id: a.id, short: a.short, label: a.label, targets: "home", deflectableBy: [K.id] });
@@ -130,7 +131,7 @@ function buildKeystone(seed: number, rng: () => number, opts: GenOpts): { web: W
   evidence.push({ id: dep.seam.id, short: dep.seam.short, label: dep.seam.label, targets: dep.id, deflectableBy: [K.id] });
   deflections[`${dep.seam.id}:${K.id}`] = deflectionPool(3, K.id, dep.seam.short, rng);
   evidence.push({ id: K.seam.id, short: K.seam.short, label: K.seam.label, targets: K.id, deflectableBy: [] });
-  evidence.push({ id: "iou", short: "the IOU", label: "An unpaid IOU — his name on it — in the desk.", targets: "square", deflectableBy: [] });
+  evidence.push({ id: "iou", short: mot.evShort, label: mot.evLabel, targets: "square", deflectableBy: [] });
 
   const web: WebCase = {
     id: `gen-k-${seed}`,
@@ -209,9 +210,10 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
     leadable.push("iou");
 
     // a non-key motive thread for flavor
-    segments.push({ id: "square", name: "the motive", base: motiveClaim(rng) });
-    concessions["square"] = motiveConcession(rng);
-    evidence.push({ id: "iou", short: "the IOU", label: "An unpaid IOU — his name on it — in the desk.", targets: "square", deflectableBy: [] });
+    const mot = motivePick(rng);
+    segments.push({ id: "square", name: "the motive", base: mot.claim });
+    concessions["square"] = mot.concession;
+    evidence.push({ id: "iou", short: mot.evShort, label: mot.evLabel, targets: "square", deflectableBy: [] });
 
     // optional dead-end lead
     if (opts.herring) {
