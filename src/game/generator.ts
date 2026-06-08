@@ -1,5 +1,11 @@
 import { Case, Statement } from "./engine";
-import { randomTemperament } from "./temperaments";
+import { randomTemperament, TEMPERAMENTS } from "./temperaments";
+
+/** Deeper nights lean toward harder temperaments (guarded / composed). */
+function pickTemperament(depth: number, rng: () => number): ReturnType<typeof randomTemperament> {
+  if (depth >= 6 && rng() < 0.7) return rng() < 0.5 ? TEMPERAMENTS.guarded : TEMPERAMENTS.cool;
+  return randomTemperament(rng);
+}
 
 /**
  * Procedural case generation for the endless mode ("an endless night"). Cases
@@ -111,7 +117,7 @@ export function generateCase(depth: number, rng: () => number = Math.random): Ca
     statements: ordered,
     pinsToBreak: pins,
     strikes,
-    temperament: randomTemperament(rng),
+    temperament: pickTemperament(depth, rng),
     resolution:
       `The truth held. The rest did not.\n\nYou asked, and asked again, and the account rearranged itself each time — ${pins} details that couldn't agree with themselves, and under them the shape of a night someone needed to be a different night.\n\nAn arrow travels in only one direction. This telling kept trying to travel back.`,
   };

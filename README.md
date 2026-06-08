@@ -183,3 +183,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v46** — **case intro card**: a brief, non-blocking title beat (case + subject)
   fades in as each subject sits down, giving every interrogation a small opening
   frame.
+- **v47** — **deeper endless scaling**: past night six the generator leans toward
+  harder temperaments (guarded / composed), so the late run keeps tightening
+  instead of plateauing once the lie/pin counts cap.
