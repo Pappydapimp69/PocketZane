@@ -62,6 +62,7 @@ export class CaseRunScene extends Phaser.Scene {
   private mode: "free" | "daily" | "endless" = "free";
   private night = 1;
   private runBase = 1;
+  private standing = 3; // endless: marks of standing left; a sloppy break costs one
   private recorded = false;
 
   // two-detective match state (shared seed, hot-seat)
@@ -82,7 +83,7 @@ export class CaseRunScene extends Phaser.Scene {
     return { ...opts, weirdness: Math.min(0.92, (opts.weirdness ?? 0) + weirdnessBias()) };
   }
 
-  init(data: { generate?: boolean; seed?: number; fixed?: boolean; mode?: "free" | "daily" | "endless"; night?: number; runBase?: number; vsMode?: "versus" | "coop"; matchSeed?: number; playerIdx?: number; scores?: number[] }): void {
+  init(data: { generate?: boolean; seed?: number; fixed?: boolean; mode?: "free" | "daily" | "endless"; night?: number; runBase?: number; standing?: number; vsMode?: "versus" | "coop"; matchSeed?: number; playerIdx?: number; scores?: number[] }): void {
     this.mode = data?.mode ?? "free";
     this.recorded = false;
     this.moves = 0;
@@ -103,6 +104,7 @@ export class CaseRunScene extends Phaser.Scene {
     } else if (this.mode === "endless") {
       this.night = Math.max(1, data?.night ?? 1);
       this.runBase = data?.runBase ?? ((Date.now() & 0x7fffffff) >>> 0);
+      this.standing = data?.standing ?? 3;
       this.seedVal = nightSeed(this.runBase, this.night);
       this.theCase = generateMergedCase(this.seedVal, this.withWeirdness(optsForNight(this.night)));
     } else if (data?.generate) {
@@ -167,7 +169,7 @@ export class CaseRunScene extends Phaser.Scene {
     this.portrait = this.add.image(px, py, "suspect").setDisplaySize(84, 108).setDepth(6);
 
     const ix = 120;
-    const tag = this.mode === "daily" ? "today's subject" : this.mode === "endless" ? `night ${this.night}` : "the subject";
+    const tag = this.mode === "daily" ? "today's subject" : this.mode === "endless" ? `night ${this.night}  ·  ${"◆".repeat(Math.max(0, this.standing))}${"◇".repeat(Math.max(0, 3 - this.standing))}` : "the subject";
     this.add.text(ix, 48, this.suspect, { fontFamily: DISPLAY, fontSize: "19px", color: CSS.ink }).setOrigin(0, 0);
     this.add.text(ix, 76, this.role ? `${tag}  ·  ${this.role}` : tag, { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(0, 0);
     this.add.text(ix, 94, c.title, { fontFamily: DISPLAY, fontSize: "13px", color: CSS.muted, fontStyle: "italic" }).setOrigin(0, 0);
@@ -768,6 +770,10 @@ export class CaseRunScene extends Phaser.Scene {
     if (this.vsMode === "coop") return this.coopEnd();
     this.busy = true;
     this.recordWin();
+    // Efficiency grade, computed once — and in endless, a sloppy break costs standing.
+    const grade = this.gradeRun();
+    if (this.mode === "endless" && !grade.clean) this.standing -= 1;
+    const runOver = this.mode === "endless" && this.standing <= 0;
     const o = this.add.container(0, 0).setDepth(140);
     o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.97));
     if (this.textures.exists("grain")) o.add(this.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, "grain").setOrigin(0).setAlpha(0.5));
@@ -775,7 +781,7 @@ export class CaseRunScene extends Phaser.Scene {
     SFX.break();
 
     const reso = this.add.container(0, 0);
-    reso.add(this.add.text(GAME_WIDTH / 2, 84, "the story breaks", { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
+    reso.add(this.add.text(GAME_WIDTH / 2, 84, runOver ? "the night beats you" : "the story breaks", { fontFamily: DISPLAY, fontSize: "26px", color: runOver ? CSS.slate : CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
     if (this.textures.exists("suspect")) {
       paintPortrait(this, "suspect", this.seedVal, "broken");
       const fr = this.add.graphics();
@@ -790,18 +796,19 @@ export class CaseRunScene extends Phaser.Scene {
     reso.add(this.add.text(GAME_WIDTH / 2, 272, this.inq.case.resolution, { fontFamily: BODY, fontSize: "14px", color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
 
     // Efficiency grade: the player's moves against the solver's par.
-    const grade = this.gradeRun();
     reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 176, `broke it in ${this.moves}  ·  par ${grade.par}${grade.best != null ? `  ·  best ${grade.best}` : ""}`, { fontFamily: MONO, fontSize: "12px", color: CSS.ink }).setOrigin(0.5));
     reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 158, grade.rating, { fontFamily: DISPLAY, fontSize: "15px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
     if (this.mode === "endless") {
-      reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 138, `night ${this.night} closed  ·  rank ${rankFor(getTotalBreaks())}`, { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(0.5));
+      const dots = "◆".repeat(Math.max(0, this.standing)) + "◇".repeat(Math.max(0, 3 - this.standing));
+      const tail = runOver ? `the run ends at night ${this.night}` : `night ${this.night} closed  ·  standing ${dots}`;
+      reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 138, `${tail}  ·  rank ${rankFor(getTotalBreaks())}`, { fontFamily: MONO, fontSize: "11px", color: runOver ? CSS.slate : CSS.faint }).setOrigin(0.5));
     }
     const diagram = this.buildDiagram().setVisible(false);
     o.add([reso, diagram]);
 
     const toTitle = () => this.scene.start("TitleScene");
-    const nextNight = () => this.scene.start("CaseRun", { mode: "endless", night: this.night + 1, runBase: this.runBase });
-    const onward = this.mode === "endless" ? nextNight : toTitle;
+    const nextNight = () => this.scene.start("CaseRun", { mode: "endless", night: this.night + 1, runBase: this.runBase, standing: this.standing });
+    const onward = this.mode === "endless" && !runOver ? nextNight : toTitle;
     const showBoard = () => {
       reso.setVisible(false);
       diagram.setVisible(true);
@@ -816,9 +823,9 @@ export class CaseRunScene extends Phaser.Scene {
 
     reso.add(new Button(this, 132, GAME_HEIGHT - 68, { w: 220, h: 50, label: "▦  THE WEB", fontSize: 14, accent: COLORS.slate, onClick: showBoard }));
     reso.add(
-      this.mode === "endless"
+      this.mode === "endless" && !runOver
         ? new Button(this, 350, GAME_HEIGHT - 68, { w: 200, h: 50, label: "NEXT NIGHT  (A)", fontSize: 13, accent: COLORS.crimson, onClick: nextNight })
-        : new Button(this, 350, GAME_HEIGHT - 68, { w: 200, h: 50, label: "CLOSE  (A)", fontSize: 13, accent: COLORS.crimson, onClick: toTitle }),
+        : new Button(this, 350, GAME_HEIGHT - 68, { w: 200, h: 50, label: runOver ? "DONE  (A)" : "CLOSE  (A)", fontSize: 13, accent: COLORS.crimson, onClick: toTitle }),
     );
     diagram.add(new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 56, { w: 200, h: 46, label: "BACK  (B)", accent: COLORS.slate, onClick: backToReso }));
   }
