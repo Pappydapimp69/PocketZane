@@ -28,6 +28,8 @@ const SUPPORTS: SupportT[] = [
   { id: "dark", name: "the dark stairwell", seam: { id: "log", short: "the light log", label: "Maintenance log: the stair light was working that week." } },
   { id: "visitor", name: "the visitor", seam: { id: "alone", short: "the empty book", label: "The desk's sign-in book: no visitor for him all night." } },
   { id: "drink", name: "the drink", seam: { id: "sober", short: "the barman", label: "The barman: he left sober, and early." } },
+  { id: "errand", name: "the errand", seam: { id: "shop", short: "the shopkeeper", label: "The corner shop closed at nine — no one served him that night." } },
+  { id: "bath", name: "the bath", seam: { id: "water", short: "the water meter", label: "The water meter shows no draw all evening." } },
 ];
 
 interface AttackT {
@@ -72,6 +74,8 @@ const PHASES_BY_SEAM: Record<string, PhaseT> = {
   log: { title: "What Could Be Seen", prompt: "What the dark hid. Press the certainty." },
   alone: { title: "The Company", prompt: "Who was with him. Find the friend who wasn't." },
   sober: { title: "The Drink", prompt: "How clear his head was. Catch the dodge." },
+  shop: { title: "The Errand", prompt: "Where he went, and whether the shop was open at all. Catch the drift." },
+  water: { title: "The Bath", prompt: "What he heard from the tub. Press what the water would have drowned." },
   sister: { title: "The Corroboration", prompt: "The one who'll vouch for him. Find the crack." },
   ticket: { title: "The Witness", prompt: "His witness. Press until it bends." },
   iou: { title: "The Bad Blood", prompt: "What stood between them. Catch the thing he smooths over." },
