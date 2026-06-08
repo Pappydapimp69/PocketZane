@@ -703,7 +703,8 @@ export class CaseScene extends Phaser.Scene {
     if (isClean && (this.mode === "story" || this.mode === "daily")) markCleanCase(id);
     const verdict = isClean ? "a clean break" : g.telling <= par + 4 ? "it broke" : "it broke, eventually";
     const fresh = prevBest === null || g.telling < prevBest ? "   ⟐ new best" : "";
-    const stats = `${verdict}\ntold again ${g.telling}×  ·  ${g.strikesUsed} strike${g.strikesUsed === 1 ? "" : "s"}  ·  best ${best}×${fresh}`;
+    const confidence = isClean ? "confidence: airtight" : "confidence: it stopped agreeing with itself";
+    const stats = `${verdict}\ntold again ${g.telling}×  ·  ${g.strikesUsed} strike${g.strikesUsed === 1 ? "" : "s"}  ·  best ${best}×${fresh}\n${confidence}`;
 
     const ledger = this.ledger.map((p) => "“" + p.join("”\n   …  “") + "”").join("\n\n");
 

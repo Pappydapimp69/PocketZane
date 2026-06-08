@@ -192,3 +192,7 @@ Touch, gamepad, and keyboard are all supported.
 - **v49** — **gentle nudge**: if a telling holds while you're sitting on lines you've
   already caught but not pinned, the status quietly points it out — help without
   hand-holding.
+- **v50** — **history re-read + asset review** (double milestone): banked the
+  confidence-quirk idea and shipped it — a wry "confidence" line on each break
+  ("airtight" on a clean one, "it stopped agreeing with itself" otherwise). Asset
+  pass: the lamp glow now lights the Case Files and Record screens too.

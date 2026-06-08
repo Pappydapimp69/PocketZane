@@ -17,7 +17,7 @@ export class StatsScene extends Phaser.Scene {
   create(): void {
     this.cameras.main.fadeIn(320);
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
-    addAtmosphere(this, {});
+    addAtmosphere(this, { lamp: true });
 
     this.add
       .text(GAME_WIDTH / 2, 56, "THE RECORD", { fontFamily: DISPLAY, fontSize: "30px", color: CSS.ink })
