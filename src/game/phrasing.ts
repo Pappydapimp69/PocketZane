@@ -161,6 +161,22 @@ export function premise(victim: string, rng: () => number): { what: string; when
   return { what: pick(WHAT, rng).replace("{v}", victim), when: pick(WHEN, rng) };
 }
 
+// Uncanny details for weird cases — grounded enough for noir, strange enough to
+// unsettle. Cosmetic only (no bearing on the deduction); gated by the weirdness dial.
+const WEIRD = [
+  "Odd thing: every clock in the building read a different hour.",
+  "The landing lamp had been unscrewed and set down, neat, on the top step.",
+  "His shoes were on the wrong feet when they found him.",
+  "Salt lay scattered across the threshold, and no one could say why.",
+  "A second set of wet footprints climbed the stairs and never came down.",
+  "Every mirror in his rooms had been turned to face the wall.",
+  "The stair runner had been peeled back in one long, careful strip.",
+  "A chair sat at the foot of the stairs, set as if for an audience.",
+];
+export function weirdDetail(rng: () => number): string {
+  return pick(WEIRD, rng);
+}
+
 const WHY_NORMAL = [
   "{s} lived below {v}. They argued that evening — he swears he never left his flat.",
   "{s} had the flat below {v}'s. Hard words passed between them that night, and he claims he never stirred.",

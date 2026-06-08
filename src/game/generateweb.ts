@@ -1,7 +1,7 @@
 import { WebCase, WebSegment, WebEvidence } from "./web";
 import { MergedCase, Phase, PhaseStatement } from "./merged";
 import { verifyWeb } from "./verify";
-import { deflectionPool, claimLine, concessionLine, coreClaim, coreConcession, motivePick, shiftTriple, phaseTruths, premise, whyLine, goalLine } from "./phrasing";
+import { deflectionPool, claimLine, concessionLine, coreClaim, coreConcession, motivePick, shiftTriple, phaseTruths, premise, whyLine, goalLine, weirdDetail } from "./phrasing";
 import { mulberry32 } from "./rng";
 
 /**
@@ -146,13 +146,15 @@ function buildKeystone(seed: number, rng: () => number, opts: GenOpts): { web: W
   evidence.push({ id: K.seam.id, short: K.seam.short, label: K.seam.label, targets: K.id, deflectableBy: [] });
   evidence.push({ id: "iou", short: mot.evShort, label: mot.evLabel, targets: "square", deflectableBy: [] });
 
+    const pr = premise(victim, rng);
+  if (rng() < (opts.weirdness ?? 0.6)) pr.what += " " + weirdDetail(rng);
   const web: WebCase = {
     id: `gen-k-${seed}`,
     weirdness: opts.weirdness ?? 0.6,
     title: caseTitle(place),
     subject,
     brief: {
-      ...premise(victim, rng),
+      ...pr,
       where: locWhere(place),
       why: whyLine(subject, victimShort, true, rng),
       goal: goalLine(true, rng),
@@ -237,13 +239,15 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
     }
 
     const victimShort = victim.split(" ").slice(-1)[0];
+    const pr = premise(victim, rng);
+    if (rng() < (opts.weirdness ?? 0.1)) pr.what += " " + weirdDetail(rng);
     const web: WebCase = {
       id: `gen-${seed}`,
       weirdness: opts.weirdness ?? 0.1,
       title: caseTitle(place),
       subject: `${subject}`,
       brief: {
-        ...premise(victim, rng),
+        ...pr,
         where: locWhere(place),
         why: whyLine(subject, victimShort, false, rng),
         goal: goalLine(false, rng),
