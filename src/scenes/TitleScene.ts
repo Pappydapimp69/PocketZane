@@ -98,7 +98,7 @@ export class TitleScene extends Phaser.Scene {
 
     const begin = () => {
       startAmbience();
-      this.scene.start("CaseRun");
+      this.scene.start("CaseRun", { generate: true });
     };
     const endless = () => {
       startAmbience();

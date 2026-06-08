@@ -5,7 +5,7 @@ import { Button } from "../ui";
 import { MergedInquiry, PHASE_STRIKES, MergedCase } from "../game/merged";
 import { WELLS } from "../game/mergedcase";
 import { generateMergedCase } from "../game/generateweb";
-import { dailySeed, DAILY_OPTS, optsForNight, nightSeed } from "../game/ladder";
+import { dailySeed, DAILY_OPTS, optsForNight, nightSeed, randomSeed, freeOpts } from "../game/ladder";
 import { incBreaks, markDeepest, rankFor, getTotalBreaks } from "../game/save";
 import { SFX, startAmbience, stopSpeech } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
@@ -69,9 +69,13 @@ export class CaseRunScene extends Phaser.Scene {
       this.runBase = data?.runBase ?? ((Date.now() & 0x7fffffff) >>> 0);
       this.seedVal = nightSeed(this.runBase, this.night);
       this.theCase = generateMergedCase(this.seedVal, optsForNight(this.night));
+    } else if (data?.generate) {
+      this.seedVal = data?.seed ?? randomSeed();
+      this.theCase = generateMergedCase(this.seedVal, freeOpts(this.seedVal));
     } else {
-      this.seedVal = data?.seed ?? (Date.now() & 0xffff) + 1;
-      this.theCase = data?.generate ? generateMergedCase(this.seedVal, { weirdness: 0.5, herring: true }) : WELLS;
+      // The crafted reference case (reachable via the N shortcut).
+      this.seedVal = data?.seed ?? 1;
+      this.theCase = WELLS;
     }
   }
 

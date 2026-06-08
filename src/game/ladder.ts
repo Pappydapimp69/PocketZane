@@ -7,10 +7,36 @@
  * the same subject. Pure and deterministic; tested in scripts/test-ladder.ts.
  */
 import type { GenOpts } from "./generateweb";
+import { mulberry32 } from "./rng";
 
 /** A seed fixed to the calendar day — the daily is the same for everyone. */
 export function dailySeed(d: Date = new Date()): number {
   return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+
+/** A fresh, unpredictable seed — so a one-off case is never the same twice. */
+export function randomSeed(): number {
+  try {
+    const a = new Uint32Array(1);
+    (globalThis.crypto as Crypto).getRandomValues(a);
+    if (a[0]) return a[0] >>> 0;
+  } catch {
+    /* no crypto — fall through */
+  }
+  return ((Math.floor(Math.random() * 0x100000000) ^ Date.now()) >>> 0) || 1;
+}
+
+/**
+ * A varied one-off case: structure and weirdness scatter with the seed, so two
+ * plays differ in size and shape, not just wording. Derived from the seed so the
+ * same seed always rebuilds the same case.
+ */
+export function freeOpts(seed: number): GenOpts {
+  const r = mulberry32(seed >>> 0);
+  const supports = r() < 0.4 ? 3 : 2; // 2 or 3 props
+  const depth = r() < 0.4 ? 2 : 1; // sometimes one prop stands on another
+  const weirdness = 0.2 + r() * 0.4; // 0.2–0.6 chance it's a keystone bluff
+  return { supports, depth, weirdness, herring: true };
 }
 
 /** The daily plays at a fair middle difficulty, same shape for all. */

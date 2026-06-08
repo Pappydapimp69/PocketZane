@@ -5,7 +5,7 @@
  * phases and failing them all. Run: npx tsx scripts/test-ladder.ts
  */
 import { generateMergedCase } from "../src/game/generateweb";
-import { optsForNight, nightSeed, dailySeed, DAILY_OPTS } from "../src/game/ladder";
+import { optsForNight, nightSeed, dailySeed, DAILY_OPTS, freeOpts } from "../src/game/ladder";
 import { MergedInquiry } from "../src/game/merged";
 
 let ok = true;
@@ -54,6 +54,14 @@ for (let night = 1; night <= 12; night++) {
     if (!winnable(seed, opts, false)) fail(`night ${night} seed ${seed}: not winnable clearing phases`);
     if (!winnable(seed, opts, true)) fail(`night ${night} seed ${seed}: not winnable FAILING phases`);
   }
+}
+
+// one-off cases (SIT DOWN) draw a random 32-bit seed + scattered structure;
+// every such seed must still build and be winnable, including large values.
+for (let i = 0; i < 300; i++) {
+  const seed = i < 150 ? (i + 1) * 14_000_111 : (0xffff0000 + i * 7919) >>> 0;
+  cases++;
+  if (!winnable(seed, freeOpts(seed), false)) fail(`free seed ${seed}: not winnable`);
 }
 
 // the daily, across a year of dates, must also be sound
