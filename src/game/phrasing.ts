@@ -176,6 +176,20 @@ export function whyLine(subject: string, victimShort: string, keystone: boolean,
   return pick(keystone ? WHY_KEYSTONE : WHY_NORMAL, rng).replace("{s}", subject).replace("{v}", victimShort);
 }
 
+const GOAL_NORMAL = [
+  "Work him for leads, then break his statement. A head-on hit will only deflect.",
+  "Question him for what he'll let slip, then take the alibi apart. Strike it head-on and it just bends.",
+  "Draw out his leads, then pull the story down. There's no breaking it with a single blow.",
+];
+const GOAL_KEYSTONE = [
+  "His story leans hard on one claim. Find the seam in that, and the rest comes down together.",
+  "Everything he says rests on a single prop. Knock that out and the whole account folds.",
+  "One claim holds the rest up. Find where it's hollow and it all comes down at once.",
+];
+export function goalLine(keystone: boolean, rng: () => number): string {
+  return pick(keystone ? GOAL_KEYSTONE : GOAL_NORMAL, rng);
+}
+
 export function claimLine(id: string, rng: () => number): string {
   return pick(CLAIM[id] ?? CORE_CLAIM, rng);
 }

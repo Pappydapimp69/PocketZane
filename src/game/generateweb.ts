@@ -1,7 +1,7 @@
 import { WebCase, WebSegment, WebEvidence } from "./web";
 import { MergedCase, Phase, PhaseStatement } from "./merged";
 import { verifyWeb } from "./verify";
-import { deflectionPool, claimLine, concessionLine, coreClaim, coreConcession, motivePick, shiftTriple, phaseTruths, premise, whyLine } from "./phrasing";
+import { deflectionPool, claimLine, concessionLine, coreClaim, coreConcession, motivePick, shiftTriple, phaseTruths, premise, whyLine, goalLine } from "./phrasing";
 import { mulberry32 } from "./rng";
 
 /**
@@ -155,7 +155,7 @@ function buildKeystone(seed: number, rng: () => number, opts: GenOpts): { web: W
       ...premise(victim, rng),
       where: locWhere(place),
       why: whyLine(subject, victimShort, true, rng),
-      goal: "His story leans hard on one claim. Find the seam in that, and the rest comes down together.",
+      goal: goalLine(true, rng),
     },
     segments,
     evidence,
@@ -246,7 +246,7 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
         ...premise(victim, rng),
         where: locWhere(place),
         why: whyLine(subject, victimShort, false, rng),
-        goal: "Work him for leads, then break his statement. A head-on hit will only deflect.",
+        goal: goalLine(false, rng),
       },
       segments,
       evidence,
