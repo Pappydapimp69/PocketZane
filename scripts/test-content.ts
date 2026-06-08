@@ -47,6 +47,24 @@ check(briefWhy.size >= 3, `the why varies (${briefWhy.size} framings)`);
 check(briefGoal.size >= 3, `the charge varies (${briefGoal.size} framings)`);
 check(motives.size >= 3, `the motive's tell varies (${motives.size} distinct)`);
 
+// No template token (e.g. {v}, {s}, {a}) may ever leak into player-facing text,
+// and the brief's fields must never be empty — across the whole difficulty range.
+let leaks = 0;
+let empties = 0;
+const token = /\{[a-z]\}/;
+for (let seed = 1; seed <= 250; seed++) {
+  for (const opts of [{ supports: 1, weirdness: 0 }, { supports: 3, depth: 2, weirdness: 0.9, herring: true }]) {
+    const c = generateMergedCase(seed, opts);
+    const texts = [c.title, c.subject, c.resolution, ...Object.values(c.brief), ...c.web.segments.map((s) => s.base), ...c.web.evidence.map((e) => e.label), ...Object.values(c.web.concessions), ...Object.values(c.web.deflections).flat(), ...c.phases.flatMap((p) => p.statements.flatMap((s) => [s.text, ...(s.lie?.shifts ?? [])]))];
+    for (const t of texts) {
+      if (token.test(t)) leaks++;
+      if (!t || !t.trim()) empties++;
+    }
+  }
+}
+check(leaks === 0, `no template tokens leak into text (${leaks} found)`);
+check(empties === 0, `no empty player-facing strings (${empties} found)`);
+
 // A phase lie must still escalate over its three tellings (no repeats within one).
 let badArc = 0;
 for (let seed = 1; seed <= 120; seed++) {
