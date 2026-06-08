@@ -39,11 +39,12 @@ export function drawScene(ctx: CanvasRenderingContext2D, W: number, H: number, s
 
   // ---- windows, a few lit warm ----
   const cols = 4 + Math.floor(rng() * 2);
+  const rows = 2 + Math.floor(rng() * 2); // 2 or 3 storeys
   const wgap = W / (cols + 1);
   for (let c = 1; c <= cols; c++) {
-    for (let r = 0; r < 2; r++) {
+    for (let r = 0; r < rows; r++) {
       const wx = c * wgap - 16;
-      const wy = 18 + r * 46;
+      const wy = 14 + r * (rows === 3 ? 36 : 46); // keep storeys within the facade
       const lit = rng() < 0.34;
       ctx.fillStyle = lit ? "rgba(224,176,86,0.92)" : "rgba(10,12,16,0.9)";
       ctx.fillRect(wx, wy, 26, 32);
