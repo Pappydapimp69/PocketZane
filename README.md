@@ -125,3 +125,5 @@ Touch, gamepad, and keyboard are all supported.
 - **v26** — **today's subject**: a seeded daily challenge — the same procedurally
   generated subject (and the same slips) for everyone until midnight, with a best
   saved per day. Backed by a small reproducible PRNG.
+- **v27** — **share the daily**: a spoiler-free "copy result" on the daily end
+  screen (date + tellings + strikes), so the shared puzzle is actually shareable.

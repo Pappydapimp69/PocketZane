@@ -584,6 +584,7 @@ export class CaseScene extends Phaser.Scene {
         stats,
         ledger,
         body: g.case.resolution,
+        share: `AGAIN — ${todayStamp()}\nbroke it in ${g.telling}× · ${g.strikesUsed}✕`,
         button: { label: "TRY TODAY AGAIN", onClick: () => this.scene.restart({ mode: "daily" }) },
       });
       return;
@@ -668,6 +669,7 @@ export class CaseScene extends Phaser.Scene {
         heading: "they walk",
         headColor: CSS.slate,
         body: "They stand, and leave. Today's subject keeps its secret — at least until you sit down with it again.",
+        share: `AGAIN — ${todayStamp()}\nthey walked · didn't break today`,
         button: { label: "TRY TODAY AGAIN", onClick: () => this.scene.restart({ mode: "daily" }) },
       });
       return;
@@ -686,6 +688,7 @@ export class CaseScene extends Phaser.Scene {
     body: string;
     stats?: string;
     ledger?: string;
+    share?: string;
     button: { label: string; onClick: () => void };
   }): void {
     this.overlayAction = opts.button.onClick;
@@ -753,7 +756,7 @@ export class CaseScene extends Phaser.Scene {
     c.setAlpha(0);
     this.tweens.add({ targets: c, alpha: 1, duration: 600 });
 
-    const btn = new Button(this, GAME_WIDTH / 2, 812, {
+    const btn = new Button(this, GAME_WIDTH / 2, opts.share ? 798 : 812, {
       w: 260,
       h: 50,
       label: opts.button.label,
@@ -761,5 +764,21 @@ export class CaseScene extends Phaser.Scene {
       onClick: opts.button.onClick,
     });
     c.add(btn);
+
+    if (opts.share) {
+      const copy = this.add
+        .text(GAME_WIDTH / 2, 836, "⧉  copy result", { fontFamily: MONO, fontSize: "12px", color: CSS.faint })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
+      copy.on("pointerup", () => {
+        try {
+          void navigator.clipboard?.writeText(opts.share!);
+          copy.setText("✓  copied").setColor(CSS.amber);
+        } catch {
+          copy.setText("clipboard blocked").setColor(CSS.slate);
+        }
+      });
+      c.add(copy);
+    }
   }
 }
