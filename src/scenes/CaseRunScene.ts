@@ -507,13 +507,17 @@ export class CaseRunScene extends Phaser.Scene {
     const views = this.inq.segments();
     const broken = new Set(views.filter((v) => v.broken).map((v) => v.id));
     const baseOf = new Map(this.inq.case.web.segments.map((s) => [s.id, s.base]));
+    // tighten for big webs so they never run past the status line
+    const big = views.length > 5;
+    const bodyPx = big ? 15 : 16;
+    const gap = big ? 14 : 22;
     let y = 250;
     for (const s of views) {
       // once a claim has deflected, its text becomes his fresh excuse — show it as his words
       const deflected = !s.broken && s.text !== baseOf.get(s.id);
       const label = this.add.text(LEFT, y, `「 ${s.name}${s.key ? " ✦" : ""} 」`, { fontFamily: MONO, fontSize: "11px", color: s.broken ? CSS.faint : CSS.muted }).setDepth(6);
       this.blocks.push(label);
-      const body = this.add.text(LEFT, y + 18, deflected ? `“${s.text}”` : s.text, { fontFamily: BODY, fontSize: "16px", color: s.broken ? CSS.faint : deflected ? CSS.amber : CSS.ink, fontStyle: deflected ? "italic" : "normal", wordWrap: { width: WRAP }, lineSpacing: 2 }).setDepth(6);
+      const body = this.add.text(LEFT, y + 18, deflected ? `“${s.text}”` : s.text, { fontFamily: BODY, fontSize: `${bodyPx}px`, color: s.broken ? CSS.faint : deflected ? CSS.amber : CSS.ink, fontStyle: deflected ? "italic" : "normal", wordWrap: { width: WRAP }, lineSpacing: 2 }).setDepth(6);
       this.blocks.push(body);
       let cy = y + 18 + body.height + 4;
       if (s.broken) {
@@ -532,7 +536,7 @@ export class CaseRunScene extends Phaser.Scene {
         this.blocks.push(note);
         cy += note.height + 2;
       }
-      y = cy + 22;
+      y = cy + gap;
     }
   }
 
