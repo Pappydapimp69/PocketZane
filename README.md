@@ -213,3 +213,11 @@ Touch, gamepad, and keyboard are all supported.
   bed — a slow minor progression (Am – F – C – E) that actually moves, a sparse
   wandering melody on the A-minor scale stepping by small intervals, and a soft
   feedback-delay room for space. Still synthesized in code; still under the mute.
+- **v55** — **the deduction redesign (beta vertical slice)**: a new engine where a
+  case has a hidden truth and the subject holds a cover story that *rewrites
+  itself* — present established evidence against a claim and it constructs a
+  coherent alternate explanation (or breaks when cornered); question a thread to
+  pull new evidence into your file. One fully-authored case with a real brief
+  (who/what/where/why) and resolution, the question→present→corner loop, and a
+  `weirdness` dial baked in for the future generator. Reachable from the
+  "THE NEW CASE (beta)" title link; the existing game is untouched.
