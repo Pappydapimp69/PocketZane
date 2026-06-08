@@ -61,13 +61,34 @@ export class CaseRunScene extends Phaser.Scene {
   private runBase = 1;
   private recorded = false;
 
+  // two-detective match state (shared seed, hot-seat)
+  private vsMode?: "versus" | "coop";
+  private matchSeed = 0;
+  private playerIdx = 0;
+  private scores: number[] = [];
+  private moves = 0;
+  private coopTurn = 0;
+  private matchBanner?: Phaser.GameObjects.Text;
+
   constructor() {
     super("CaseRun");
   }
 
-  init(data: { generate?: boolean; seed?: number; mode?: "free" | "daily" | "endless"; night?: number; runBase?: number }): void {
+  init(data: { generate?: boolean; seed?: number; mode?: "free" | "daily" | "endless"; night?: number; runBase?: number; vsMode?: "versus" | "coop"; matchSeed?: number; playerIdx?: number; scores?: number[] }): void {
     this.mode = data?.mode ?? "free";
     this.recorded = false;
+    this.moves = 0;
+    this.coopTurn = 0;
+    this.vsMode = data?.vsMode;
+    if (this.vsMode) {
+      // Both detectives play the identical case; versus scores it, co-op shares it.
+      this.matchSeed = data?.matchSeed ?? randomSeed();
+      this.playerIdx = data?.playerIdx ?? 0;
+      this.scores = data?.scores ?? [];
+      this.seedVal = this.matchSeed;
+      this.theCase = generateMergedCase(this.seedVal, freeOpts(this.seedVal));
+      return;
+    }
     if (this.mode === "daily") {
       this.seedVal = dailySeed();
       this.theCase = generateMergedCase(this.seedVal, DAILY_OPTS);
@@ -116,6 +137,12 @@ export class CaseRunScene extends Phaser.Scene {
 
     this.add.text(14, 14, "← leave", { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(0, 0).setInteractive({ useHandCursor: true }).on("pointerup", () => this.scene.start("TitleScene"));
     this.add.text(GAME_WIDTH - 14, 14, "the file  (Y)", { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(1, 0).setInteractive({ useHandCursor: true }).on("pointerup", () => this.showFile(false));
+
+    if (this.vsMode === "versus") {
+      this.add.text(GAME_WIDTH / 2, 15, `DUEL  ·  Detective ${this.playerIdx === 0 ? "One" : "Two"}`, { fontFamily: MONO, fontSize: "10px", color: CSS.amber }).setOrigin(0.5);
+    } else if (this.vsMode === "coop") {
+      this.matchBanner = this.add.text(GAME_WIDTH / 2, 15, "", { fontFamily: MONO, fontSize: "10px", color: CSS.amber }).setOrigin(0.5);
+    }
 
     // Character-profile header: the suspect's photo under the lamp, his particulars beside it.
     const px = this.portraitBase.x;
@@ -171,7 +198,22 @@ export class CaseRunScene extends Phaser.Scene {
     }
     this.setMood("neutral");
     this.updateHud();
+    this.updateCoopBanner();
     this.setStatus("");
+  }
+
+  private updateCoopBanner(): void {
+    if (this.vsMode !== "coop" || !this.matchBanner) return;
+    this.matchBanner.setText(`PARTNERS  ·  ▶ Detective ${this.coopTurn === 0 ? "One" : "Two"}'s move`);
+  }
+
+  /** Count a committed action; in co-op, hand the pad to the other detective. */
+  private tick(): void {
+    this.moves++;
+    if (this.vsMode === "coop") {
+      this.coopTurn ^= 1;
+      this.updateCoopBanner();
+    }
   }
 
   /** Drive the portrait's expression and posture from the interrogation. */
@@ -340,6 +382,7 @@ export class CaseRunScene extends Phaser.Scene {
       this.setStatus("Pick a line of his account, then question it.", CSS.muted);
       return;
     }
+    this.tick();
     if (this.inq.question(this.selected).shifted) {
       SFX.flicker();
       this.renderPhase();
@@ -358,6 +401,7 @@ export class CaseRunScene extends Phaser.Scene {
       this.setStatus("Select the line you mean to call a lie.", CSS.muted);
       return;
     }
+    this.tick();
     const r = this.inq.pin(this.selected);
     switch (r.kind) {
       case "lead":
@@ -444,6 +488,7 @@ export class CaseRunScene extends Phaser.Scene {
   }
 
   private resolve(evId: string): void {
+    this.tick();
     const r = this.inq.present(evId);
     switch (r.kind) {
       case "deflect": {
@@ -587,13 +632,52 @@ export class CaseRunScene extends Phaser.Scene {
 
   /** Solving a case feeds the record: a break toward rank, plus depth in endless. */
   private recordWin(): void {
-    if (this.recorded) return;
+    if (this.recorded || this.vsMode) return; // matches don't touch the solo record
     this.recorded = true;
     incBreaks();
     if (this.mode === "endless") markDeepest(this.night);
   }
 
+  // ---- two-detective match endings ------------------------------------------
+
+  private versusEnd(): void {
+    this.busy = true;
+    const score = this.moves;
+    const next = [...this.scores, score];
+    if (this.playerIdx === 0) {
+      this.matchOverlay("Detective One has it", `Cracked in ${score} moves.`, "Pass the pad — Detective Two gets the same case, the same lies.", "DETECTIVE TWO  (A)", () =>
+        this.scene.start("CaseRun", { vsMode: "versus", matchSeed: this.matchSeed, playerIdx: 1, scores: next }),
+      );
+    } else {
+      const a = this.scores[0];
+      const b = score;
+      const verdict = a === b ? "A dead heat" : a < b ? "Detective One takes it" : "Detective Two takes it";
+      this.matchOverlay(verdict, `One: ${a} moves     Two: ${b} moves`, "Fewer moves is the cleaner break.", "DONE  (A)", () => this.scene.start("TitleScene"));
+    }
+  }
+
+  private coopEnd(): void {
+    this.busy = true;
+    this.matchOverlay("Partners — closed", `Solved together in ${this.moves} moves.`, "Two minds, one confession.", "DONE  (A)", () => this.scene.start("TitleScene"));
+  }
+
+  private matchOverlay(title: string, score: string, flavor: string, btnLabel: string, onGo: () => void): void {
+    SFX.break();
+    const o = this.add.container(0, 0).setDepth(150);
+    o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 1));
+    if (this.textures.exists("grain")) o.add(this.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, "grain").setOrigin(0).setAlpha(0.5));
+    if (this.textures.exists("vignette")) o.add(this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, "vignette"));
+    o.add(this.add.text(GAME_WIDTH / 2, 120, title, { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
+    o.add(this.add.text(GAME_WIDTH / 2, 162, score, { fontFamily: MONO, fontSize: "14px", color: CSS.ink }).setOrigin(0.5));
+    o.add(this.add.text(GAME_WIDTH / 2, 206, this.inq.case.resolution, { fontFamily: BODY, fontSize: "14px", color: CSS.muted, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
+    o.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 150, flavor, { fontFamily: MONO, fontSize: "11px", color: CSS.faint, align: "center", wordWrap: { width: 408 } }).setOrigin(0.5));
+    this.overlayClose = onGo;
+    o.add(new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 72, { w: 240, h: 50, label: btnLabel, accent: COLORS.crimson, onClick: onGo }));
+  }
+
   private solve(): void {
+    if (this.vsMode === "versus") return this.versusEnd();
+    if (this.vsMode === "coop") return this.coopEnd();
     this.busy = true;
     this.recordWin();
     const o = this.add.container(0, 0).setDepth(140);

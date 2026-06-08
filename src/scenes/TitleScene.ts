@@ -107,11 +107,11 @@ export class TitleScene extends Phaser.Scene {
 
     const versus = () => {
       startAmbience();
-      this.scene.start("CaseScene", { mode: "versus" });
+      this.scene.start("CaseRun", { vsMode: "versus" });
     };
     const coop = () => {
       startAmbience();
-      this.scene.start("CaseScene", { mode: "coop" });
+      this.scene.start("CaseRun", { vsMode: "coop" });
     };
 
     const revisit = () => this.scene.start("CaseSelect");
