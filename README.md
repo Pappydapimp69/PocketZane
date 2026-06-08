@@ -117,3 +117,5 @@ Touch, gamepad, and keyboard are all supported.
 - **v23** — **fully navigable title menu** by gamepad and keyboard: a moving focus
   highlight with d-pad/arrows and select on A/Enter — no touch required to choose
   a mode.
+- **v24** — **Case Files**: a revisit screen to replay any reached story case and
+  chase a better best-telling count, with later cases sealed until you reach them.

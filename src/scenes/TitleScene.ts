@@ -68,11 +68,13 @@ export class TitleScene extends Phaser.Scene {
       this.scene.start("CaseScene", { mode: "coop" });
     };
 
+    const revisit = () => this.scene.start("CaseSelect");
     const items: { btn: Button; fn: () => void }[] = [
-      { btn: new Button(this, GAME_WIDTH / 2, 540, { w: 240, h: 46, label: "SIT DOWN", accent: COLORS.crimson, onClick: begin }), fn: begin },
-      { btn: new Button(this, GAME_WIDTH / 2, 592, { w: 240, h: 46, label: "AN ENDLESS NIGHT", accent: COLORS.slate, onClick: endless }), fn: endless },
-      { btn: new Button(this, GAME_WIDTH / 2, 644, { w: 240, h: 46, label: "TWO DETECTIVES — VERSUS", accent: COLORS.amber, onClick: versus }), fn: versus },
-      { btn: new Button(this, GAME_WIDTH / 2, 696, { w: 240, h: 46, label: "PARTNERS — CO-OP", accent: COLORS.amber, onClick: coop }), fn: coop },
+      { btn: new Button(this, GAME_WIDTH / 2, 516, { w: 240, h: 44, label: "SIT DOWN", accent: COLORS.crimson, onClick: begin }), fn: begin },
+      { btn: new Button(this, GAME_WIDTH / 2, 564, { w: 240, h: 44, label: "AN ENDLESS NIGHT", accent: COLORS.slate, onClick: endless }), fn: endless },
+      { btn: new Button(this, GAME_WIDTH / 2, 612, { w: 240, h: 44, label: "TWO DETECTIVES — VERSUS", accent: COLORS.amber, onClick: versus }), fn: versus },
+      { btn: new Button(this, GAME_WIDTH / 2, 660, { w: 240, h: 44, label: "PARTNERS — CO-OP", accent: COLORS.amber, onClick: coop }), fn: coop },
+      { btn: new Button(this, GAME_WIDTH / 2, 708, { w: 240, h: 44, label: "CASE FILES", accent: COLORS.slate, onClick: revisit }), fn: revisit },
     ];
 
     // Full gamepad / keyboard navigation of the menu.
