@@ -177,3 +177,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v44** — **clean breaks**: break a case with no strikes and at/under par and it's
   marked clean (✦ in Case Files, counted in the Record) — an aspirational target
   beyond simply closing it.
+- **v45** — **asset review pass** (every-fifth): a soft "page" sound when panels
+  open (ledger, settings, how-it-works) and a faint offset echo behind the title
+  wordmark for depth.

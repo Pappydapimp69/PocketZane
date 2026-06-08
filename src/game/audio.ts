@@ -185,4 +185,5 @@ export const SFX = {
       { freq: 62, dur: 0.16, type: "sine", vol: 0.14 },
       { freq: 52, dur: 0.2, type: "sine", vol: 0.1, delay: 0.22 },
     ]),
+  page: () => play([{ freq: 1200, to: 560, dur: 0.13, type: "sine", vol: 0.04 }]),
 };

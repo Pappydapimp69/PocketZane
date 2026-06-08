@@ -23,6 +23,12 @@ export class TitleScene extends Phaser.Scene {
       this.tweens.add({ targets: lamp, alpha: { from: 0.7, to: 1 }, scale: { from: 0.98, to: 1.05 }, duration: 3600, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     }
 
+    // Faint offset echo behind the title, for depth.
+    this.add
+      .text(GAME_WIDTH / 2 + 3, 253, "AGAIN", { fontFamily: DISPLAY, fontSize: "76px", color: "#000000" })
+      .setOrigin(0.5)
+      .setLetterSpacing(14)
+      .setAlpha(0.5);
     const title = this.add
       .text(GAME_WIDTH / 2, 250, "AGAIN", { fontFamily: DISPLAY, fontSize: "76px", color: CSS.ink })
       .setOrigin(0.5)
@@ -168,6 +174,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private showSettings(): void {
+    SFX.page();
     const c = this.add.container(0, 0).setDepth(200);
     c.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.96));
     c.add(
@@ -201,6 +208,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private showHelp(): void {
+    SFX.page();
     const c = this.add.container(0, 0).setDepth(200);
     c.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.96));
     c.add(

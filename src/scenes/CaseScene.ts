@@ -192,6 +192,7 @@ export class CaseScene extends Phaser.Scene {
 
   private showLedger(): void {
     if (this.busy) return;
+    SFX.page();
     const entries = this.game_.ledgerView();
     const body =
       entries.length === 0
