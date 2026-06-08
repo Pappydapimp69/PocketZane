@@ -34,8 +34,13 @@ await shot("support-broken");
 
 // present coat -> break alibi -> solve
 await k("Enter"); await w(400);
-await k("Enter"); await w(900); // coat index 0
+await k("Enter"); await w(1100); // coat index 0 -> solve
 await shot("solved");
+
+// open the win diagram (click the "THE WEB" button at ~132, 786)
+await page.mouse.click(132, 786);
+await w(700);
+await shot("diagram");
 
 console.log(errs.length ? errs.join("\n") : "(no page errors)");
 await b.close();

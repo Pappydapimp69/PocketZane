@@ -24,6 +24,7 @@ export interface WebSegment {
 export interface WebEvidence {
   id: string;
   label: string;
+  short?: string; // a short tag for the win diagram, e.g. "the coat"
   targets: string; // segment this attacks
   deflectableBy: string[]; // intact segments that can absorb it as an alt-cause
 }

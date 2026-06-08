@@ -101,10 +101,10 @@ export const WELLS: MergedCase = {
       { id: "square", name: "the motive", base: "Carr and I were square. I'd no reason to touch him." },
     ],
     evidence: [
-      { id: "coat", label: "His coat was logged soaked through at intake.", targets: "home", deflectableBy: ["sleep"] },
-      { id: "neighbor", label: "A neighbor saw someone on the stairs at 10:30.", targets: "home", deflectableBy: ["sleep"] },
-      { id: "call", label: "Phone records: a call from the building at 10:50.", targets: "sleep", deflectableBy: [] },
-      { id: "iou", label: "An unpaid IOU — Hale's name on it — in Carr's desk.", targets: "square", deflectableBy: [] },
+      { id: "coat", short: "the coat", label: "His coat was logged soaked through at intake.", targets: "home", deflectableBy: ["sleep"] },
+      { id: "neighbor", short: "the neighbor", label: "A neighbor saw someone on the stairs at 10:30.", targets: "home", deflectableBy: ["sleep"] },
+      { id: "call", short: "the call", label: "Phone records: a call from the building at 10:50.", targets: "sleep", deflectableBy: [] },
+      { id: "iou", short: "the IOU", label: "An unpaid IOU — Hale's name on it — in Carr's desk.", targets: "square", deflectableBy: [] },
     ],
     startEvidence: [],
     deflections: {

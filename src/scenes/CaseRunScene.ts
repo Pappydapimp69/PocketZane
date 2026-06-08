@@ -461,11 +461,146 @@ export class CaseRunScene extends Phaser.Scene {
     o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.97));
     if (this.textures.exists("grain")) o.add(this.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, "grain").setOrigin(0).setAlpha(0.5));
     if (this.textures.exists("vignette")) o.add(this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, "vignette"));
-    o.add(this.add.text(GAME_WIDTH / 2, 110, "the story breaks", { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
-    o.add(this.add.text(GAME_WIDTH / 2, 158, this.inq.case.resolution, { fontFamily: BODY, fontSize: "15px", color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
     SFX.break();
-    const back = () => this.scene.start("TitleScene");
-    this.overlayClose = back;
-    o.add(new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 68, { w: 220, h: 50, label: "CLOSE THE FILE  (A)", accent: COLORS.crimson, onClick: back }));
+
+    const reso = this.add.container(0, 0);
+    reso.add(this.add.text(GAME_WIDTH / 2, 110, "the story breaks", { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
+    reso.add(this.add.text(GAME_WIDTH / 2, 158, this.inq.case.resolution, { fontFamily: BODY, fontSize: "15px", color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
+    const diagram = this.buildDiagram().setVisible(false);
+    o.add([reso, diagram]);
+
+    const toTitle = () => this.scene.start("TitleScene");
+    const showBoard = () => {
+      reso.setVisible(false);
+      diagram.setVisible(true);
+      this.overlayClose = backToReso;
+    };
+    const backToReso = () => {
+      diagram.setVisible(false);
+      reso.setVisible(true);
+      this.overlayClose = toTitle;
+    };
+    this.overlayClose = toTitle;
+
+    reso.add(new Button(this, 132, GAME_HEIGHT - 68, { w: 220, h: 50, label: "▦  THE WEB", fontSize: 14, accent: COLORS.slate, onClick: showBoard }));
+    reso.add(new Button(this, 350, GAME_HEIGHT - 68, { w: 200, h: 50, label: "CLOSE  (A)", fontSize: 13, accent: COLORS.crimson, onClick: toTitle }));
+    diagram.add(new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 56, { w: 200, h: 46, label: "BACK  (B)", accent: COLORS.slate, onClick: backToReso }));
+  }
+
+  /** A win-screen "case board" laid out from the actual web graph. */
+  private buildDiagram(): Phaser.GameObjects.Container {
+    const c = this.add.container(0, 0);
+    c.add(this.add.text(GAME_WIDTH / 2, 64, "the web", { fontFamily: DISPLAY, fontSize: "24px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
+    c.add(this.add.text(GAME_WIDTH / 2, 90, "one lie holding up another", { fontFamily: MONO, fontSize: "11px", color: CSS.muted }).setOrigin(0.5));
+
+    const segs = this.inq.case.web.segments;
+    const evs = this.inq.case.web.evidence;
+    const brokenSet = new Set(this.inq.segments().filter((s) => s.broken).map((s) => s.id));
+
+    // support edges (d props target) and per-segment "support depth"
+    const supportsOf = (id: string) => evs.filter((e) => e.targets === id).flatMap((e) => e.deflectableBy);
+    const memo = new Map<string, number>();
+    const level = (id: string): number => {
+      if (memo.has(id)) return memo.get(id)!;
+      const sup = supportsOf(id);
+      const v = sup.length ? 1 + Math.max(...sup.map(level)) : 0;
+      memo.set(id, v);
+      return v;
+    };
+    const maxL = Math.max(0, ...segs.map((s) => level(s.id)));
+
+    const distribute = (n: number, w: number): number[] => {
+      const gap = 16;
+      const total = n * w + (n - 1) * gap;
+      const x0 = (GAME_WIDTH - total) / 2 + w / 2;
+      return Array.from({ length: n }, (_, i) => x0 + i * (w + gap));
+    };
+
+    // lie node positions, by level row
+    const lieW = maxL > 0 ? 178 : 220;
+    const topY = 300;
+    const rowGap = 130;
+    const pos = new Map<string, { x: number; y: number }>();
+    for (let L = 0; L <= maxL; L++) {
+      const row = segs.filter((s) => level(s.id) === L);
+      const xs = distribute(row.length, lieW);
+      row.forEach((s, i) => pos.set(s.id, { x: xs[i], y: topY + (maxL - L) * rowGap }));
+    }
+    // evidence row above the top lies
+    const evXs = distribute(evs.length, 104);
+    const evY = 168;
+    const evPos = new Map<string, { x: number; y: number }>();
+    evs.forEach((e, i) => evPos.set(e.id, { x: evXs[i], y: evY }));
+
+    const g = this.add.graphics();
+    c.add(g);
+    const lieH = 52;
+    // support edges (amber)
+    const seen = new Set<string>();
+    for (const e of evs) {
+      for (const d of e.deflectableBy) {
+        const key = `${d}->${e.targets}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const a = pos.get(d)!;
+        const b = pos.get(e.targets)!;
+        this.arrow(g, a.x, a.y - lieH / 2, b.x, b.y + lieH / 2, COLORS.amber, 0.9);
+      }
+    }
+    // attack edges (crimson)
+    for (const e of evs) {
+      const a = evPos.get(e.id)!;
+      const b = pos.get(e.targets)!;
+      this.arrow(g, a.x, a.y + 18, b.x, b.y - lieH / 2, COLORS.crimson, 0.8);
+    }
+
+    // evidence nodes
+    for (const e of evs) {
+      const p = evPos.get(e.id)!;
+      this.node(c, p.x, p.y, 104, 36, e.short ?? e.label, { evidence: true });
+    }
+    // lie nodes
+    for (const s of segs) {
+      const p = pos.get(s.id)!;
+      this.node(c, p.x, p.y, lieW, lieH, s.name, { key: s.key, broken: brokenSet.has(s.id) });
+    }
+
+    c.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 130, "amber holds it up · crimson takes it down", { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(0.5));
+    return c;
+  }
+
+  private node(c: Phaser.GameObjects.Container, cx: number, cy: number, w: number, h: number, name: string, opts: { evidence?: boolean; key?: boolean; broken?: boolean }): void {
+    const g = this.add.graphics();
+    const edge = opts.broken ? COLORS.crimson : opts.evidence ? COLORS.panelEdge : COLORS.slate;
+    g.fillStyle(COLORS.panel, 1);
+    g.fillRoundedRect(cx - w / 2, cy - h / 2, w, h, 7);
+    g.lineStyle(opts.broken ? 2 : 1.4, edge, opts.broken ? 0.85 : 1);
+    g.strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, 7);
+    c.add(g);
+    const label = `${opts.key ? "✦ " : ""}${name}`;
+    const t = this.add.text(cx, cy, label, { fontFamily: opts.evidence ? MONO : BODY, fontSize: opts.evidence ? "11px" : "14px", color: opts.broken ? CSS.faint : CSS.ink, align: "center", wordWrap: { width: w - 14 } }).setOrigin(0.5);
+    c.add(t);
+    if (opts.broken) {
+      const s = this.add.graphics();
+      s.lineStyle(1.5, COLORS.crimson, 0.9);
+      s.lineBetween(cx - w / 2 + 10, cy, cx + w / 2 - 10, cy);
+      c.add(s);
+    }
+  }
+
+  private arrow(g: Phaser.GameObjects.Graphics, x1: number, y1: number, x2: number, y2: number, color: number, alpha: number): void {
+    g.lineStyle(2, color, alpha);
+    g.lineBetween(x1, y1, x2, y2);
+    const ang = Math.atan2(y2 - y1, x2 - x1);
+    const s = 7;
+    g.fillStyle(color, alpha);
+    g.fillTriangle(
+      x2,
+      y2,
+      x2 - s * Math.cos(ang - 0.4),
+      y2 - s * Math.sin(ang - 0.4),
+      x2 - s * Math.cos(ang + 0.4),
+      y2 - s * Math.sin(ang + 0.4),
+    );
   }
 }
