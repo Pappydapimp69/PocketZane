@@ -1,4 +1,5 @@
 import { WebCase, WebSegment, WebEvidence } from "./web";
+import { MergedCase, Phase, PhaseStatement } from "./merged";
 import { verifyWeb } from "./verify";
 import { mulberry32 } from "./rng";
 
@@ -115,6 +116,26 @@ const VICTIMS = ["Edmund Carr", "Walter Brill", "Sam Okafor", "Henry Vance", "Le
 const PLACES = ["Wells Street", "Harrow Lane", "Sutter Row", "the Macklin building", "Dover Court"];
 const SUBJECTS = ["the downstairs tenant", "the brother-in-law", "the landlord", "the old friend", "the night porter"];
 
+// Question-phase content, keyed by the seam evidence a phase yields. Pinning the
+// shifting lie in a phase hands the player that seam.
+interface PhaseT {
+  title: string;
+  prompt: string;
+  lieShifts: string[];
+  truths: string[];
+}
+const PHASES_BY_SEAM: Record<string, PhaseT> = {
+  call: { title: "The Hour", prompt: "When he turned in. Find the line that drifts.", lieShifts: ["My phone was off the whole night.", "Off, or near enough — I didn't answer it.", "Fine. It rang, and I picked up. From my bed."], truths: ["I turn in early. Always have.", "It was a quiet night, until your knock."] },
+  mud: { title: "The Threshold", prompt: "How far he went. Catch the part he keeps shrinking.", lieShifts: ["I never once opened my door.", "I cracked it for air, no more than that.", "Alright — I stepped out onto the landing."], truths: ["I keep my door locked. Always have.", "The hall light's been out for weeks."] },
+  log: { title: "What Could Be Seen", prompt: "What the dark hid. Press the certainty.", lieShifts: ["That stairwell's been pitch black a month.", "The light flickered, mostly out.", "It was lit. I only hoped you'd think it wasn't."], truths: ["I've complained about that light before.", "People trip on those stairs all the time."] },
+  alone: { title: "The Company", prompt: "Who was with him. Find the friend who wasn't.", lieShifts: ["A friend sat with me all evening.", "He came by for a while, anyway.", "Alright. No one came. I was alone."], truths: ["I don't have many friends to speak of.", "I keep to myself most nights."] },
+  sober: { title: "The Drink", prompt: "How clear his head was. Catch the dodge.", lieShifts: ["I'd drunk too much to recall a thing.", "I'd had a couple, that's all.", "I was stone sober. I just didn't want to say."], truths: ["I drink at the same place every week.", "I always walk home, never drive."] },
+  sister: { title: "The Corroboration", prompt: "The one who'll vouch for him. Find the crack.", lieShifts: ["My partner was beside me every minute.", "She was in and out, but mostly with me.", "She... she wasn't there. I'll say it."], truths: ["We've been together some years now.", "She sleeps lighter than I do."] },
+  ticket: { title: "The Witness", prompt: "His witness. Press until it bends.", lieShifts: ["My brother watched the whole evening with me.", "He was around, in any case.", "He wasn't here. I only wished he were."], truths: ["My brother and I are close.", "He visits when he can."] },
+  iou: { title: "The Bad Blood", prompt: "What stood between them. Catch the thing he smooths over.", lieShifts: ["Money never came up between us.", "We may have spoken of it, once.", "He held a marker of mine. Months old."], truths: ["We'd been neighbors a long time.", "We argued about noise, nothing more."] },
+};
+const ROMAN = ["I", "II", "III", "IV"];
+
 function shuffle<T>(a: T[], rng: () => number): T[] {
   const x = [...a];
   for (let i = x.length - 1; i > 0; i--) {
@@ -133,7 +154,7 @@ export interface GenOpts {
   keystone?: boolean; // force a keystone case
 }
 
-function buildKeystone(seed: number, rng: () => number, opts: GenOpts): WebCase {
+function buildKeystone(seed: number, rng: () => number, opts: GenOpts): { web: WebCase; leadable: string[] } {
   const K = pick(KEYSTONES, rng);
   const dep = pick(SUPPORTS, rng);
   const core = pick(CORES, rng);
@@ -166,7 +187,7 @@ function buildKeystone(seed: number, rng: () => number, opts: GenOpts): WebCase 
   evidence.push({ id: K.seam.id, short: K.seam.short, label: K.seam.label, targets: K.id, deflectableBy: [] });
   evidence.push({ id: "iou", short: "the IOU", label: "An unpaid IOU — his name on it — in the desk.", targets: "square", deflectableBy: [] });
 
-  return {
+  const web: WebCase = {
     id: `gen-k-${seed}`,
     weirdness: opts.weirdness ?? 0.6,
     title: `The ${place} Stairs`,
@@ -185,18 +206,20 @@ function buildKeystone(seed: number, rng: () => number, opts: GenOpts): WebCase 
     concessions,
     resolution: `It was a bluff all the way down. ${K.name[0].toUpperCase() + K.name.slice(1)} never existed — ${homeAttacks[0].short} and ${dep.seam.short} alike had been leaning on that one invention.\n\nWhen it went, everything resting on it went with it. He didn't have a story. He had a keystone, and you found the seam in it.`,
   };
+  return { web, leadable: [dep.seam.id, K.seam.id, "iou"] };
 }
 
-/** Build a verified-solvable web from a seed. */
-export function generateWeb(seed: number, opts: GenOpts = {}): WebCase {
+/** Compose a verified-solvable web plus the leads its phases could gather. */
+function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable: string[] } {
   for (let attempt = 0; attempt < 8; attempt++) {
     const rng = mulberry32((seed + attempt * 7919) >>> 0);
     const keystone = opts.keystone ?? rng() < (opts.weirdness ?? 0);
     if (keystone) {
-      const web = buildKeystone(seed + attempt, rng, opts);
-      if (verifyWeb(web, web.startEvidence).solvable) return web;
+      const r = buildKeystone(seed + attempt, rng, opts);
+      if (verifyWeb(r.web, r.web.startEvidence).solvable) return r;
       continue;
     }
+    const leadable: string[] = [];
     const supN = Math.max(1, Math.min(3, opts.supports ?? 2));
     const depth = Math.max(1, Math.min(2, opts.depth ?? 1));
 
@@ -234,10 +257,13 @@ export function generateWeb(seed: number, opts: GenOpts = {}): WebCase {
         deflections[`${s.seam.id}:${deep.id}`] = deep.deflect;
         // the deeper support has its own clean seam
         evidence.push({ id: deep.seam.id, short: deep.seam.short, label: deep.seam.label, targets: deep.id, deflectableBy: [] });
+        leadable.push(deep.seam.id, s.seam.id);
       } else {
         evidence.push({ id: s.seam.id, short: s.seam.short, label: s.seam.label, targets: s.id, deflectableBy: [] });
+        leadable.push(s.seam.id);
       }
     }
+    leadable.push("iou");
 
     // a non-key motive thread for flavor
     segments.push({ id: "square", name: "the motive", base: "We were square. I'd no reason to touch him." });
@@ -273,7 +299,44 @@ export function generateWeb(seed: number, opts: GenOpts = {}): WebCase {
       resolution: `It came apart from the bottom. ${supports[0].name[0].toUpperCase() + supports[0].name.slice(1)} was the floor under the rest; once it went, ${attacks[0].short} had nothing to stand on.\n\nHe went up that night. What he gave you wasn't an alibi — it was one lie holding up another, and you took out the bottom one.`,
     };
 
-    if (verifyWeb(web, web.startEvidence).solvable) return web;
+    if (verifyWeb(web, web.startEvidence).solvable) return { web, leadable };
   }
-  throw new Error(`generateWeb: could not produce a solvable case for seed ${seed}`);
+  throw new Error(`composeWeb: could not produce a solvable case for seed ${seed}`);
+}
+
+/** Build a verified-solvable web from a seed (confrontation only). */
+export function generateWeb(seed: number, opts: GenOpts = {}): WebCase {
+  return composeWeb(seed, opts).web;
+}
+
+/** Build a full case: generated phases that gather the web's leads, then the web. */
+export function generateMergedCase(seed: number, opts: GenOpts = {}): MergedCase {
+  const { web, leadable } = composeWeb(seed, opts);
+  const rng = mulberry32((seed ^ 0x5bd1e995) >>> 0);
+  const leads = leadable.filter((id) => PHASES_BY_SEAM[id]).slice(0, 3);
+
+  const phases: Phase[] = leads.map((seamId, i) => {
+    const ph = PHASES_BY_SEAM[seamId];
+    const statements: PhaseStatement[] = shuffle(
+      [
+        { id: `l${i}`, text: ph.lieShifts[0], lie: { shifts: ph.lieShifts, lead: seamId } },
+        { id: `t${i}a`, text: ph.truths[0] },
+        { id: `t${i}b`, text: ph.truths[1] },
+      ],
+      rng,
+    );
+    return { id: `p${i}`, title: `${ROMAN[i]}.  ${ph.title}`, prompt: ph.prompt, statements };
+  });
+
+  return {
+    id: `m-${seed}`,
+    weirdness: web.weirdness,
+    title: web.title,
+    subject: web.subject,
+    brief: web.brief,
+    phases,
+    startLeads: web.startEvidence,
+    web,
+    resolution: web.resolution,
+  };
 }

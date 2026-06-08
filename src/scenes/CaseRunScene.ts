@@ -2,8 +2,9 @@ import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../dimensions";
 import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
 import { Button } from "../ui";
-import { MergedInquiry, PHASE_STRIKES } from "../game/merged";
+import { MergedInquiry, PHASE_STRIKES, MergedCase } from "../game/merged";
 import { WELLS } from "../game/mergedcase";
+import { generateMergedCase } from "../game/generateweb";
 import { SFX, startAmbience, stopSpeech } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
 import { PAD } from "../input";
@@ -44,8 +45,16 @@ export class CaseRunScene extends Phaser.Scene {
   private overlayClose: (() => void) | null = null;
   private pickHandler: ((i: number) => void) | null = null;
 
+  private theCase: MergedCase = WELLS;
+  private seedVal = 1;
+
   constructor() {
     super("CaseRun");
+  }
+
+  init(data: { generate?: boolean; seed?: number }): void {
+    this.seedVal = data?.seed ?? (Date.now() & 0xffff) + 1;
+    this.theCase = data?.generate ? generateMergedCase(this.seedVal, { weirdness: 0.5, herring: true }) : WELLS;
   }
 
   create(): void {
@@ -54,7 +63,7 @@ export class CaseRunScene extends Phaser.Scene {
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
     addAtmosphere(this, { lamp: true });
     startAmbience();
-    this.inq = new MergedInquiry(WELLS, (Date.now() & 0xffff) + 1);
+    this.inq = new MergedInquiry(this.theCase, this.seedVal);
     this.marks = this.add.graphics().setDepth(5);
     this.busy = false;
 

@@ -91,11 +91,11 @@ export class TitleScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
     web.on("pointerup", () => {
       startAmbience();
-      this.scene.start("Web", { generate: true });
+      this.scene.start("CaseRun", { generate: true });
     });
     this.input.keyboard?.on("keydown-W", () => {
       startAmbience();
-      this.scene.start("Web", { generate: true });
+      this.scene.start("CaseRun", { generate: true });
     });
 
     this.add
