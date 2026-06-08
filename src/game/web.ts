@@ -19,6 +19,7 @@ export interface WebSegment {
   name: string; // short label for legibility cues, e.g. "the alibi"
   base: string; // the claim as first stated
   key?: boolean; // breaking the key segment(s) solves the case
+  keystone?: boolean; // a bluff: breaking it cascades everything leaning on it
 }
 
 export interface WebEvidence {
@@ -57,7 +58,7 @@ export interface SegmentView {
 
 export type PresentResult =
   | { kind: "deflect"; target: string; via: string; text: string; revealed?: WebEvidence }
-  | { kind: "break"; target: string; key: boolean; solved: boolean }
+  | { kind: "break"; target: string; key: boolean; solved: boolean; keystone?: boolean; cascaded?: string[] }
   | { kind: "already" }
   | { kind: "spent" }
   | { kind: "nomatch" };
@@ -68,6 +69,7 @@ export class WebInquiry {
   private leans = new Map<string, string>(); // target → deflector it currently leans on
   private text = new Map<string, string>(); // current rendered text per segment
   private held = new Set<string>();
+  private pressed = new Set<string>(); // segments an attack has deflected on
   private rng: () => number;
   private tick = 0;
 
@@ -119,6 +121,7 @@ export class WebInquiry {
     if (cover.length > 0) {
       const via = cover[0];
       this.leans.set(t, via);
+      this.pressed.add(t);
       const pool = this.case.deflections[`${ev.id}:${via}`] ?? [`(${via})`];
       const line = pool[Math.floor(this.rng() * pool.length) % pool.length];
       this.tick += 1;
@@ -138,6 +141,36 @@ export class WebInquiry {
     this.broken.add(t);
     this.leans.delete(t);
     this.text.set(t, this.case.concessions[t] ?? this.text.get(t) ?? "");
-    return { kind: "break", target: t, key: !!this.case.segments.find((s) => s.id === t)?.key, solved: this.solved };
+    const seg = this.case.segments.find((s) => s.id === t);
+    // A keystone is a bluff: when it falls, everything it propped falls with it.
+    const cascaded = seg?.keystone ? this.cascade() : undefined;
+    return { kind: "break", target: t, key: !!seg?.key, solved: this.solved, keystone: !!seg?.keystone, cascaded };
+  }
+
+  private deflectorsOf(id: string): string[] {
+    const s = new Set<string>();
+    for (const e of this.case.evidence) if (e.targets === id) e.deflectableBy.forEach((d) => s.add(d));
+    return [...s];
+  }
+
+  /** After a keystone falls, collapse every pressed segment left with no cover. */
+  private cascade(): string[] {
+    const out: string[] = [];
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const seg of this.case.segments) {
+        if (this.broken.has(seg.id) || !this.pressed.has(seg.id)) continue;
+        const defl = this.deflectorsOf(seg.id);
+        if (defl.length > 0 && defl.every((d) => this.broken.has(d))) {
+          this.broken.add(seg.id);
+          this.leans.delete(seg.id);
+          this.text.set(seg.id, this.case.concessions[seg.id] ?? this.text.get(seg.id) ?? "");
+          out.push(seg.id);
+          changed = true;
+        }
+      }
+    }
+    return out;
   }
 }

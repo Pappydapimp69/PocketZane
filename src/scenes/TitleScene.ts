@@ -18,6 +18,13 @@ export class TitleScene extends Phaser.Scene {
 
   create(): void {
     stopSpeech();
+    // Dev shortcut: ?web=keystone&seed=11 boots straight into a forced case.
+    const params = new URLSearchParams(location.search);
+    if (params.get("web")) {
+      startAmbience();
+      this.scene.start("Web", { generate: true, seed: Number(params.get("seed") ?? 11), keystone: params.get("web") === "keystone" });
+      return;
+    }
     this.cameras.main.fadeIn(500);
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
     const { lamp } = addAtmosphere(this, { lamp: true });

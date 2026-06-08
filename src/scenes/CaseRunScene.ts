@@ -365,10 +365,14 @@ export class CaseRunScene extends Phaser.Scene {
         SFX.pin();
         this.renderWeb();
         this.updateHud();
-        if (r.solved) {
-          this.setStatus("It caves — and the whole story with it.", CSS.crimsonBright);
-          this.time.delayedCall(900, () => this.solve());
-        } else this.setStatus(`${this.inq.segmentName(r.target)} collapses. Whatever it covered is exposed now — press it.`, CSS.crimsonBright);
+        if (r.keystone && r.cascaded && r.cascaded.length) {
+          SFX.break();
+          this.cameras.main.shake(220, 0.005);
+          this.setStatus("It evaporates — there was never a floor under it. Everything leaning on it comes down at once.", CSS.crimsonBright);
+        } else {
+          this.setStatus(r.solved ? "It caves — and the whole story with it." : `${this.inq.segmentName(r.target)} collapses. Whatever it covered is exposed now — press it.`, CSS.crimsonBright);
+        }
+        if (r.solved) this.time.delayedCall(1100, () => this.solve());
         break;
       }
       case "already":

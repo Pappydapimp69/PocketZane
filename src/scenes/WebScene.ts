@@ -29,10 +29,10 @@ export class WebScene extends Phaser.Scene {
     super("Web");
   }
 
-  init(data: { generate?: boolean; seed?: number; supports?: number; depth?: number }): void {
+  init(data: { generate?: boolean; seed?: number; supports?: number; depth?: number; keystone?: boolean }): void {
     this.seedVal = data?.seed ?? (Date.now() & 0xffff) + 1;
     this.theCase = data?.generate
-      ? generateWeb(this.seedVal, { supports: data.supports ?? 2, depth: data.depth ?? 2, herring: true })
+      ? generateWeb(this.seedVal, { supports: data.supports ?? 2, depth: data.depth ?? 2, herring: true, weirdness: 0.5, keystone: data.keystone })
       : WELLS_WEB;
   }
 
@@ -166,12 +166,14 @@ export class WebScene extends Phaser.Scene {
         SFX.pin();
         this.renderWeb();
         this.updateHud();
-        if (r.solved) {
-          this.setStatus("It caves — and the whole story with it.", CSS.crimsonBright);
-          this.time.delayedCall(900, () => this.solve());
+        if (r.keystone && r.cascaded && r.cascaded.length) {
+          SFX.break();
+          this.cameras.main.shake(220, 0.005);
+          this.setStatus("It evaporates — there was never a floor under it. Everything leaning on it comes down at once.", CSS.crimsonBright);
         } else {
-          this.setStatus(`${this.inq.segmentName(r.target)} collapses. Whatever it was covering is exposed now — press it.`, CSS.crimsonBright);
+          this.setStatus(r.solved ? "It caves — and the whole story with it." : `${this.inq.segmentName(r.target)} collapses. Whatever it was covering is exposed now — press it.`, CSS.crimsonBright);
         }
+        if (r.solved) this.time.delayedCall(1100, () => this.solve());
         break;
       }
       case "already":

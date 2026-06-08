@@ -11,7 +11,7 @@ async function boot(): Promise<void> {
   } catch {
     /* fonts optional — fall back to serif */
   }
-  new Phaser.Game(gameConfig);
+  (window as any).__game = new Phaser.Game(gameConfig);
 }
 
 void boot();

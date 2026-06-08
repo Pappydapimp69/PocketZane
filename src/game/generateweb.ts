@@ -90,6 +90,27 @@ const HERRINGS = [
   { id: "smudge", short: "a smudge", label: "A smudge on the bannister, too faint to read." },
 ];
 
+// Keystones: bluffs with no floor of their own. Many lies lean on one, and when
+// its tell is found, the whole structure cascades.
+const KEYSTONES: SupportT[] = [
+  {
+    id: "partner",
+    name: "the partner",
+    claim: "My partner was beside me the whole night. She'll tell you so.",
+    concession: "...There was no partner beside me. I made her up to fill the bed.",
+    seam: { id: "sister", short: "her sister", label: "Her sister puts her across town the whole night." },
+    deflect: ["My partner will swear to every word of it.", "Ask her — she was right beside me.", "I wasn't alone. That's the end of it."],
+  },
+  {
+    id: "brother",
+    name: "the brother's word",
+    claim: "My brother was here all evening — he saw the whole of it.",
+    concession: "...My brother wasn't here. He'd cover for me, but he wasn't here.",
+    seam: { id: "ticket", short: "the ticket stub", label: "A train stub: his brother was three towns over that night." },
+    deflect: ["My brother will tell you exactly what I told you.", "He was here. Ask him yourself.", "Family doesn't lie about a thing like this."],
+  },
+];
+
 const VICTIMS = ["Edmund Carr", "Walter Brill", "Sam Okafor", "Henry Vance", "Leon Pryce"];
 const PLACES = ["Wells Street", "Harrow Lane", "Sutter Row", "the Macklin building", "Dover Court"];
 const SUBJECTS = ["the downstairs tenant", "the brother-in-law", "the landlord", "the old friend", "the night porter"];
@@ -107,14 +128,75 @@ const pick = <T>(a: T[], rng: () => number): T => a[Math.floor(rng() * a.length)
 export interface GenOpts {
   supports?: number; // how many supports prop the alibi (default 2)
   depth?: number; // 1 = flat supports, 2 = one support propped by a deeper one
-  weirdness?: number;
+  weirdness?: number; // also the probability a case is built around a keystone bluff
   herring?: boolean;
+  keystone?: boolean; // force a keystone case
+}
+
+function buildKeystone(seed: number, rng: () => number, opts: GenOpts): WebCase {
+  const K = pick(KEYSTONES, rng);
+  const dep = pick(SUPPORTS, rng);
+  const core = pick(CORES, rng);
+  const homeAttacks = shuffle(ATTACKS, rng).slice(0, 2);
+  const victim = pick(VICTIMS, rng);
+  const place = pick(PLACES, rng);
+  const subject = pick(SUBJECTS, rng);
+  const victimShort = victim.split(" ").slice(-1)[0];
+
+  const segments: WebSegment[] = [
+    { id: "home", name: "the alibi", key: true, base: core.claim },
+    { id: dep.id, name: dep.name, base: dep.claim },
+    { id: K.id, name: K.name, keystone: true, base: K.claim },
+    { id: "square", name: "the motive", base: "We were square. I'd no reason to touch him." },
+  ];
+  const evidence: WebEvidence[] = [];
+  const deflections: Record<string, string[]> = {};
+  const concessions: Record<string, string> = {
+    home: core.concession,
+    [dep.id]: dep.concession,
+    [K.id]: K.concession,
+    square: "...He held a marker of mine. Months overdue, and he'd stopped pretending he'd pay.",
+  };
+  for (const a of homeAttacks) {
+    evidence.push({ id: a.id, short: a.short, label: a.label, targets: "home", deflectableBy: [K.id] });
+    deflections[`${a.id}:${K.id}`] = K.deflect;
+  }
+  evidence.push({ id: dep.seam.id, short: dep.seam.short, label: dep.seam.label, targets: dep.id, deflectableBy: [K.id] });
+  deflections[`${dep.seam.id}:${K.id}`] = K.deflect;
+  evidence.push({ id: K.seam.id, short: K.seam.short, label: K.seam.label, targets: K.id, deflectableBy: [] });
+  evidence.push({ id: "iou", short: "the IOU", label: "An unpaid IOU — his name on it — in the desk.", targets: "square", deflectableBy: [] });
+
+  return {
+    id: `gen-k-${seed}`,
+    weirdness: opts.weirdness ?? 0.6,
+    title: `The ${place} Stairs`,
+    subject,
+    brief: {
+      what: `${victim} was found dead at the foot of his stairs, his neck broken. It reads like a fall.`,
+      where: `His building on ${place}.`,
+      when: "The rain ran all night; the fall came between ten and midnight.",
+      why: `${subject} lived below ${victimShort}. They argued that evening — and his whole account rests on one corroboration that won't bear weight.`,
+      goal: "His story leans hard on one claim. Find the seam in that, and the rest comes down together.",
+    },
+    segments,
+    evidence,
+    startEvidence: [homeAttacks[0].id, dep.seam.id],
+    deflections,
+    concessions,
+    resolution: `It was a bluff all the way down. ${K.name[0].toUpperCase() + K.name.slice(1)} never existed — ${homeAttacks[0].short} and ${dep.seam.short} alike had been leaning on that one invention.\n\nWhen it went, everything resting on it went with it. He didn't have a story. He had a keystone, and you found the seam in it.`,
+  };
 }
 
 /** Build a verified-solvable web from a seed. */
 export function generateWeb(seed: number, opts: GenOpts = {}): WebCase {
   for (let attempt = 0; attempt < 8; attempt++) {
     const rng = mulberry32((seed + attempt * 7919) >>> 0);
+    const keystone = opts.keystone ?? rng() < (opts.weirdness ?? 0);
+    if (keystone) {
+      const web = buildKeystone(seed + attempt, rng, opts);
+      if (verifyWeb(web, web.startEvidence).solvable) return web;
+      continue;
+    }
     const supN = Math.max(1, Math.min(3, opts.supports ?? 2));
     const depth = Math.max(1, Math.min(2, opts.depth ?? 1));
 

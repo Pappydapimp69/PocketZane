@@ -12,7 +12,7 @@ const fail = (m: string) => {
   console.log("✗ " + m);
 };
 
-const configs: GenOpts[] = [];
+const configs: GenOpts[] = [{ keystone: true }, { keystone: true, herring: true }];
 for (const supports of [1, 2, 3]) for (const depth of [1, 2]) for (const herring of [false, true]) configs.push({ supports, depth, herring });
 
 let n = 0;
