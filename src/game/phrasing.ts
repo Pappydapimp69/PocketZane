@@ -161,6 +161,21 @@ export function premise(victim: string, rng: () => number): { what: string; when
   return { what: pick(WHAT, rng).replace("{v}", victim), when: pick(WHEN, rng) };
 }
 
+const WHY_NORMAL = [
+  "{s} lived below {v}. They argued that evening — he swears he never left his flat.",
+  "{s} had the flat below {v}'s. Hard words passed between them that night, and he claims he never stirred.",
+  "{s} lived under {v} and owed him no love. They quarreled before the fall; he says he stayed in all night.",
+  "{s} kept the rooms beneath {v}. There was a row that evening — and he insists he was never out of his own.",
+];
+const WHY_KEYSTONE = [
+  "{s} lived below {v}. They argued that evening — and his whole account rests on one corroboration that won't bear weight.",
+  "{s} had the rooms below {v}. They fell out that night, and everything he tells you leans on a single word that won't hold.",
+  "{s} lived under {v}, and there was bad blood. His story stands on one prop that evening — and only the one.",
+];
+export function whyLine(subject: string, victimShort: string, keystone: boolean, rng: () => number): string {
+  return pick(keystone ? WHY_KEYSTONE : WHY_NORMAL, rng).replace("{s}", subject).replace("{v}", victimShort);
+}
+
 export function claimLine(id: string, rng: () => number): string {
   return pick(CLAIM[id] ?? CORE_CLAIM, rng);
 }
