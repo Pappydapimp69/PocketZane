@@ -1,6 +1,7 @@
 import { WebCase, WebSegment, WebEvidence } from "./web";
 import { MergedCase, Phase, PhaseStatement } from "./merged";
 import { verifyWeb } from "./verify";
+import { deflectionPool } from "./phrasing";
 import { mulberry32 } from "./rng";
 
 /**
@@ -180,10 +181,10 @@ function buildKeystone(seed: number, rng: () => number, opts: GenOpts): { web: W
   };
   for (const a of homeAttacks) {
     evidence.push({ id: a.id, short: a.short, label: a.label, targets: "home", deflectableBy: [K.id] });
-    deflections[`${a.id}:${K.id}`] = K.deflect;
+    deflections[`${a.id}:${K.id}`] = deflectionPool(3, K.id, a.short, rng);
   }
   evidence.push({ id: dep.seam.id, short: dep.seam.short, label: dep.seam.label, targets: dep.id, deflectableBy: [K.id] });
-  deflections[`${dep.seam.id}:${K.id}`] = K.deflect;
+  deflections[`${dep.seam.id}:${K.id}`] = deflectionPool(3, K.id, dep.seam.short, rng);
   evidence.push({ id: K.seam.id, short: K.seam.short, label: K.seam.label, targets: K.id, deflectableBy: [] });
   evidence.push({ id: "iou", short: "the IOU", label: "An unpaid IOU — his name on it — in the desk.", targets: "square", deflectableBy: [] });
 
@@ -244,7 +245,7 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
     for (const s of supports) {
       segments.push({ id: s.id, name: s.name, base: s.claim });
       concessions[s.id] = s.concession;
-      for (const a of attacks) deflections[`${a.id}:${s.id}`] = s.deflect;
+      for (const a of attacks) deflections[`${a.id}:${s.id}`] = deflectionPool(3, s.id, a.short, rng);
 
       const makeDeep = depth >= 2 && !deepUsed && SUPPORTS.length > supN;
       if (makeDeep) {
@@ -254,7 +255,7 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
         concessions[deep.id] = deep.concession;
         // this support's seam is now itself deflected by the deeper support
         evidence.push({ id: s.seam.id, short: s.seam.short, label: s.seam.label, targets: s.id, deflectableBy: [deep.id] });
-        deflections[`${s.seam.id}:${deep.id}`] = deep.deflect;
+        deflections[`${s.seam.id}:${deep.id}`] = deflectionPool(3, deep.id, s.seam.short, rng);
         // the deeper support has its own clean seam
         evidence.push({ id: deep.seam.id, short: deep.seam.short, label: deep.seam.label, targets: deep.id, deflectableBy: [] });
         leadable.push(deep.seam.id, s.seam.id);
