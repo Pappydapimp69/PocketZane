@@ -10,6 +10,8 @@ import { CASES } from "../game/cases";
 import { PAD } from "../input";
 
 export class TitleScene extends Phaser.Scene {
+  private overlayClose: (() => void) | null = null;
+
   constructor() {
     super("TitleScene");
   }
@@ -109,17 +111,29 @@ export class TitleScene extends Phaser.Scene {
     const updateFocus = () => items.forEach((it, i) => it.btn.setActive2(i === focus));
     updateFocus();
     const move = (d: number) => {
+      if (this.overlayClose) return;
       focus = Phaser.Math.Wrap(focus + d, 0, items.length);
       updateFocus();
       SFX.select();
     };
-    const confirm = () => items[focus].fn();
+    const confirm = () => {
+      if (this.overlayClose) {
+        this.overlayClose();
+        return;
+      }
+      items[focus].fn();
+    };
 
     this.input.keyboard?.on("keydown-UP", () => move(-1));
     this.input.keyboard?.on("keydown-DOWN", () => move(1));
     this.input.keyboard?.on("keydown-ENTER", confirm);
     this.input.keyboard?.on("keydown-SPACE", confirm);
+    this.input.keyboard?.on("keydown-ESC", () => this.overlayClose?.());
     this.input.gamepad?.on("down", (_p: Phaser.Input.Gamepad.Gamepad, b: Phaser.Input.Gamepad.Button) => {
+      if (this.overlayClose) {
+        if (b.index === PAD.A || b.index === PAD.B || b.index === PAD.START) this.overlayClose();
+        return;
+      }
       if (b.index === PAD.UP) move(-1);
       else if (b.index === PAD.DOWN) move(1);
       else if (b.index === PAD.A || b.index === PAD.START) confirm();
@@ -139,6 +153,15 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0, 0)
       .setInteractive({ useHandCursor: true });
     help.on("pointerup", () => this.showHelp());
+
+    // Fullscreen — the readable way to play on desktop.
+    const fs = this.add
+      .text(16, 42, "⛶  fullscreen", { fontFamily: MONO, fontSize: "11px", color: CSS.faint })
+      .setOrigin(0, 0)
+      .setInteractive({ useHandCursor: true });
+    fs.on("pointerup", () => this.scale.toggleFullscreen());
+    this.input.keyboard?.on("keydown-F", () => this.scale.toggleFullscreen());
+
     if (!hasSeenIntro()) {
       markSeenIntro();
       this.showHelp();
@@ -204,7 +227,12 @@ export class TitleScene extends Phaser.Scene {
       y += 44;
     }
 
-    c.add(new Button(this, GAME_WIDTH / 2, y + 24, { w: 200, h: 48, label: "DONE", accent: COLORS.crimson, onClick: () => c.destroy() }));
+    const close = () => {
+      c.destroy();
+      this.overlayClose = null;
+    };
+    this.overlayClose = close;
+    c.add(new Button(this, GAME_WIDTH / 2, y + 24, { w: 200, h: 48, label: "DONE", accent: COLORS.crimson, onClick: close }));
   }
 
   private showHelp(): void {
@@ -226,12 +254,17 @@ export class TitleScene extends Phaser.Scene {
         )
         .setOrigin(0.5, 0),
     );
+    const dismiss = () => {
+      c.destroy();
+      this.overlayClose = null;
+    };
+    this.overlayClose = dismiss;
     const close = new Button(this, GAME_WIDTH / 2, 720, {
       w: 200,
       h: 50,
-      label: "GOT IT",
+      label: "GOT IT  (A / Enter)",
       accent: COLORS.crimson,
-      onClick: () => c.destroy(),
+      onClick: dismiss,
     });
     c.add(close);
     c.setAlpha(0);

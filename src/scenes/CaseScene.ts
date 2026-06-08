@@ -146,6 +146,7 @@ export class CaseScene extends Phaser.Scene {
     kb?.on("keydown-P", () => this.onButton(PAD.X));
     kb?.on("keydown-K", () => this.onButton(PAD.Y));
     kb?.on("keydown-L", () => this.onButton(PAD.LB));
+    kb?.on("keydown-F", () => this.scale.toggleFullscreen());
     kb?.on("keydown-ESC", () => {
       if (!this.busy) this.confirmLeave();
     });
