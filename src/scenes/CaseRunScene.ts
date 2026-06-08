@@ -6,7 +6,7 @@ import { MergedInquiry, PHASE_STRIKES, MergedCase } from "../game/merged";
 import { WELLS } from "../game/mergedcase";
 import { generateMergedCase } from "../game/generateweb";
 import { dailySeed, DAILY_OPTS, optsForNight, nightSeed, randomSeed, freeOpts } from "../game/ladder";
-import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias, getBest, setBest, getNarration, getDifficulty, DIFFS, getReduceMotion } from "../game/save";
+import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias, getBest, setBest, getNarration, getDifficulty, DIFFS, getReduceMotion, markCleanCase } from "../game/save";
 import { SFX, startAmbience, stopSpeech, speak } from "../game/audio";
 import { addAtmosphere, addRain } from "../game/textures";
 import { paintPortrait, suspectName, temperament, Mood, Temperament } from "../game/portrait";
@@ -745,20 +745,22 @@ export class CaseRunScene extends Phaser.Scene {
 
   /** Rate the run against the solver's par: phases (a question+pin each) plus the
    * number of lies that had to fall. Records a personal best for repeatable cases. */
-  private gradeRun(): { par: number; rating: string; best: number | null } {
+  private gradeRun(): { par: number; rating: string; best: number | null; clean: boolean } {
     const order = verifyWeb(this.inq.case.web, this.inq.case.web.startEvidence).order;
     const par = Math.max(2, this.inq.case.phases.length * 2 + order.length);
     const ratio = this.moves / par;
-    const rating = ratio <= 1.12 ? "a clean break" : ratio <= 1.5 ? "workmanlike" : ratio <= 2.1 ? "the long way round" : "you got there in the end";
+    const clean = this.moves <= par; // at or under the solver's par
+    const rating = clean ? "a clean break  ✦" : ratio <= 1.5 ? "workmanlike" : ratio <= 2.1 ? "the long way round" : "you got there in the end";
     let best: number | null = null;
     if (this.mode === "daily" || this.mode === "free") {
       // daily key matches the record screen's lookup (daily-YYYY-MM-DD)
       const key = this.mode === "daily" ? `daily-${todayStamp()}` : `case-${this.seedVal}`;
       const prev = getBest(key);
       setBest(key, this.moves);
+      if (clean) markCleanCase(key);
       best = prev != null ? Math.min(prev, this.moves) : null;
     }
-    return { par, rating, best };
+    return { par, rating, best, clean };
   }
 
   private solve(): void {
