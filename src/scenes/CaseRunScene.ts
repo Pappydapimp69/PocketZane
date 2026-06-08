@@ -6,7 +6,7 @@ import { MergedInquiry, PHASE_STRIKES, MergedCase } from "../game/merged";
 import { WELLS } from "../game/mergedcase";
 import { generateMergedCase } from "../game/generateweb";
 import { dailySeed, DAILY_OPTS, optsForNight, nightSeed, randomSeed, freeOpts } from "../game/ladder";
-import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias, getBest, setBest, getNarration, getDifficulty, DIFFS } from "../game/save";
+import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias, getBest, setBest, getNarration, getDifficulty, DIFFS, getReduceMotion } from "../game/save";
 import { SFX, startAmbience, stopSpeech, speak } from "../game/audio";
 import { addAtmosphere, addRain } from "../game/textures";
 import { paintPortrait, suspectName, temperament, Mood, Temperament } from "../game/portrait";
@@ -192,7 +192,7 @@ export class CaseRunScene extends Phaser.Scene {
   /** Small involuntary life: the suspect breathes, and blinks now and then. */
   private startIdle(): void {
     const p = this.portrait;
-    if (!p) return;
+    if (!p || getReduceMotion()) return;
     this.breathe();
     this.time.addEvent({
       delay: this.temper?.blinkMs ?? 3400,
@@ -270,7 +270,7 @@ export class CaseRunScene extends Phaser.Scene {
 
   private breathe(): void {
     const p = this.portrait;
-    if (!p) return;
+    if (!p || getReduceMotion()) return;
     const base = 108 / 280; // the displaySize scaleY
     p.scaleY = base;
     this.tweens.add({ targets: p, scaleY: { from: base, to: base * 1.02 }, duration: 2600, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
@@ -461,7 +461,7 @@ export class CaseRunScene extends Phaser.Scene {
         break;
       case "strike":
         SFX.wrong();
-        this.cameras.main.shake(150, 0.004);
+        this.shake(150, 0.004);
         this.updateHud();
         if (r.failed) {
           this.setStatus("He's had enough — he won't talk this point again.", CSS.slate);
@@ -556,7 +556,7 @@ export class CaseRunScene extends Phaser.Scene {
         this.setMood(r.solved || (r.keystone && r.cascaded && r.cascaded.length) ? "broken" : "pressed");
         if (r.keystone && r.cascaded && r.cascaded.length) {
           SFX.break();
-          this.cameras.main.shake(320, 0.008);
+          this.shake(320, 0.008);
           this.flash(COLORS.crimson, 0.32);
           this.setStatus("It evaporates — there was never a floor under it. Everything leaning on it comes down at once.", CSS.crimsonBright);
         } else {
@@ -587,8 +587,12 @@ export class CaseRunScene extends Phaser.Scene {
 
   /** A brief full-screen colour wash — for the moment the floor gives out. */
   private flash(color: number, alpha: number): void {
-    const r = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, color, alpha).setDepth(95);
-    this.tweens.add({ targets: r, alpha: 0, duration: 520, ease: "Quad.easeOut", onComplete: () => r.destroy() });
+    const r = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, color, getReduceMotion() ? alpha * 0.5 : alpha).setDepth(95);
+    this.tweens.add({ targets: r, alpha: 0, duration: getReduceMotion() ? 260 : 520, ease: "Quad.easeOut", onComplete: () => r.destroy() });
+  }
+
+  private shake(duration: number, intensity: number): void {
+    if (!getReduceMotion()) this.cameras.main.shake(duration, intensity);
   }
 
   private centerToast(msg: string): void {

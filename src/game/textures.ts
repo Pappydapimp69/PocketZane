@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../dimensions";
+import { getReduceMotion } from "./save";
 
 /**
  * All art in AGAIN is generated at runtime — no image files. These build a
@@ -55,7 +56,7 @@ function makeRaindrop(scene: Phaser.Scene, key: string, w: number, h: number): v
 
 /** A sheet of rain falling across the scene — depth-sorted faint, for atmosphere. */
 export function addRain(scene: Phaser.Scene, depth = 88, quantity = 2): void {
-  if (!scene.textures.exists("raindrop")) return;
+  if (!scene.textures.exists("raindrop") || getReduceMotion()) return;
   scene.add
     .particles(0, -20, "raindrop", {
       x: { min: -20, max: GAME_WIDTH + 20 },
@@ -138,16 +139,19 @@ export function addAtmosphere(
   scene: Phaser.Scene,
   opts: { lamp?: boolean } = {},
 ): { lamp?: Phaser.GameObjects.Image } {
+  const reduced = getReduceMotion();
   if (scene.textures.exists("grain")) {
-    // Living film grain — drifts slowly so it never sits still.
+    // Living film grain — drifts slowly so it never sits still (still if motion reduced).
     const grain = scene.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, "grain").setOrigin(0).setDepth(-1).setAlpha(0.5);
-    scene.tweens.add({ targets: grain, tilePositionY: "+=220", duration: 8000, repeat: -1 });
-    scene.tweens.add({ targets: grain, alpha: { from: 0.42, to: 0.58 }, duration: 2400, yoyo: true, repeat: -1 });
+    if (!reduced) {
+      scene.tweens.add({ targets: grain, tilePositionY: "+=220", duration: 8000, repeat: -1 });
+      scene.tweens.add({ targets: grain, alpha: { from: 0.42, to: 0.58 }, duration: 2400, yoyo: true, repeat: -1 });
+    }
   }
   let lamp: Phaser.GameObjects.Image | undefined;
   if (opts.lamp && scene.textures.exists("lamp")) {
     lamp = scene.add.image(GAME_WIDTH / 2, 0, "lamp").setOrigin(0.5, 0).setDepth(-1);
-    if (scene.textures.exists("mote")) {
+    if (scene.textures.exists("mote") && !reduced) {
       // Dust turning over in the cone of light.
       scene.add
         .particles(GAME_WIDTH / 2, 24, "mote", {
