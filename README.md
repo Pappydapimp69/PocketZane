@@ -111,3 +111,6 @@ Touch, gamepad, and keyboard are all supported.
   (rattled, guarded, composed, ordinary) that tilts how readily lies slip, how
   much pressure helps, and how fast composure returns — shown as a first "read,"
   so different subjects want different approaches.
+- **v22** — a sixth case, **The Same Man**: a Ship-of-Theseus interrogation where
+  the lies are about identity itself — memory, promises, blame — and only the
+  name and the body hold still. The new finale of the arc.

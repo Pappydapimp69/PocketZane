@@ -271,4 +271,62 @@ export const CASES: Case[] = [
     resolution:
       "You spent four nights teaching strangers that the truth holds still. Then you opened your own account, and it moved like all the rest.\n\nThe time slid. The partner appeared and was gone. The latch you swore you never touched still has your hand on it. Not because you're guilty of the night — because you're guilty of the one small thing everyone in that chair is guilty of: you wanted the version where you come out clean, and you could not stop writing toward it.\n\nAn arrow travels in only one direction. You have been standing at the end of yours this whole time, calling it the beginning. The truth holds still. You are the one who keeps moving.",
   },
+
+  {
+    id: "the-same-man",
+    title: "VI. The Same Man",
+    subject: "the man who says he hasn't changed",
+    intro: "He swears he is the same person who did it — and the same who'll answer for it. Ask him what that means. Then ask again.",
+    pinsToBreak: 4,
+    strikes: 2,
+    temperament: TEMPERAMENTS.cool,
+    statements: [
+      { id: "name", text: "I have the name I was born with. That much is fixed." },
+      {
+        id: "memory",
+        variants: [
+          "I remember all of it. Nothing's been lost.",
+          "I remember most of it. The edges have gone soft.",
+          "I remember almost none of it now, if I'm honest.",
+        ],
+      },
+      {
+        id: "same",
+        variants: [
+          "I'm the same man I was at twenty.",
+          "I'm mostly the same. A few parts replaced.",
+          "I'm nothing like him. He's a stranger I used to be.",
+        ],
+      },
+      { id: "photo", text: "The body in the photograph is mine. You can match it." },
+      {
+        id: "promise",
+        variants: [
+          "I keep every promise he made.",
+          "I keep the ones I still agree with.",
+          "I'm not bound by what he swore. That was him.",
+        ],
+        evidence: "The vow on file is in your hand, and unkept.",
+      },
+      {
+        id: "matter",
+        variants: [
+          "Not a cell of me is what it was. I'm entirely new.",
+          "Some of the original remains, surely.",
+          "I am exactly the matter I always was.",
+        ],
+      },
+      {
+        id: "blame",
+        variants: [
+          "What he did, I did. I'll answer for it.",
+          "What he did was his. I only inherited the name.",
+          "I don't know everything he did. I wasn't always there.",
+        ],
+      },
+      { id: "ask", text: "Ask me again. The question doesn't frighten me." },
+    ],
+    resolution:
+      "The name held. The body held. Everything that would actually make him the same man did not.\n\nThe memory thinned and thickened. The promises were his, then optional, then someone else's. The blame he reached for and set back down. A self that has to keep re-deciding which of its parts still count is not a fixed thing — it's a negotiation, conducted in real time, in front of you.\n\nAn arrow travels in only one direction. The man who fired it is not the man who watches it land. He has been using the single word 'I' to pretend the two are one — and the word, like the rest of it, would not hold still.",
+  },
 ];
