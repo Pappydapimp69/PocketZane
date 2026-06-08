@@ -22,6 +22,27 @@ export function suspectName(seed: number): string {
   return `${NAMES_FIRST[Math.floor(r() * NAMES_FIRST.length)]} ${NAMES_LAST[Math.floor(r() * NAMES_LAST.length)]}`;
 }
 
+export interface Temperament {
+  name: string;
+  tell: string;
+  blinkMs: number; // how restless the idle is
+}
+const TEMPERAMENTS: Temperament[] = [
+  { name: "nervous", tell: "His hands won't keep still.", blinkMs: 2100 },
+  { name: "a stonewaller", tell: "He gives you nothing you don't take.", blinkMs: 5200 },
+  { name: "smooth", tell: "He smiles like he's done this before.", blinkMs: 3600 },
+  { name: "weary", tell: "He looks like he hasn't slept in days.", blinkMs: 4200 },
+  { name: "belligerent", tell: "He resents every question you put to him.", blinkMs: 3000 },
+  { name: "rattled", tell: "There's sweat at his collar before you start.", blinkMs: 1800 },
+];
+
+/** A stable manner for the suspect — flavor in the file, and a restlessness the
+ * idle picks up (the nervous blink more, the stonewaller barely at all). */
+export function temperament(seed: number): Temperament {
+  const r = mulberry32((seed ^ 0x27d4eb2f) >>> 0);
+  return TEMPERAMENTS[Math.floor(r() * TEMPERAMENTS.length)];
+}
+
 interface Face {
   skin: string;
   grey: number; // 0 dark hair .. 1 grey (age)

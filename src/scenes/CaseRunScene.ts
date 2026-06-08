@@ -9,7 +9,7 @@ import { dailySeed, DAILY_OPTS, optsForNight, nightSeed, randomSeed, freeOpts } 
 import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias, getBest, setBest } from "../game/save";
 import { SFX, startAmbience, stopSpeech } from "../game/audio";
 import { addAtmosphere, addRain } from "../game/textures";
-import { paintPortrait, suspectName, Mood } from "../game/portrait";
+import { paintPortrait, suspectName, temperament, Mood, Temperament } from "../game/portrait";
 import { paintScene } from "../game/scenery";
 import { verifyWeb } from "../game/verify";
 import { todayStamp } from "../game/rng";
@@ -42,6 +42,7 @@ export class CaseRunScene extends Phaser.Scene {
   private mood: Mood = "neutral";
   private suspect = "";
   private role = "";
+  private temper!: Temperament;
 
   // phase render
   private clauses: ClauseLayout[] = [];
@@ -141,6 +142,7 @@ export class CaseRunScene extends Phaser.Scene {
       this.suspect = c.subject;
       this.role = "";
     }
+    this.temper = temperament(this.seedVal);
     paintPortrait(this, "suspect", this.seedVal, "neutral");
     paintScene(this, "crime", this.seedVal);
     this.mood = "neutral";
@@ -193,7 +195,7 @@ export class CaseRunScene extends Phaser.Scene {
     if (!p) return;
     this.breathe();
     this.time.addEvent({
-      delay: 3400,
+      delay: this.temper?.blinkMs ?? 3400,
       loop: true,
       callback: () => {
         if (this.busy || this.mood !== "neutral") return;
@@ -652,9 +654,10 @@ export class CaseRunScene extends Phaser.Scene {
       o.add(fr2);
       o.add(this.add.image(68, mugY, "suspect").setDisplaySize(74, 94));
     }
-    o.add(this.add.text(122, mugY - 46, this.suspect, { fontFamily: DISPLAY, fontSize: "18px", color: CSS.ink }).setOrigin(0, 0));
-    o.add(this.add.text(122, mugY - 22, this.role || c.subject, { fontFamily: MONO, fontSize: "11px", color: CSS.amber }).setOrigin(0, 0));
-    o.add(this.add.text(122, mugY - 2, `${c.brief.where}\n${c.brief.when}`, { fontFamily: MONO, fontSize: "10px", color: CSS.faint, lineSpacing: 3, wordWrap: { width: 330 } }).setOrigin(0, 0));
+    o.add(this.add.text(122, mugY - 48, this.suspect, { fontFamily: DISPLAY, fontSize: "18px", color: CSS.ink }).setOrigin(0, 0));
+    o.add(this.add.text(122, mugY - 24, this.role || c.subject, { fontFamily: MONO, fontSize: "11px", color: CSS.amber }).setOrigin(0, 0));
+    o.add(this.add.text(122, mugY - 6, this.temper.tell, { fontFamily: BODY, fontSize: "12px", color: CSS.muted, fontStyle: "italic", wordWrap: { width: 330 } }).setOrigin(0, 0));
+    o.add(this.add.text(122, mugY + 30, `${c.brief.where}  ${c.brief.when}`, { fontFamily: MONO, fontSize: "10px", color: CSS.faint, lineSpacing: 3, wordWrap: { width: 330 } }).setOrigin(0, 0));
 
     const body = `${c.brief.what}\n\n${c.brief.why}\n\n— ${c.brief.goal}`;
     o.add(this.add.text(GAME_WIDTH / 2, 392, body, { fontFamily: BODY, fontSize: "14px", color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
