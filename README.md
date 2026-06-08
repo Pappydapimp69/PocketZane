@@ -96,3 +96,6 @@ Touch, gamepad, and keyboard are all supported.
   alternate turns on one shared subject; pins are credited to whoever lands them,
   and the most pins when the story breaks wins (accuse the truth and you may hand
   it to your rival).
+- **v17** — **multiplayer: Partners (co-op)** — the second option: two heads
+  against one deliberately hard procedural subject, breaking it together, sharing
+  the win or the walk.

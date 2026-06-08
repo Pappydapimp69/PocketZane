@@ -19,7 +19,7 @@ const LIST_TOP = 150;
 export class CaseScene extends Phaser.Scene {
   private game_!: Interrogation;
   private caseIndex = 0;
-  private mode: "story" | "endless" | "versus" = "story";
+  private mode: "story" | "endless" | "versus" | "coop" = "story";
   private depth = 0;
   private activePlayer = 0;
   private scores = [0, 0];
@@ -44,7 +44,7 @@ export class CaseScene extends Phaser.Scene {
     super("CaseScene");
   }
 
-  init(data: { caseIndex?: number; mode?: "story" | "endless" | "versus"; depth?: number }): void {
+  init(data: { caseIndex?: number; mode?: "story" | "endless" | "versus" | "coop"; depth?: number }): void {
     this.mode = data?.mode ?? "story";
     this.caseIndex = data?.caseIndex ?? 0;
     this.depth = data?.depth ?? 0;
@@ -68,7 +68,13 @@ export class CaseScene extends Phaser.Scene {
     this.prevHigh = false;
 
     const theCase =
-      this.mode === "endless" ? generateCase(this.depth) : this.mode === "versus" ? generateCase(2) : CASES[this.caseIndex];
+      this.mode === "endless"
+        ? generateCase(this.depth)
+        : this.mode === "versus"
+          ? generateCase(2)
+          : this.mode === "coop"
+            ? generateCase(4) // a hard one, meant for two heads
+            : CASES[this.caseIndex];
     this.game_ = new Interrogation(theCase);
     this.ledger = [];
     this.selected = null;
@@ -183,7 +189,7 @@ export class CaseScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(GAME_WIDTH / 2, 92, this.mode === "versus" ? "Two detectives, one room. Take turns. Most pins when it breaks wins." : c.intro, {
+      .text(GAME_WIDTH / 2, 92, this.mode === "versus" ? "Two detectives, one room. Take turns. Most pins when it breaks wins." : this.mode === "coop" ? "Partners. One hard subject, two heads. Break it together." : c.intro, {
         fontFamily: BODY,
         fontSize: "13px",
         color: CSS.muted,
@@ -539,6 +545,18 @@ export class CaseScene extends Phaser.Scene {
       return;
     }
 
+    if (this.mode === "coop") {
+      this.showOverlay({
+        heading: "you break it",
+        headColor: CSS.amber,
+        stats: `together  ·  told again ${g.telling}×  ·  ${g.strikesUsed} strike${g.strikesUsed === 1 ? "" : "s"}`,
+        ledger,
+        body: g.case.resolution,
+        button: { label: "ANOTHER, TOGETHER", onClick: () => this.scene.restart({ mode: "coop" }) },
+      });
+      return;
+    }
+
     if (this.mode === "endless") {
       const night = this.depth + 1;
       markDeepest(night);
@@ -589,6 +607,15 @@ export class CaseScene extends Phaser.Scene {
         stats: `you broke ${this.depth} night${this.depth === 1 ? "" : "s"}  ·  deepest ${getDeepest()}\nnight ${reached} kept its shape`,
         body: "They stand, and leave. The chair is cold before the door closes.\n\nYou accused the truth one too many times, and the night that would have held went slack in your hands.",
         button: { label: "FROM THE FIRST NIGHT", onClick: () => this.scene.start("TitleScene") },
+      });
+      return;
+    }
+    if (this.mode === "coop") {
+      this.showOverlay({
+        heading: "they walk",
+        headColor: CSS.slate,
+        body: "They stand, and leave. Between the two of you, the truth got accused one time too many, and the night went slack.",
+        button: { label: "AGAIN, TOGETHER", onClick: () => this.scene.restart({ mode: "coop" }) },
       });
       return;
     }

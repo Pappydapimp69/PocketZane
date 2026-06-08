@@ -62,28 +62,15 @@ export class TitleScene extends Phaser.Scene {
       startAmbience();
       this.scene.start("CaseScene", { mode: "versus" });
     };
+    const coop = () => {
+      startAmbience();
+      this.scene.start("CaseScene", { mode: "coop" });
+    };
 
-    new Button(this, GAME_WIDTH / 2, 560, {
-      w: 240,
-      h: 50,
-      label: "SIT DOWN",
-      accent: COLORS.crimson,
-      onClick: begin,
-    });
-    new Button(this, GAME_WIDTH / 2, 618, {
-      w: 240,
-      h: 48,
-      label: "AN ENDLESS NIGHT",
-      accent: COLORS.slate,
-      onClick: endless,
-    });
-    new Button(this, GAME_WIDTH / 2, 672, {
-      w: 240,
-      h: 48,
-      label: "TWO DETECTIVES",
-      accent: COLORS.amber,
-      onClick: versus,
-    });
+    new Button(this, GAME_WIDTH / 2, 540, { w: 240, h: 46, label: "SIT DOWN", accent: COLORS.crimson, onClick: begin });
+    new Button(this, GAME_WIDTH / 2, 592, { w: 240, h: 46, label: "AN ENDLESS NIGHT", accent: COLORS.slate, onClick: endless });
+    new Button(this, GAME_WIDTH / 2, 644, { w: 240, h: 46, label: "TWO DETECTIVES — VERSUS", accent: COLORS.amber, onClick: versus });
+    new Button(this, GAME_WIDTH / 2, 696, { w: 240, h: 46, label: "PARTNERS — CO-OP", accent: COLORS.amber, onClick: coop });
 
     // Gamepad / keyboard: A / Enter takes the story; Space / X takes the endless night.
     this.input.gamepad?.once("down", begin);
@@ -91,7 +78,7 @@ export class TitleScene extends Phaser.Scene {
     this.input.keyboard?.once("keydown-SPACE", endless);
 
     this.add
-      .text(GAME_WIDTH / 2, 716, "touch · gamepad · keyboard", {
+      .text(GAME_WIDTH / 2, 738, "touch · gamepad · keyboard", {
         fontFamily: MONO,
         fontSize: "10px",
         color: CSS.faint,
@@ -105,7 +92,7 @@ export class TitleScene extends Phaser.Scene {
     if (deepest > 0) lines.push(`deepest night: ${deepest}`);
     if (lines.length > 0) {
       this.add
-        .text(GAME_WIDTH / 2, 742, lines.join("      "), { fontFamily: MONO, fontSize: "11px", color: CSS.amber })
+        .text(GAME_WIDTH / 2, 762, lines.join("      "), { fontFamily: MONO, fontSize: "11px", color: CSS.amber })
         .setOrigin(0.5);
     }
 
