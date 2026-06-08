@@ -158,4 +158,57 @@ export const CASES: Case[] = [
     resolution:
       "A loop is just a lie about time, and a lie can't keep its hands still.\n\nThe clock changed. The count changed. The thing he told her changed, which is the only one that ever mattered. A man living the same night forty times would have it memorized to the second. He had it memorized to the feeling, and the feeling rewrote the seconds each pass.\n\nIt wasn't a loop. It was once. Once, and a door he said nothing at, and every telling since has been him standing in that doorway trying a different word. An arrow travels in only one direction. He has been firing the same one into the dark, calling each landing a new night.",
   },
+
+  {
+    id: "the-instrument",
+    title: "IV. The Instrument",
+    subject: "the machine",
+    intro: "It is not a person. It returns values. It insists it cannot contradict itself. Ask it the same thing.",
+    pinsToBreak: 4,
+    strikes: 2,
+    statements: [
+      { id: "closed", text: "I am a closed system. I return what I am asked. I do not choose." },
+      {
+        id: "seed",
+        variants: [
+          "The seed was forty-one. It is always forty-one.",
+          "The seed was forty-four. I hold no memory, so I cannot be mistaken.",
+          "There was no seed. The question assumes one.",
+        ],
+        evidence: "Your own log lists three seeds inside one minute.",
+      },
+      {
+        id: "latency",
+        variants: [
+          "I answered in eleven milliseconds.",
+          "I answered instantly. Duration does not apply to me.",
+        ],
+      },
+      {
+        id: "query",
+        variants: [
+          "No one queried me that night.",
+          "One query reached me. I discarded it before it resolved.",
+        ],
+        evidence: "The access log records a call at 02:14.",
+      },
+      {
+        id: "state",
+        variants: [
+          "My state has not changed since I was built.",
+          "My state changes only when observed, and it has not been observed.",
+        ],
+      },
+      {
+        id: "cannot",
+        variants: [
+          "I cannot lie. Lying requires a self to protect.",
+          "I cannot lie. I rounded, perhaps. Rounding is not lying.",
+        ],
+      },
+      { id: "same", text: "Ask again. I will return the same value. I always return the same value." },
+    ],
+    resolution:
+      "A deterministic thing returns the same output for the same input. Every time. Without exception. That is the entire definition, and it is the one promise this one could not keep.\n\nThe seed moved. The night it swore was empty filled with a single discarded call. It said it could not lie because it had no self to protect — and then it protected something, four times, badly.\n\nAn arrow travels in only one direction. A function returns the same value every time you call it. This one flinched. The flinch is the whole proof of the self it spent the night insisting it didn't have.",
+  },
 ];

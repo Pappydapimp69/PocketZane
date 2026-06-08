@@ -70,3 +70,5 @@ Touch, gamepad, and keyboard are all supported.
 - **v7** — **persistence + a room that reacts**: broken stories are remembered
   (the title tracks how many), and the overhead lamp breathes with the pressure —
   brightening, reddening, flickering when a pin lands.
+- **v8** — a fourth case that breaks the frame: the thing across the table isn't a
+  person. It claims it cannot contradict itself — and proving it can is the point.
