@@ -6,7 +6,7 @@ import { MergedInquiry, PHASE_STRIKES, MergedCase } from "../game/merged";
 import { WELLS } from "../game/mergedcase";
 import { generateMergedCase } from "../game/generateweb";
 import { dailySeed, DAILY_OPTS, optsForNight, nightSeed, randomSeed, freeOpts } from "../game/ladder";
-import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias } from "../game/save";
+import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias, getBest, setBest } from "../game/save";
 import { SFX, startAmbience, stopSpeech } from "../game/audio";
 import { addAtmosphere, addRain } from "../game/textures";
 import { paintPortrait, suspectName, Mood } from "../game/portrait";
@@ -712,6 +712,23 @@ export class CaseRunScene extends Phaser.Scene {
     o.add(new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 72, { w: 240, h: 50, label: btnLabel, accent: COLORS.crimson, onClick: onGo }));
   }
 
+  /** Rate the run against the solver's par: phases (a question+pin each) plus the
+   * number of lies that had to fall. Records a personal best for repeatable cases. */
+  private gradeRun(): { par: number; rating: string; best: number | null } {
+    const order = verifyWeb(this.inq.case.web, this.inq.case.web.startEvidence).order;
+    const par = Math.max(2, this.inq.case.phases.length * 2 + order.length);
+    const ratio = this.moves / par;
+    const rating = ratio <= 1.12 ? "a clean break" : ratio <= 1.5 ? "workmanlike" : ratio <= 2.1 ? "the long way round" : "you got there in the end";
+    let best: number | null = null;
+    if (this.mode === "daily" || this.mode === "free") {
+      const key = this.mode === "daily" ? `daily-${this.seedVal}` : `case-${this.seedVal}`;
+      const prev = getBest(key);
+      setBest(key, this.moves);
+      best = prev != null ? Math.min(prev, this.moves) : null;
+    }
+    return { par, rating, best };
+  }
+
   private solve(): void {
     if (this.vsMode === "versus") return this.versusEnd();
     if (this.vsMode === "coop") return this.coopEnd();
@@ -737,8 +754,13 @@ export class CaseRunScene extends Phaser.Scene {
       reso.add(this.add.text(GAME_WIDTH / 2, 244, this.suspect, { fontFamily: DISPLAY, fontSize: "15px", color: CSS.ink }).setOrigin(0.5));
     }
     reso.add(this.add.text(GAME_WIDTH / 2, 272, this.inq.case.resolution, { fontFamily: BODY, fontSize: "14px", color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
+
+    // Efficiency grade: the player's moves against the solver's par.
+    const grade = this.gradeRun();
+    reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 176, `broke it in ${this.moves}  ·  par ${grade.par}${grade.best != null ? `  ·  best ${grade.best}` : ""}`, { fontFamily: MONO, fontSize: "12px", color: CSS.ink }).setOrigin(0.5));
+    reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 158, grade.rating, { fontFamily: DISPLAY, fontSize: "15px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
     if (this.mode === "endless") {
-      reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 150, `night ${this.night} closed  ·  rank ${rankFor(getTotalBreaks())}`, { fontFamily: MONO, fontSize: "11px", color: CSS.amber }).setOrigin(0.5));
+      reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 138, `night ${this.night} closed  ·  rank ${rankFor(getTotalBreaks())}`, { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(0.5));
     }
     const diagram = this.buildDiagram().setVisible(false);
     o.add([reso, diagram]);
