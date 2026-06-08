@@ -5,7 +5,11 @@ import { Button } from "../ui";
 import { addAtmosphere, addRain } from "../game/textures";
 import { startAmbience, isMuted, toggleMute, SFX, stopSpeech } from "../game/audio";
 import { getReduceMotion, toggleReduceMotion, getNarration, toggleNarration, getDifficulty, cycleDifficulty, DIFFS, getWeirdness, cycleWeirdness, WEIRDS } from "../game/save";
-import { getDeepest, hasSeenIntro, markSeenIntro, getTotalBreaks, rankFor } from "../game/save";
+import { getDeepest, hasSeenIntro, markSeenIntro, getTotalBreaks, rankFor, getBest } from "../game/save";
+import { generateMergedCase } from "../game/generateweb";
+import { dailySeed, DAILY_OPTS } from "../game/ladder";
+import { verifyWeb } from "../game/verify";
+import { todayStamp } from "../game/rng";
 import { PAD } from "../input";
 
 export class TitleScene extends Phaser.Scene {
@@ -60,14 +64,26 @@ export class TitleScene extends Phaser.Scene {
       this.scene.start("CaseRun", { mode: "daily" });
     };
     const dailyText = this.add
-      .text(GAME_WIDTH / 2, 360, "» today's subject «", { fontFamily: MONO, fontSize: "12px", color: CSS.slate })
+      .text(GAME_WIDTH / 2, 358, "» today's subject «", { fontFamily: MONO, fontSize: "12px", color: CSS.slate })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
     dailyText.on("pointerup", daily);
     this.input.keyboard?.on("keydown-T", daily);
 
+    // Today's par-chase status, so the daily reads as an optimization target.
+    try {
+      const seed = dailySeed();
+      const c = generateMergedCase(seed, DAILY_OPTS);
+      const par = Math.max(2, c.phases.length * 2 + verifyWeb(c.web, c.web.startEvidence).order.length);
+      const best = getBest(`daily-${todayStamp()}`);
+      const status = best != null ? `solved in ${best}  ·  par ${par}${best <= par ? "  ✦" : ""}` : `unbroken  ·  par ${par}`;
+      this.add.text(GAME_WIDTH / 2, 374, status, { fontFamily: MONO, fontSize: "10px", color: best != null && best <= par ? CSS.amber : CSS.faint }).setOrigin(0.5);
+    } catch {
+      /* generation guard — skip the status line */
+    }
+
     const record = this.add
-      .text(GAME_WIDTH / 2, 384, "» the record «", { fontFamily: MONO, fontSize: "11px", color: CSS.faint })
+      .text(GAME_WIDTH / 2, 392, "» the record «", { fontFamily: MONO, fontSize: "11px", color: CSS.faint })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
     record.on("pointerup", () => this.scene.start("Stats"));
