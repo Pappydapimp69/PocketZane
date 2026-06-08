@@ -553,12 +553,16 @@ export class CaseRunScene extends Phaser.Scene {
         this.setMood(r.solved || (r.keystone && r.cascaded && r.cascaded.length) ? "broken" : "pressed");
         if (r.keystone && r.cascaded && r.cascaded.length) {
           SFX.break();
-          this.cameras.main.shake(220, 0.005);
+          this.cameras.main.shake(320, 0.008);
+          this.flash(COLORS.crimson, 0.32);
           this.setStatus("It evaporates — there was never a floor under it. Everything leaning on it comes down at once.", CSS.crimsonBright);
         } else {
           this.setStatus(r.solved ? "It caves — and the whole story with it." : `${this.inq.segmentName(r.target)} collapses. Whatever it covered is exposed now — press it.`, CSS.crimsonBright);
         }
-        if (r.solved) this.time.delayedCall(1100, () => this.solve());
+        if (r.solved) {
+          this.flash(COLORS.amber, 0.22);
+          this.time.delayedCall(1100, () => this.solve());
+        }
         break;
       }
       case "already":
@@ -572,6 +576,12 @@ export class CaseRunScene extends Phaser.Scene {
   }
 
   // ---- overlays --------------------------------------------------------------
+
+  /** A brief full-screen colour wash — for the moment the floor gives out. */
+  private flash(color: number, alpha: number): void {
+    const r = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, color, alpha).setDepth(95);
+    this.tweens.add({ targets: r, alpha: 0, duration: 520, ease: "Quad.easeOut", onComplete: () => r.destroy() });
+  }
 
   private centerToast(msg: string): void {
     const t = this.add.text(GAME_WIDTH / 2, 700, msg, { fontFamily: MONO, fontSize: "12px", color: CSS.amber, align: "center", wordWrap: { width: 440 } }).setOrigin(0.5).setDepth(60);
