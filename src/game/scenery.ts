@@ -133,8 +133,39 @@ export function drawScene(ctx: CanvasRenderingContext2D, W: number, H: number, s
   ctx.stroke();
   ctx.restore();
 
+  // ---- a street lamp on the far side, throwing a cold cone ----
+  const lampX = W / 2 - side * W * 0.42;
+  const lampTop = H * 0.18;
+  ctx.strokeStyle = "rgba(8,8,10,0.95)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(lampX, H);
+  ctx.lineTo(lampX, lampTop + 6);
+  ctx.stroke();
+  ctx.fillStyle = "rgba(190,205,225,0.9)";
+  ctx.beginPath();
+  ctx.arc(lampX, lampTop, 4, 0, Math.PI * 2);
+  ctx.fill();
+  const cone = ctx.createRadialGradient(lampX, lampTop, 2, lampX, lampTop, 120);
+  cone.addColorStop(0, "rgba(180,200,230,0.20)");
+  cone.addColorStop(1, "rgba(180,200,230,0)");
+  ctx.fillStyle = cone;
+  ctx.beginPath();
+  ctx.moveTo(lampX, lampTop);
+  ctx.lineTo(lampX - 56, H);
+  ctx.lineTo(lampX + 56, H);
+  ctx.closePath();
+  ctx.fill();
+
+  // ---- doorway reflection smeared in the wet ground ----
+  const refl = ctx.createLinearGradient(doorX, botY, doorX, H);
+  refl.addColorStop(0, "rgba(232,190,110,0.14)");
+  refl.addColorStop(1, "rgba(232,190,110,0)");
+  ctx.fillStyle = refl;
+  ctx.fillRect(doorX - 6, botY, doorW + 12, H - botY);
+
   // ---- rain ----
-  const drops = 120 + Math.floor(rng() * 120);
+  const drops = 150 + Math.floor(rng() * 140);
   ctx.strokeStyle = "rgba(200,210,225,0.16)";
   ctx.lineWidth = 1;
   for (let i = 0; i < drops; i++) {
