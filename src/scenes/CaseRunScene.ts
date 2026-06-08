@@ -9,13 +9,15 @@ import { dailySeed, DAILY_OPTS, optsForNight, nightSeed, randomSeed, freeOpts } 
 import { incBreaks, markDeepest, rankFor, getTotalBreaks } from "../game/save";
 import { SFX, startAmbience, stopSpeech } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
+import { paintPortrait, suspectName, Mood } from "../game/portrait";
+import { paintScene } from "../game/scenery";
 import { PAD } from "../input";
 
 const LEFT = 30;
 const WRAP = GAME_WIDTH - 60;
 const FONT = 16;
 const LINE_H = 28;
-const PTOP = 190;
+const PTOP = 250;
 
 interface ClauseLayout {
   id: string;
@@ -33,6 +35,11 @@ export class CaseRunScene extends Phaser.Scene {
   private status!: Phaser.GameObjects.Text;
   private btnL!: Button;
   private btnR!: Button;
+  private portrait?: Phaser.GameObjects.Image;
+  private portraitBase = { x: 60, y: 96 };
+  private mood: Mood = "neutral";
+  private suspect = "";
+  private role = "";
 
   // phase render
   private clauses: ClauseLayout[] = [];
@@ -90,18 +97,48 @@ export class CaseRunScene extends Phaser.Scene {
     this.busy = false;
 
     const c = this.inq.case;
-    this.add.text(GAME_WIDTH / 2, 30, "AGAIN", { fontFamily: DISPLAY, fontSize: "22px", color: CSS.ink }).setOrigin(0.5).setLetterSpacing(6);
+    // The case may already name its subject ("Name — role"); a generated one gives
+    // only a role ("the night porter"), so we supply a seeded name to go with it.
+    if (c.subject.includes("—")) {
+      const [n, r] = c.subject.split("—");
+      this.suspect = n.trim();
+      this.role = r.trim();
+    } else if (/^the\b/i.test(c.subject)) {
+      this.suspect = suspectName(this.seedVal);
+      this.role = c.subject;
+    } else {
+      this.suspect = c.subject;
+      this.role = "";
+    }
+    paintPortrait(this, "suspect", this.seedVal, "neutral");
+    paintScene(this, "crime", this.seedVal);
+    this.mood = "neutral";
+
     this.add.text(14, 14, "← leave", { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(0, 0).setInteractive({ useHandCursor: true }).on("pointerup", () => this.scene.start("TitleScene"));
     this.add.text(GAME_WIDTH - 14, 14, "the file  (Y)", { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(1, 0).setInteractive({ useHandCursor: true }).on("pointerup", () => this.showFile(false));
-    const tag = this.mode === "daily" ? "today's subject" : this.mode === "endless" ? `night ${this.night}` : "";
-    if (tag) this.add.text(GAME_WIDTH / 2, 44, tag, { fontFamily: MONO, fontSize: "10px", color: CSS.faint }).setOrigin(0.5);
-    this.add.text(GAME_WIDTH / 2, 58, c.title, { fontFamily: DISPLAY, fontSize: "14px", color: CSS.muted, fontStyle: "italic" }).setOrigin(0.5);
-    this.title = this.add.text(GAME_WIDTH / 2, 86, "", { fontFamily: DISPLAY, fontSize: "18px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5);
-    this.hud = this.add.text(GAME_WIDTH / 2, 112, "", { fontFamily: MONO, fontSize: "12px", color: CSS.faint }).setOrigin(0.5);
-    this.prompt = this.add.text(GAME_WIDTH / 2, 144, "", { fontFamily: BODY, fontSize: "13px", color: CSS.muted, align: "center", wordWrap: { width: 430 } }).setOrigin(0.5);
+
+    // Character-profile header: the suspect's photo under the lamp, his particulars beside it.
+    const px = this.portraitBase.x;
+    const py = this.portraitBase.y;
+    const frame = this.add.graphics().setDepth(5);
+    frame.fillStyle(0x000000, 0.55);
+    frame.fillRoundedRect(px - 46, py - 58, 92, 116, 4);
+    frame.lineStyle(1.5, COLORS.panelEdge, 0.9);
+    frame.strokeRoundedRect(px - 46, py - 58, 92, 116, 4);
+    this.portrait = this.add.image(px, py, "suspect").setDisplaySize(84, 108).setDepth(6);
+
+    const ix = 120;
+    const tag = this.mode === "daily" ? "today's subject" : this.mode === "endless" ? `night ${this.night}` : "the subject";
+    this.add.text(ix, 48, this.suspect, { fontFamily: DISPLAY, fontSize: "19px", color: CSS.ink }).setOrigin(0, 0);
+    this.add.text(ix, 76, this.role ? `${tag}  ·  ${this.role}` : tag, { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(0, 0);
+    this.add.text(ix, 94, c.title, { fontFamily: DISPLAY, fontSize: "13px", color: CSS.muted, fontStyle: "italic" }).setOrigin(0, 0);
+    this.hud = this.add.text(ix, 122, "", { fontFamily: MONO, fontSize: "12px", color: CSS.faint }).setOrigin(0, 0);
+
     const rule = this.add.graphics();
     rule.fillStyle(COLORS.panelEdge, 0.6);
-    rule.fillRect(40, 170, GAME_WIDTH - 80, 1);
+    rule.fillRect(40, 160, GAME_WIDTH - 80, 1);
+    this.title = this.add.text(GAME_WIDTH / 2, 186, "", { fontFamily: DISPLAY, fontSize: "18px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5);
+    this.prompt = this.add.text(GAME_WIDTH / 2, 214, "", { fontFamily: BODY, fontSize: "13px", color: CSS.muted, align: "center", wordWrap: { width: 430 } }).setOrigin(0.5);
 
     this.status = this.add.text(GAME_WIDTH / 2, 748, "", { fontFamily: BODY, fontSize: "14px", color: CSS.muted, fontStyle: "italic", align: "center", wordWrap: { width: 444 } }).setOrigin(0.5);
     this.btnL = new Button(this, 116, 810, { w: 200, h: 50, label: "", fontSize: 13, accent: COLORS.slate, onClick: () => this.actL() });
@@ -132,8 +169,30 @@ export class CaseRunScene extends Phaser.Scene {
       this.btnR.setLabel("PIN  (X)");
       this.renderPhase();
     }
+    this.setMood("neutral");
     this.updateHud();
     this.setStatus("");
+  }
+
+  /** Drive the portrait's expression and posture from the interrogation. */
+  private setMood(m: Mood): void {
+    if (m === this.mood) return;
+    this.mood = m;
+    paintPortrait(this, "suspect", this.seedVal, m);
+    const p = this.portrait;
+    if (!p) return;
+    this.tweens.killTweensOf(p);
+    const b = this.portraitBase;
+    if (m === "evasive") {
+      this.tweens.add({ targets: p, x: b.x - 5, y: b.y, angle: -4, alpha: 1, duration: 260, ease: "Sine.easeOut" });
+    } else if (m === "pressed") {
+      p.setPosition(b.x, b.y).setAngle(0).setAlpha(1);
+      this.tweens.add({ targets: p, x: { from: b.x - 3, to: b.x + 3 }, duration: 55, yoyo: true, repeat: 5, onComplete: () => p.setX(b.x) });
+    } else if (m === "broken") {
+      this.tweens.add({ targets: p, x: b.x, y: b.y + 7, angle: 4, alpha: 0.9, duration: 440, ease: "Sine.easeOut" });
+    } else {
+      this.tweens.add({ targets: p, x: b.x, y: b.y, angle: 0, alpha: 1, duration: 300, ease: "Sine.easeOut" });
+    }
   }
 
   private updateHud(): void {
@@ -284,9 +343,11 @@ export class CaseRunScene extends Phaser.Scene {
     if (this.inq.question(this.selected).shifted) {
       SFX.flicker();
       this.renderPhase();
+      this.setMood("evasive");
       this.setStatus("Something in it moves.", CSS.amber);
     } else {
       SFX.again();
+      this.setMood("neutral");
       this.setStatus("He says it the same way. Unmoved.", CSS.muted);
     }
   }
@@ -303,6 +364,7 @@ export class CaseRunScene extends Phaser.Scene {
         SFX.pin();
         this.renderPhase();
         this.updateHud();
+        this.setMood("pressed");
         this.setStatus("Caught. That's a lead.", CSS.crimsonBright);
         this.centerToast("New lead:  " + this.inq.leadLabel(r.leadId));
         if (r.phaseDone) this.time.delayedCall(1300, () => this.phaseBeat(true));
@@ -345,7 +407,7 @@ export class CaseRunScene extends Phaser.Scene {
     this.blocks = [];
     const views = this.inq.segments();
     const broken = new Set(views.filter((v) => v.broken).map((v) => v.id));
-    let y = 192;
+    let y = 250;
     for (const s of views) {
       const label = this.add.text(LEFT, y, `「 ${s.name}${s.key ? " ✦" : ""} 」`, { fontFamily: MONO, fontSize: "11px", color: s.broken ? CSS.faint : CSS.muted }).setDepth(6);
       this.blocks.push(label);
@@ -388,6 +450,7 @@ export class CaseRunScene extends Phaser.Scene {
         SFX.flicker();
         this.renderWeb();
         this.updateHud();
+        this.setMood("evasive");
         const via = this.inq.segmentName(r.via);
         const tgt = this.inq.segmentName(r.target);
         this.setStatus(`He slips it. ${tgt} hides behind ${via} — so take ${via} apart first.`, CSS.amber);
@@ -398,6 +461,7 @@ export class CaseRunScene extends Phaser.Scene {
         SFX.pin();
         this.renderWeb();
         this.updateHud();
+        this.setMood(r.solved || (r.keystone && r.cascaded && r.cascaded.length) ? "broken" : "pressed");
         if (r.keystone && r.cascaded && r.cascaded.length) {
           SFX.break();
           this.cameras.main.shake(220, 0.005);
@@ -476,21 +540,49 @@ export class CaseRunScene extends Phaser.Scene {
     const c = this.inq.case;
     this.busy = true;
     const o = this.add.container(0, 0).setDepth(120);
-    o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.96));
-    if (this.textures.exists("vignette")) o.add(this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, "vignette"));
-    o.add(this.add.text(GAME_WIDTH / 2, 70, "the file", { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
-    const body = `${c.brief.what}\n\n${c.brief.where}  ${c.brief.when}\n\n${c.brief.why}\n\n— ${c.brief.goal}`;
-    o.add(this.add.text(GAME_WIDTH / 2, 110, body, { fontFamily: BODY, fontSize: "15px", color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
+    o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 1));
+    o.add(this.add.text(GAME_WIDTH / 2, 38, "the file", { fontFamily: DISPLAY, fontSize: "24px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
+
+    // the scene-of-the-fall photograph, clipped in a paper frame
+    if (this.textures.exists("crime")) {
+      const cw = GAME_WIDTH - 48;
+      const ch = (cw / 440) * 210;
+      const cyTop = 64;
+      const fr = this.add.graphics();
+      fr.lineStyle(2, COLORS.panelEdge, 0.9);
+      fr.strokeRect(24, cyTop, cw, ch);
+      o.add(fr);
+      o.add(this.add.image(GAME_WIDTH / 2, cyTop + ch / 2, "crime").setDisplaySize(cw, ch));
+      o.add(this.add.text(GAME_WIDTH / 2, cyTop + ch - 12, "the scene, as found", { fontFamily: MONO, fontSize: "10px", color: CSS.faint }).setOrigin(0.5));
+    }
+
+    // suspect mug + particulars
+    const mugY = 318;
+    if (this.textures.exists("suspect")) {
+      const fr2 = this.add.graphics();
+      fr2.fillStyle(0x000000, 0.5);
+      fr2.fillRoundedRect(28, mugY - 50, 80, 100, 3);
+      fr2.lineStyle(1.5, COLORS.panelEdge, 0.9);
+      fr2.strokeRoundedRect(28, mugY - 50, 80, 100, 3);
+      o.add(fr2);
+      o.add(this.add.image(68, mugY, "suspect").setDisplaySize(74, 94));
+    }
+    o.add(this.add.text(122, mugY - 46, this.suspect, { fontFamily: DISPLAY, fontSize: "18px", color: CSS.ink }).setOrigin(0, 0));
+    o.add(this.add.text(122, mugY - 22, this.role || c.subject, { fontFamily: MONO, fontSize: "11px", color: CSS.amber }).setOrigin(0, 0));
+    o.add(this.add.text(122, mugY - 2, `${c.brief.where}\n${c.brief.when}`, { fontFamily: MONO, fontSize: "10px", color: CSS.faint, lineSpacing: 3, wordWrap: { width: 330 } }).setOrigin(0, 0));
+
+    const body = `${c.brief.what}\n\n${c.brief.why}\n\n— ${c.brief.goal}`;
+    o.add(this.add.text(GAME_WIDTH / 2, 392, body, { fontFamily: BODY, fontSize: "14px", color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
     const leads = this.inq.confronting ? this.inq.heldEvidence().map((e) => e.label) : [];
     const ev = this.inq.confronting && leads.length ? "leads in hand:\n" + leads.map((l) => "•  " + l).join("\n") : "";
-    if (ev) o.add(this.add.text(GAME_WIDTH / 2, 430, ev, { fontFamily: MONO, fontSize: "12px", color: CSS.muted, align: "left", wordWrap: { width: 408 }, lineSpacing: 4 }).setOrigin(0.5, 0));
+    if (ev) o.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 150, ev, { fontFamily: MONO, fontSize: "11px", color: CSS.muted, align: "left", wordWrap: { width: 408 }, lineSpacing: 4 }).setOrigin(0.5, 1));
     const close = () => {
       o.destroy();
       this.busy = false;
       this.overlayClose = null;
     };
     this.overlayClose = close;
-    o.add(new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 72, { w: 220, h: 50, label: initial ? "BEGIN  (A)" : "CLOSE  (A/Y)", accent: COLORS.crimson, onClick: close }));
+    o.add(new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 64, { w: 220, h: 50, label: initial ? "BEGIN  (A)" : "CLOSE  (A/Y)", accent: COLORS.crimson, onClick: close }));
   }
 
   /** Solving a case feeds the record: a break toward rank, plus depth in endless. */
