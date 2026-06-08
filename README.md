@@ -159,3 +159,5 @@ Touch, gamepad, and keyboard are all supported.
 - **v38** — **press feedback**: a line you've leaned on shows small instability
   pips, so PRESS has a visible effect — you can see which lines are coming loose
   before you ask again.
+- **v39** — **leave a case**: a "← leave" link (and Esc / Start) with a confirm,
+  so you're no longer locked into an interrogation until it ends.

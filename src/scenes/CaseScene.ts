@@ -120,6 +120,35 @@ export class CaseScene extends Phaser.Scene {
     kb?.on("keydown-P", () => this.onButton(PAD.X));
     kb?.on("keydown-K", () => this.onButton(PAD.Y));
     kb?.on("keydown-L", () => this.onButton(PAD.LB));
+    kb?.on("keydown-ESC", () => {
+      if (!this.busy) this.confirmLeave();
+    });
+  }
+
+  private confirmLeave(): void {
+    if (this.busy) return;
+    this.busy = true;
+    const c = this.add.container(0, 0).setDepth(130);
+    c.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.9));
+    c.add(
+      this.add
+        .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 60, "Leave this one?\nNothing here is saved.", {
+          fontFamily: BODY,
+          fontSize: "17px",
+          color: CSS.ink,
+          align: "center",
+          lineSpacing: 6,
+        })
+        .setOrigin(0.5),
+    );
+    const stay = () => {
+      c.destroy();
+      this.busy = false;
+      this.overlayAction = null;
+    };
+    this.overlayAction = stay;
+    c.add(new Button(this, GAME_WIDTH / 2 - 80, GAME_HEIGHT / 2 + 20, { w: 140, h: 48, label: "STAY", accent: COLORS.slate, onClick: stay }));
+    c.add(new Button(this, GAME_WIDTH / 2 + 80, GAME_HEIGHT / 2 + 20, { w: 140, h: 48, label: "LEAVE", accent: COLORS.crimson, onClick: () => this.scene.start("TitleScene") }));
   }
 
   /** Map a (gamepad or keyboard-aliased) button to an action. */
@@ -146,6 +175,9 @@ export class CaseScene extends Phaser.Scene {
         break;
       case PAD.LB:
         this.showLedger();
+        break;
+      case PAD.START:
+        this.confirmLeave();
         break;
       case PAD.B:
         this.clearSelection();
@@ -241,6 +273,11 @@ export class CaseScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, 34, "AGAIN", { fontFamily: DISPLAY, fontSize: "26px", color: CSS.ink })
       .setOrigin(0.5)
       .setLetterSpacing(6);
+    const leave = this.add
+      .text(14, 16, "← leave", { fontFamily: MONO, fontSize: "11px", color: CSS.faint })
+      .setOrigin(0, 0)
+      .setInteractive({ useHandCursor: true });
+    leave.on("pointerup", () => this.confirmLeave());
     this.add
       .text(GAME_WIDTH / 2, 66, `${c.title}  ·  ${c.subject}`, {
         fontFamily: DISPLAY,
