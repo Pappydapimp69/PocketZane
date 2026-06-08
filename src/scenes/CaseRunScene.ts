@@ -11,6 +11,7 @@ import { SFX, startAmbience, stopSpeech } from "../game/audio";
 import { addAtmosphere, addRain } from "../game/textures";
 import { paintPortrait, suspectName, Mood } from "../game/portrait";
 import { paintScene } from "../game/scenery";
+import { verifyWeb } from "../game/verify";
 import { PAD } from "../input";
 
 const LEFT = 30;
@@ -772,6 +773,9 @@ export class CaseRunScene extends Phaser.Scene {
     const segs = this.inq.case.web.segments;
     const evs = this.inq.case.web.evidence;
     const brokenSet = new Set(this.inq.segments().filter((s) => s.broken).map((s) => s.id));
+    // the order the lies have to fall — from the solver, for ①②③ labels
+    const order = verifyWeb(this.inq.case.web, this.inq.case.web.startEvidence).order;
+    const orderOf = new Map(order.map((id, i) => [id, i + 1]));
 
     // support edges (d props target) and per-segment "support depth"
     const supportsOf = (id: string) => evs.filter((e) => e.targets === id).flatMap((e) => e.deflectableBy);
@@ -838,14 +842,14 @@ export class CaseRunScene extends Phaser.Scene {
     // lie nodes
     for (const s of segs) {
       const p = pos.get(s.id)!;
-      this.node(c, p.x, p.y, lieW, lieH, s.name, { key: s.key, broken: brokenSet.has(s.id) });
+      this.node(c, p.x, p.y, lieW, lieH, s.name, { key: s.key, broken: brokenSet.has(s.id), order: orderOf.get(s.id) });
     }
 
-    c.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 130, "amber holds it up · crimson takes it down", { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(0.5));
+    c.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 130, "① the order they had to fall  ·  amber holds it up  ·  crimson takes it down", { fontFamily: MONO, fontSize: "10px", color: CSS.faint, align: "center", wordWrap: { width: 440 } }).setOrigin(0.5));
     return c;
   }
 
-  private node(c: Phaser.GameObjects.Container, cx: number, cy: number, w: number, h: number, name: string, opts: { evidence?: boolean; key?: boolean; broken?: boolean }): void {
+  private node(c: Phaser.GameObjects.Container, cx: number, cy: number, w: number, h: number, name: string, opts: { evidence?: boolean; key?: boolean; broken?: boolean; order?: number }): void {
     const g = this.add.graphics();
     const edge = opts.broken ? COLORS.crimson : opts.evidence ? COLORS.panelEdge : COLORS.slate;
     g.fillStyle(COLORS.panel, 1);
@@ -853,6 +857,10 @@ export class CaseRunScene extends Phaser.Scene {
     g.lineStyle(opts.broken ? 2 : 1.4, edge, opts.broken ? 0.85 : 1);
     g.strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, 7);
     c.add(g);
+    if (opts.order) {
+      const circled = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"][opts.order - 1] ?? `${opts.order}`;
+      c.add(this.add.text(cx - w / 2 + 2, cy - h / 2 - 9, circled, { fontFamily: MONO, fontSize: "15px", color: CSS.amber }).setOrigin(0.5));
+    }
     const label = `${opts.key ? "✦ " : ""}${name}`;
     const t = this.add.text(cx, cy, label, { fontFamily: opts.evidence ? MONO : BODY, fontSize: opts.evidence ? "11px" : "14px", color: opts.broken ? CSS.faint : CSS.ink, align: "center", wordWrap: { width: w - 14 } }).setOrigin(0.5);
     c.add(t);
