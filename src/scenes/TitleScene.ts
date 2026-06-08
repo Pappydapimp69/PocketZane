@@ -3,8 +3,8 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../config";
 import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere } from "../game/textures";
-import { startAmbience, isMuted, toggleMute, SFX } from "../game/audio";
-import { getReduceMotion, toggleReduceMotion } from "../game/save";
+import { startAmbience, isMuted, toggleMute, SFX, stopSpeech } from "../game/audio";
+import { getReduceMotion, toggleReduceMotion, getNarration, toggleNarration } from "../game/save";
 import { getCleared, getDeepest, hasSeenIntro, markSeenIntro, getTotalBreaks, rankFor } from "../game/save";
 import { CASES } from "../game/cases";
 import { PAD } from "../input";
@@ -15,6 +15,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    stopSpeech();
     this.cameras.main.fadeIn(500);
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
     const { lamp } = addAtmosphere(this, { lamp: true });
@@ -156,6 +157,19 @@ export class TitleScene extends Phaser.Scene {
     motion.on("pointerup", () => {
       const r = toggleReduceMotion();
       motion.setText(r ? "motion: reduced" : "motion: full");
+    });
+
+    const narr = this.add
+      .text(GAME_WIDTH - 16, 58, getNarration() ? "narration: on" : "narration: off", {
+        fontFamily: MONO,
+        fontSize: "11px",
+        color: CSS.faint,
+      })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true });
+    narr.on("pointerup", () => {
+      const n = toggleNarration();
+      narr.setText(n ? "narration: on" : "narration: off");
     });
 
     const cleared = getCleared();

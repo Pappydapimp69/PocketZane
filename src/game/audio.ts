@@ -36,6 +36,32 @@ export function isMuted(): boolean {
   return muted;
 }
 
+/**
+ * Optional spoken narration of the end-screen text, via the browser's built-in
+ * speech synthesis — no files, no network. Off by default (voices vary widely).
+ */
+export function speak(text: string): void {
+  try {
+    const s = window.speechSynthesis;
+    if (!s) return;
+    s.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/\s+/g, " ").trim());
+    u.rate = 0.86;
+    u.pitch = 0.9;
+    s.speak(u);
+  } catch {
+    /* speech unavailable — ignore */
+  }
+}
+
+export function stopSpeech(): void {
+  try {
+    window.speechSynthesis?.cancel();
+  } catch {
+    /* ignore */
+  }
+}
+
 export function toggleMute(): boolean {
   muted = !muted;
   if (master) master.gain.value = muted ? 0 : 1;

@@ -117,6 +117,26 @@ export function toggleReduceMotion(): boolean {
   return next;
 }
 
+const NARR_KEY = "again:narration";
+
+export function getNarration(): boolean {
+  try {
+    return localStorage.getItem(NARR_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function toggleNarration(): boolean {
+  const next = !getNarration();
+  try {
+    localStorage.setItem(NARR_KEY, next ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+  return next;
+}
+
 const INTRO_KEY = "again:seenIntro";
 
 export function hasSeenIntro(): boolean {

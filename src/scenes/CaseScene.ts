@@ -4,9 +4,9 @@ import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
 import { Button } from "../ui";
 import { Interrogation, LineView } from "../game/engine";
 import { CASES } from "../game/cases";
-import { SFX, startAmbience } from "../game/audio";
+import { SFX, startAmbience, speak, stopSpeech } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
-import { markCleared, getBest, setBest, markDeepest, getDeepest, incBreaks, getReduceMotion } from "../game/save";
+import { markCleared, getBest, setBest, markDeepest, getDeepest, incBreaks, getReduceMotion, getNarration } from "../game/save";
 import { generateCase } from "../game/generator";
 import { mulberry32, todaySeed, todayStamp } from "../game/rng";
 import { tell } from "../game/reactions";
@@ -54,6 +54,7 @@ export class CaseScene extends Phaser.Scene {
   }
 
   create(): void {
+    stopSpeech();
     this.cameras.main.fadeIn(380);
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
     this.lamp = addAtmosphere(this, { lamp: true }).lamp;
@@ -881,6 +882,8 @@ export class CaseScene extends Phaser.Scene {
 
     c.setAlpha(0);
     this.tweens.add({ targets: c, alpha: 1, duration: 600 });
+
+    if (getNarration()) this.time.delayedCall(500, () => speak(`${opts.heading}. ${opts.body}`));
 
     const btn = new Button(this, GAME_WIDTH / 2, opts.share ? 798 : 812, {
       w: 260,

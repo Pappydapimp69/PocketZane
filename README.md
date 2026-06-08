@@ -161,3 +161,7 @@ Touch, gamepad, and keyboard are all supported.
   before you ask again.
 - **v39** — **leave a case**: a "← leave" link (and Esc / Start) with a confirm,
   so you're no longer locked into an interrogation until it ends.
+- **v40** — **tenth-mark history re-read + asset review**: re-read the notes
+  (banked: a wry "confidence" readout). Added **narration** — an optional toggle
+  that reads each resolution aloud via the browser's built-in speech synthesis
+  (no files), nodding to the voice-as-instrument thread.
