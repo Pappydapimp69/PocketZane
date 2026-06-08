@@ -6,7 +6,7 @@ import { addAtmosphere } from "../game/textures";
 import { generateMergedCase } from "../game/generateweb";
 import { freeOpts } from "../game/ladder";
 import { COLD_CASES } from "./CaseSelectScene";
-import { getTotalBreaks, rankFor, getBest, getDeepest, getCleanCount } from "../game/save";
+import { getTotalBreaks, rankFor, getBest, getDeepest, getCleanCount, isCleanCase } from "../game/save";
 import { todayStamp } from "../game/rng";
 import { PAD } from "../input";
 
@@ -42,7 +42,8 @@ export class StatsScene extends Phaser.Scene {
     COLD_CASES.forEach((seed, i) => {
       const c = generateMergedCase(seed, freeOpts(seed));
       const best = getBest(`case-${seed}`);
-      rows.push(`${(ROMAN[i] + ".  " + c.title).padEnd(26, " ")}${best != null ? `best ${best}` : "— open —"}`);
+      const clean = isCleanCase(`case-${seed}`) ? " ✦" : "";
+      rows.push(`${(ROMAN[i] + ".  " + c.title).padEnd(33, " ")}${best != null ? `best ${best}${clean}` : "— open —"}`);
     });
     rows.push("");
     rows.push("— the long nights —");
