@@ -76,6 +76,17 @@ for (let seed = 1; seed <= 120; seed++) {
 }
 check(badArc === 0, "every phase lie has three distinct tellings (deny→hedge→admit)");
 
+// the weirdness dial must actually add an uncanny detail when high, never when zero
+const UNCANNY = /clock|lamp|shoes|salt|footprints|mirror|runner|chair/;
+let weirdHi = 0;
+let weirdLo = 0;
+for (let seed = 1; seed <= 120; seed++) {
+  if (UNCANNY.test(generateMergedCase(seed, { weirdness: 0.95 }).brief.what)) weirdHi++;
+  if (UNCANNY.test(generateMergedCase(seed, { weirdness: 0 }).brief.what)) weirdLo++;
+}
+check(weirdHi >= 80, `weirdness adds uncanny details when high (${weirdHi}/120)`);
+check(weirdLo === 0, `no uncanny details at zero weirdness (${weirdLo}/120)`);
+
 // determinism
 check(JSON.stringify(generateMergedCase(42, { herring: true })) === JSON.stringify(generateMergedCase(42, { herring: true })), "content is deterministic by seed");
 
