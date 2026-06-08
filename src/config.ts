@@ -7,6 +7,7 @@ import { CaseSelectScene } from "./scenes/CaseSelectScene";
 import { StatsScene } from "./scenes/StatsScene";
 import { CaseScene } from "./scenes/CaseScene";
 import { InterrogationScene } from "./scenes/InterrogationScene";
+import { WebScene } from "./scenes/WebScene";
 
 export { GAME_WIDTH, GAME_HEIGHT } from "./dimensions";
 
@@ -23,5 +24,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   input: {
     gamepad: true,
   },
-  scene: [BootScene, TitleScene, CaseSelectScene, StatsScene, CaseScene, InterrogationScene],
+  scene: [BootScene, TitleScene, CaseSelectScene, StatsScene, CaseScene, InterrogationScene, WebScene],
 };

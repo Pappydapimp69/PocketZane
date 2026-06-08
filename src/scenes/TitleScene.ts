@@ -66,7 +66,7 @@ export class TitleScene extends Phaser.Scene {
 
     // The redesign prototype — a real case, evidence, the new loop.
     const beta = this.add
-      .text(GAME_WIDTH / 2, 486, "❖  THE NEW CASE  (beta)  ❖", { fontFamily: MONO, fontSize: "12px", color: CSS.crimsonBright })
+      .text(GAME_WIDTH / 2, 400, "❖  PHASES  (beta)  ❖", { fontFamily: MONO, fontSize: "12px", color: CSS.crimsonBright })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
     beta.on("pointerup", () => {
@@ -78,10 +78,23 @@ export class TitleScene extends Phaser.Scene {
       this.scene.start("Interrogation");
     });
 
+    const web = this.add
+      .text(GAME_WIDTH / 2, 424, "❖  THE WEB  (beta)  ❖", { fontFamily: MONO, fontSize: "12px", color: CSS.crimsonBright })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+    web.on("pointerup", () => {
+      startAmbience();
+      this.scene.start("Web");
+    });
+    this.input.keyboard?.on("keydown-W", () => {
+      startAmbience();
+      this.scene.start("Web");
+    });
+
     this.add
       .text(
         GAME_WIDTH / 2,
-        430,
+        462,
         "The truth holds still.\nA lie cannot tell itself the same way twice.\n\nAsk them to tell it again. Watch what moves.\nPin what won't hold its shape.",
         {
           fontFamily: BODY,
