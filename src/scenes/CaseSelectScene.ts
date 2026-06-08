@@ -4,7 +4,7 @@ import { COLORS, CSS, DISPLAY, MONO } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere } from "../game/textures";
 import { CASES } from "../game/cases";
-import { getCleared, getBest } from "../game/save";
+import { getCleared, getBest, isCleanCase } from "../game/save";
 import { SFX } from "../game/audio";
 import { PAD } from "../input";
 
@@ -30,7 +30,8 @@ export class CaseSelectScene extends Phaser.Scene {
     CASES.forEach((c, i) => {
       const unlocked = i <= cleared;
       const best = getBest(c.id);
-      const label = unlocked ? `${c.title}${best != null ? `   ·   best ${best}×` : ""}` : `${c.title.split(".")[0]}.  — sealed —`;
+      const clean = isCleanCase(c.id) ? "  ✦" : "";
+      const label = unlocked ? `${c.title}${best != null ? `   ·   best ${best}×` : ""}${clean}` : `${c.title.split(".")[0]}.  — sealed —`;
       const fn = () => this.scene.start("CaseScene", { mode: "story", caseIndex: i });
       const btn = new Button(this, GAME_WIDTH / 2, y, {
         w: 410,

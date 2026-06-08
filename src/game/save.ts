@@ -64,6 +64,32 @@ export function markDeepest(night: number): void {
   }
 }
 
+const CLEAN_KEY = "again:clean";
+
+/** Cases broken "clean" (no strikes, at or under par), by id. */
+function cleanSet(): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem(CLEAN_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+export function isCleanCase(id: string): boolean {
+  return !!cleanSet()[id];
+}
+export function markCleanCase(id: string): void {
+  try {
+    const o = cleanSet();
+    o[id] = true;
+    localStorage.setItem(CLEAN_KEY, JSON.stringify(o));
+  } catch {
+    /* ignore */
+  }
+}
+export function getCleanCount(): number {
+  return Object.keys(cleanSet()).length;
+}
+
 const TOTAL_KEY = "again:breaks";
 
 /** Total stories broken, across every mode — drives the detective rank. */

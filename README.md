@@ -174,3 +174,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v43** — **settings panel**: the scattered toggles (sound, motion, narration,
   difficulty) are consolidated behind one "settings ⚙" link, decluttering the
   title.
+- **v44** — **clean breaks**: break a case with no strikes and at/under par and it's
+  marked clean (✦ in Case Files, counted in the Record) — an aspirational target
+  beyond simply closing it.

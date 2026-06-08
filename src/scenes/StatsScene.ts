@@ -4,7 +4,7 @@ import { COLORS, CSS, DISPLAY, MONO } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere } from "../game/textures";
 import { CASES } from "../game/cases";
-import { getTotalBreaks, rankFor, getCleared, getBest, getDeepest } from "../game/save";
+import { getTotalBreaks, rankFor, getCleared, getBest, getDeepest, getCleanCount } from "../game/save";
 import { todayStamp } from "../game/rng";
 import { PAD } from "../input";
 
@@ -33,7 +33,7 @@ export class StatsScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, 108, `${rankFor(total)}`, { fontFamily: DISPLAY, fontSize: "20px", color: CSS.amber, fontStyle: "italic" })
       .setOrigin(0.5);
     this.add
-      .text(GAME_WIDTH / 2, 138, `${total} stories broken, all told`, { fontFamily: MONO, fontSize: "12px", color: CSS.muted })
+      .text(GAME_WIDTH / 2, 138, `${total} broken, all told   ·   ${getCleanCount()} clean ✦`, { fontFamily: MONO, fontSize: "12px", color: CSS.muted })
       .setOrigin(0.5);
 
     const rows: string[] = ["", "— the cases —"];

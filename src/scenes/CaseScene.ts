@@ -6,7 +6,7 @@ import { Interrogation, LineView, Case } from "../game/engine";
 import { CASES } from "../game/cases";
 import { SFX, startAmbience, speak, stopSpeech } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
-import { markCleared, getBest, setBest, markDeepest, getDeepest, incBreaks, getReduceMotion, getNarration, getDifficulty, DIFFS } from "../game/save";
+import { markCleared, getBest, setBest, markDeepest, getDeepest, incBreaks, getReduceMotion, getNarration, getDifficulty, DIFFS, markCleanCase } from "../game/save";
 import { generateCase } from "../game/generator";
 import { mulberry32, todaySeed, todayStamp } from "../game/rng";
 import { tell } from "../game/reactions";
@@ -665,7 +665,9 @@ export class CaseScene extends Phaser.Scene {
     setBest(id, g.telling);
     const best = getBest(id) ?? g.telling;
     const par = g.case.pinsToBreak * 2 + 1;
-    const verdict = g.strikesUsed === 0 && g.telling <= par ? "a clean break" : g.telling <= par + 4 ? "it broke" : "it broke, eventually";
+    const isClean = g.strikesUsed === 0 && g.telling <= par;
+    if (isClean && (this.mode === "story" || this.mode === "daily")) markCleanCase(id);
+    const verdict = isClean ? "a clean break" : g.telling <= par + 4 ? "it broke" : "it broke, eventually";
     const fresh = prevBest === null || g.telling < prevBest ? "   ⟐ new best" : "";
     const stats = `${verdict}\ntold again ${g.telling}×  ·  ${g.strikesUsed} strike${g.strikesUsed === 1 ? "" : "s"}  ·  best ${best}×${fresh}`;
 
