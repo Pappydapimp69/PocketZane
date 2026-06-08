@@ -817,7 +817,8 @@ export class CaseRunScene extends Phaser.Scene {
     o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.97));
     if (this.textures.exists("grain")) o.add(this.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, "grain").setOrigin(0).setAlpha(0.5));
     if (this.textures.exists("vignette")) o.add(this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, "vignette"));
-    SFX.break();
+    if (runOver) SFX.heart();
+    else SFX.break();
 
     const reso = this.add.container(0, 0);
     reso.add(this.add.text(GAME_WIDTH / 2, 84, runOver ? "the night beats you" : "the story breaks", { fontFamily: DISPLAY, fontSize: "26px", color: runOver ? CSS.slate : CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
