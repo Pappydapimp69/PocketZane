@@ -123,39 +123,92 @@ function knock(vol = 0.18): void {
   src.stop(now + dur);
 }
 
-/** A low, near-subliminal room tone. Started on the first user gesture. */
+function midi(n: number): number {
+  return 440 * Math.pow(2, (n - 69) / 12);
+}
+
+/**
+ * Generative noir ambience. A slow minor chord progression that actually moves
+ * (Am – F – C – E), sparse single notes wandering over it on the A-minor scale,
+ * and a soft feedback-delay "room" for space — so it evolves instead of droning.
+ * Started on the first user gesture; routes through the master bus (honors mute).
+ */
 let ambienceOn = false;
 export function startAmbience(): void {
   if (ambienceOn) return;
   const a = ac();
   ambienceOn = true;
+
   const bus = a.createGain();
-  bus.gain.value = 0.5;
-  bus.connect(out());
+  bus.gain.setValueAtTime(0.0001, a.currentTime);
+  bus.gain.linearRampToValueAtTime(0.8, a.currentTime + 5);
+  const tone = a.createBiquadFilter();
+  tone.type = "lowpass";
+  tone.frequency.value = 2600;
+  bus.connect(tone).connect(out());
 
-  for (const f of [54, 54.4]) {
-    const osc = a.createOscillator();
-    osc.type = "sine";
-    osc.frequency.value = f;
+  // Cheap reverb: a feedback delay the voices also feed into.
+  const delay = a.createDelay();
+  delay.delayTime.value = 0.34;
+  const fb = a.createGain();
+  fb.gain.value = 0.4;
+  const wet = a.createGain();
+  wet.gain.value = 0.32;
+  delay.connect(fb).connect(delay);
+  delay.connect(wet).connect(bus);
+
+  const voice = (freq: number, t: number, dur: number, vol: number, type: OscillatorType): void => {
+    const o = a.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    o.detune.setValueAtTime((Math.random() - 0.5) * 6, t);
     const g = a.createGain();
-    g.gain.value = 0.02;
-    osc.connect(g).connect(bus);
-    osc.start();
-  }
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + Math.min(0.6, dur * 0.3));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g);
+    g.connect(bus);
+    g.connect(delay);
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  };
 
-  const noiseBuf = a.createBuffer(1, a.sampleRate * 2, a.sampleRate);
-  const nd = noiseBuf.getChannelData(0);
-  for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
-  const noise = a.createBufferSource();
-  noise.buffer = noiseBuf;
-  noise.loop = true;
-  const nf = a.createBiquadFilter();
-  nf.type = "lowpass";
-  nf.frequency.value = 220;
-  const ng = a.createGain();
-  ng.gain.value = 0.012;
-  noise.connect(nf).connect(ng).connect(bus);
-  noise.start();
+  // Harmonic movement: i – VI – III – V in A minor (Am, F, C, E major).
+  const chords = [
+    [57, 60, 64],
+    [53, 57, 60],
+    [48, 52, 55],
+    [52, 56, 59],
+  ];
+  let ci = 0;
+  const CHORD_DUR = 14;
+  const chordTick = (): void => {
+    if (!ambienceOn) return;
+    const t = a.currentTime + 0.05;
+    for (const n of chords[ci]) voice(midi(n - 12), t, CHORD_DUR, 0.045, "triangle");
+    ci = (ci + 1) % chords.length;
+    setTimeout(chordTick, (CHORD_DUR - 3) * 1000); // overlap for a soft crossfade
+  };
+  chordTick();
+
+  // Sparse wandering melody over the chords (A harmonic-minor-ish).
+  const scale = [57, 59, 60, 62, 64, 65, 68, 69];
+  let lastIdx = 0;
+  const melodyTick = (): void => {
+    if (!ambienceOn) return;
+    if (Math.random() < 0.8) {
+      // Step mostly by small intervals so it feels like a line, not random.
+      const step = Math.floor(Math.random() * 5) - 2;
+      lastIdx = Math.max(0, Math.min(scale.length - 1, lastIdx + step));
+      const oct = Math.random() < 0.5 ? 12 : 0;
+      const n = scale[lastIdx] + oct;
+      const t = a.currentTime + 0.05;
+      voice(midi(n), t, 1.6 + Math.random() * 1.6, 0.05, "sine");
+      if (Math.random() < 0.28) voice(midi(n + (Math.random() < 0.5 ? 3 : 4)), t + 0.2, 1.2, 0.03, "sine");
+    }
+    setTimeout(melodyTick, 2200 + Math.random() * 4200);
+  };
+  setTimeout(melodyTick, 3000);
 }
 
 export const SFX = {

@@ -209,3 +209,7 @@ Touch, gamepad, and keyboard are all supported.
   clause individually selectable; a slip flickers and re-flows in place, a caught
   clause is underlined inline, a pinned one struck through. PRESS → left trigger,
   PIN → right trigger, AGAIN → A, labeled on the buttons.
+- **v54** — **generative music**: replaced the static drone with an evolving noir
+  bed — a slow minor progression (Am – F – C – E) that actually moves, a sparse
+  wandering melody on the A-minor scale stepping by small intervals, and a soft
+  feedback-delay room for space. Still synthesized in code; still under the mute.
