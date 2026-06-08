@@ -60,6 +60,8 @@ interface Face {
   beard: number; // 0 none 1 stubble 2 moustache 3 full
   collar: string;
   tie: boolean;
+  glasses: boolean;
+  scar: boolean;
   lit: number; // -1 lit from left, +1 from right
 }
 
@@ -78,8 +80,10 @@ function rollFace(rng: () => number): Face {
     noseLen: 24 + rng() * 20,
     mouthW: 26 + rng() * 20,
     beard: rng() < 0.5 ? 0 : Math.floor(1 + rng() * 3),
-    collar: ["#1a1712", "#241d16", "#15110d", "#20242a"][Math.floor(rng() * 4)],
+    collar: ["#1a1712", "#241d16", "#15110d", "#20242a", "#2a201a", "#191c20"][Math.floor(rng() * 6)],
     tie: rng() < 0.6,
+    glasses: rng() < 0.22,
+    scar: rng() < 0.14,
     lit: rng() < 0.5 ? -1 : 1,
   };
 }
@@ -272,6 +276,38 @@ export function drawPortrait(ctx: CanvasRenderingContext2D, W: number, H: number
     ctx.beginPath();
     ctx.moveTo(x - f.eyeR, eyeY + f.eyeR * 0.5);
     ctx.lineTo(x + f.eyeR, eyeY + f.eyeR * 0.5);
+    ctx.stroke();
+  }
+
+  // ---- spectacles ----
+  if (f.glasses) {
+    ctx.strokeStyle = "rgba(20,18,16,0.9)";
+    ctx.lineWidth = 1.6;
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.arc(cx + s * ex, eyeY, f.eyeR + 2.5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(cx - ex + f.eyeR + 2, eyeY);
+    ctx.lineTo(cx + ex - f.eyeR - 2, eyeY); // bridge
+    ctx.stroke();
+    // a glint on the lit lens
+    ctx.strokeStyle = "rgba(240,224,170,0.4)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx - f.lit * ex, eyeY - 1, f.eyeR + 2.5, Math.PI * 1.1, Math.PI * 1.4);
+    ctx.stroke();
+  }
+
+  // ---- an old scar across one cheek ----
+  if (f.scar) {
+    ctx.strokeStyle = "rgba(150,110,100,0.5)";
+    ctx.lineWidth = 1.4;
+    const sx2 = f.lit; // on the lit cheek, where it catches
+    ctx.beginPath();
+    ctx.moveTo(cx - sx2 * hw * 0.5, eyeY + faceH * 0.06);
+    ctx.lineTo(cx - sx2 * hw * 0.42, eyeY + faceH * 0.22);
     ctx.stroke();
   }
 
