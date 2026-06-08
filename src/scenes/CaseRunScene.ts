@@ -156,8 +156,8 @@ export class CaseRunScene extends Phaser.Scene {
     paintScene(this, "crime", this.seedVal);
     this.mood = "neutral";
 
-    this.add.text(14, 14, "← leave", { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(0, 0).setInteractive({ useHandCursor: true }).on("pointerup", () => this.scene.start("TitleScene"));
-    this.add.text(GAME_WIDTH - 14, 14, "the file  (Y)", { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(1, 0).setInteractive({ useHandCursor: true }).on("pointerup", () => this.showFile(false));
+    this.cornerLink(14, 14, 0, "← leave", () => this.scene.start("TitleScene"));
+    this.cornerLink(GAME_WIDTH - 14, 14, 1, "the file  (Y)", () => this.showFile(false));
 
     if (this.vsMode === "versus") {
       this.add.text(GAME_WIDTH / 2, 15, `DUEL  ·  Detective ${this.playerIdx === 0 ? "One" : "Two"}`, { fontFamily: MONO, fontSize: "10px", color: CSS.amber }).setOrigin(0.5);
@@ -596,6 +596,15 @@ export class CaseRunScene extends Phaser.Scene {
   }
 
   // ---- overlays --------------------------------------------------------------
+
+  /** A small corner link with a finger-sized tap zone (touch-first). */
+  private cornerLink(x: number, y: number, originX: 0 | 1, label: string, onTap: () => void): void {
+    const t = this.add.text(x, y, label, { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(originX, 0).setDepth(7);
+    const zone = this.add.rectangle(x + (originX === 1 ? -t.width / 2 : t.width / 2), y + 8, t.width + 36, 40, 0x000000, 0).setInteractive({ useHandCursor: true });
+    zone.on("pointerover", () => t.setColor(CSS.muted));
+    zone.on("pointerout", () => t.setColor(CSS.faint));
+    zone.on("pointerup", onTap);
+  }
 
   /** Voice a suspect's line when narration is on (accessibility / immersion). */
   private say(line: string): void {
