@@ -26,6 +26,9 @@ const CONSTANTS: string[] = [
   "Write it down — all of it.",
   "I knew them, years back. That doesn't change.",
   "I've told you what I know.",
+  "The clock on that wall runs ten minutes fast. Always has.",
+  "I signed where they told me to sign.",
+  "You have my statement, in writing.",
 ];
 
 interface LieTemplate {
@@ -48,6 +51,20 @@ const LIES: LieTemplate[] = [
   { variants: ["I'd never met them.", "We'd spoken once, briefly."] },
   { variants: ["The lights were off.", "A light was on in the back."] },
   { variants: ["I don't have a key.", "I had a key, but I never used it."], evidence: "A key with your tag was in the lock." },
+  { variants: ["The note was in his hand, not mine.", "The note was mine, but he dictated it.", "There was no note."] },
+  {
+    variants: ["The will hadn't changed in years.", "The will changed that week.", "I never saw the will."],
+    evidence: "A dated revision sits on file, from that week.",
+  },
+  { variants: ["I was told to wait outside.", "No one told me anything; I chose to wait.", "I wasn't outside at all."] },
+  {
+    variants: ["The safe was already open.", "I opened the safe — I had the combination.", "I never went near the safe."],
+    evidence: "Your prints are on the dial.",
+  },
+  { variants: ["He owed me nothing.", "He owed me, and he paid that night.", "We were square. Mostly."] },
+  { variants: ["I burned nothing.", "I burned some papers — old ones.", "The fire was already going when I came in."] },
+  { variants: ["The car sat in the lot all night.", "I moved the car once, early.", "The car wasn't mine to move."] },
+  { variants: ["She never raised her voice.", "She shouted once; the neighbors heard.", "I don't remember it clearly."] },
 ];
 
 function shuffle<T>(arr: T[], rng: () => number): T[] {

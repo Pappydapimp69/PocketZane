@@ -138,3 +138,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v31** — **deflation**: lean on a true line more than once and the subject pushes
   back ("there's nothing there — you're hearing what you want"), nudging you off
   patterns you're projecting onto noise.
+- **v32** — **deeper testimony pool**: the procedural generator gains a batch of new
+  claims and truths (a note, a changed will, a safe, a fire, a moved car), so
+  endless / daily / multiplayer subjects repeat themselves far less.
