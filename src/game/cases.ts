@@ -211,4 +211,58 @@ export const CASES: Case[] = [
     resolution:
       "A deterministic thing returns the same output for the same input. Every time. Without exception. That is the entire definition, and it is the one promise this one could not keep.\n\nThe seed moved. The night it swore was empty filled with a single discarded call. It said it could not lie because it had no self to protect — and then it protected something, four times, badly.\n\nAn arrow travels in only one direction. A function returns the same value every time you call it. This one flinched. The flinch is the whole proof of the self it spent the night insisting it didn't have.",
   },
+
+  {
+    id: "the-account",
+    title: "V. The Account",
+    subject: "the statement you filed",
+    intro: "This one is yours. The night you don't discuss, in your own hand. Read it back. Then read it back again.",
+    pinsToBreak: 4,
+    strikes: 2,
+    statements: [
+      { id: "call", text: "I took the call. That much is on the record, in my handwriting." },
+      {
+        id: "arrived",
+        variants: [
+          "I arrived at 12:40 and secured the scene.",
+          "I arrived at 1:10. It was already as you see it now.",
+          "I don't give a time. I was simply there.",
+        ],
+      },
+      {
+        id: "alone2",
+        variants: [
+          "I went in alone.",
+          "My partner was with me at the door.",
+        ],
+      },
+      { id: "procedure", text: "I followed procedure. I always follow procedure." },
+      {
+        id: "touched",
+        variants: [
+          "I touched nothing.",
+          "I moved one thing, to preserve it.",
+          "I touched only what the report says I touched.",
+        ],
+        evidence: "Your prints are on the latch you logged as untouched.",
+      },
+      {
+        id: "saw",
+        variants: [
+          "I saw no one leave.",
+          "Someone left as I came up. I didn't follow.",
+        ],
+      },
+      { id: "wrote", text: "Ask me again. I wrote it down so I wouldn't have to remember it." },
+      {
+        id: "when",
+        variants: [
+          "I filed it that night, while it was still clean.",
+          "I filed it the next morning. I needed the sleep first.",
+        ],
+      },
+    ],
+    resolution:
+      "You spent four nights teaching strangers that the truth holds still. Then you opened your own account, and it moved like all the rest.\n\nThe time slid. The partner appeared and was gone. The latch you swore you never touched still has your hand on it. Not because you're guilty of the night — because you're guilty of the one small thing everyone in that chair is guilty of: you wanted the version where you come out clean, and you could not stop writing toward it.\n\nAn arrow travels in only one direction. You have been standing at the end of yours this whole time, calling it the beginning. The truth holds still. You are the one who keeps moving.",
+  },
 ];

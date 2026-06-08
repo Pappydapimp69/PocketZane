@@ -83,3 +83,5 @@ Touch, gamepad, and keyboard are all supported.
 - **v12** — **a verdict**: each break is scored on tellings used and strikes taken,
   with a per-case best saved — an optimization layer for breaking a story clean
   and fast, not just breaking it.
+- **v13** — a fifth and final case that turns the lamp around: the account on the
+  table is *yours*, and it won't hold still either. The climax of the arc.
