@@ -119,9 +119,10 @@ const shade = (hex: string, f: number): string => {
   return `rgb(${r | 0},${g | 0},${b | 0})`;
 };
 
-export function drawPortrait(ctx: CanvasRenderingContext2D, W: number, H: number, seed: number, mood: Mood, blink = false): void {
+export function drawPortrait(ctx: CanvasRenderingContext2D, W: number, H: number, seed: number, mood: Mood, blink = false, tense = false): void {
   const f = rollFace(mulberry32(seed >>> 0));
   const e = exprFor(mood);
+  if (tense && mood === "neutral") e.sweat = Math.max(e.sweat, 1); // he's uneasy before you start
   const cx = W / 2;
   const headTop = H * 0.2;
   const chinY = H * 0.76;
@@ -436,12 +437,12 @@ const PW = 220;
 const PH = 280;
 
 /** Paint (or repaint) a portrait texture in place, so mood changes update it. */
-export function paintPortrait(scene: Phaser.Scene, key: string, seed: number, mood: Mood, blink = false): void {
+export function paintPortrait(scene: Phaser.Scene, key: string, seed: number, mood: Mood, blink = false, tense = false): void {
   const tex = scene.textures.exists(key) ? (scene.textures.get(key) as Phaser.Textures.CanvasTexture) : scene.textures.createCanvas(key, PW, PH);
   if (!tex) return;
   const ctx = tex.getContext();
   if (!ctx) return;
   ctx.clearRect(0, 0, PW, PH);
-  drawPortrait(ctx, PW, PH, seed, mood, blink);
+  drawPortrait(ctx, PW, PH, seed, mood, blink, tense);
   tex.refresh();
 }

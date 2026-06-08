@@ -43,6 +43,11 @@ export class CaseRunScene extends Phaser.Scene {
   private suspect = "";
   private role = "";
   private temper!: Temperament;
+  private tense = false;
+
+  private paintSuspect(mood: Mood, blink = false): void {
+    paintPortrait(this, "suspect", this.seedVal, mood, blink, this.tense && mood === "neutral");
+  }
 
   // phase render
   private clauses: ClauseLayout[] = [];
@@ -146,7 +151,8 @@ export class CaseRunScene extends Phaser.Scene {
       this.role = "";
     }
     this.temper = temperament(this.seedVal);
-    paintPortrait(this, "suspect", this.seedVal, "neutral");
+    this.tense = /nervous|rattled/.test(this.temper.name);
+    this.paintSuspect("neutral");
     paintScene(this, "crime", this.seedVal);
     this.mood = "neutral";
 
@@ -202,9 +208,9 @@ export class CaseRunScene extends Phaser.Scene {
       loop: true,
       callback: () => {
         if (this.busy || this.mood !== "neutral") return;
-        paintPortrait(this, "suspect", this.seedVal, "neutral", true);
+        this.paintSuspect("neutral", true);
         this.time.delayedCall(120, () => {
-          if (this.mood === "neutral") paintPortrait(this, "suspect", this.seedVal, "neutral", false);
+          if (this.mood === "neutral") this.paintSuspect("neutral", false);
         });
       },
     });
@@ -258,7 +264,7 @@ export class CaseRunScene extends Phaser.Scene {
   private setMood(m: Mood): void {
     if (m === this.mood) return;
     this.mood = m;
-    paintPortrait(this, "suspect", this.seedVal, m);
+    this.paintSuspect(m);
     const p = this.portrait;
     if (!p) return;
     this.tweens.killTweensOf(p);
@@ -788,7 +794,7 @@ export class CaseRunScene extends Phaser.Scene {
     const reso = this.add.container(0, 0);
     reso.add(this.add.text(GAME_WIDTH / 2, 84, runOver ? "the night beats you" : "the story breaks", { fontFamily: DISPLAY, fontSize: "26px", color: runOver ? CSS.slate : CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
     if (this.textures.exists("suspect")) {
-      paintPortrait(this, "suspect", this.seedVal, "broken");
+      this.paintSuspect("broken");
       const fr = this.add.graphics();
       fr.fillStyle(0x000000, 0.5);
       fr.fillRoundedRect(GAME_WIDTH / 2 - 44, 120, 88, 112, 4);
