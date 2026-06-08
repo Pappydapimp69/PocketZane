@@ -491,11 +491,14 @@ export class CaseRunScene extends Phaser.Scene {
     this.blocks = [];
     const views = this.inq.segments();
     const broken = new Set(views.filter((v) => v.broken).map((v) => v.id));
+    const baseOf = new Map(this.inq.case.web.segments.map((s) => [s.id, s.base]));
     let y = 250;
     for (const s of views) {
+      // once a claim has deflected, its text becomes his fresh excuse — show it as his words
+      const deflected = !s.broken && s.text !== baseOf.get(s.id);
       const label = this.add.text(LEFT, y, `「 ${s.name}${s.key ? " ✦" : ""} 」`, { fontFamily: MONO, fontSize: "11px", color: s.broken ? CSS.faint : CSS.muted }).setDepth(6);
       this.blocks.push(label);
-      const body = this.add.text(LEFT, y + 18, s.text, { fontFamily: BODY, fontSize: "16px", color: s.broken ? CSS.faint : CSS.ink, wordWrap: { width: WRAP }, lineSpacing: 2 }).setDepth(6);
+      const body = this.add.text(LEFT, y + 18, deflected ? `“${s.text}”` : s.text, { fontFamily: BODY, fontSize: "16px", color: s.broken ? CSS.faint : deflected ? CSS.amber : CSS.ink, fontStyle: deflected ? "italic" : "normal", wordWrap: { width: WRAP }, lineSpacing: 2 }).setDepth(6);
       this.blocks.push(body);
       let cy = y + 18 + body.height + 4;
       if (s.broken) {
@@ -540,7 +543,7 @@ export class CaseRunScene extends Phaser.Scene {
         const via = this.inq.segmentName(r.via);
         const tgt = this.inq.segmentName(r.target);
         this.setStatus(`He slips it. ${tgt} hides behind ${via} — so take ${via} apart first.`, CSS.amber);
-        if (r.revealed) this.time.delayedCall(800, () => this.centerToast("That shakes loose:  " + r.revealed!.label));
+        if (r.revealed) this.time.delayedCall(900, () => this.centerToast("That shakes loose:  " + r.revealed!.label));
         break;
       }
       case "break": {
