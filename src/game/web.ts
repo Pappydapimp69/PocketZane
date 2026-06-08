@@ -55,7 +55,7 @@ export interface SegmentView {
 }
 
 export type PresentResult =
-  | { kind: "deflect"; target: string; via: string; text: string }
+  | { kind: "deflect"; target: string; via: string; text: string; revealed?: WebEvidence }
   | { kind: "break"; target: string; key: boolean; solved: boolean }
   | { kind: "already" }
   | { kind: "spent" }
@@ -70,9 +70,9 @@ export class WebInquiry {
   private rng: () => number;
   private tick = 0;
 
-  constructor(c: WebCase, seed = 1) {
+  constructor(c: WebCase, seed = 1, initialHeld?: string[]) {
     this.case = c;
-    c.startEvidence.forEach((e) => this.held.add(e));
+    (initialHeld ?? c.startEvidence).forEach((e) => this.held.add(e));
     c.segments.forEach((s) => this.text.set(s.id, s.base));
     this.rng = mulberry32(seed);
   }
@@ -122,7 +122,15 @@ export class WebInquiry {
       const line = pool[Math.floor(this.rng() * pool.length) % pool.length];
       this.tick += 1;
       this.text.set(t, line);
-      return { kind: "deflect", target: t, via, text: line };
+      // Recovery: leaning on a support exposes that support's weakness — hand the
+      // player the lead that breaks it, if they don't already hold it.
+      let revealed: WebEvidence | undefined;
+      const breaker = this.case.evidence.find((e) => e.targets === via && !this.held.has(e.id));
+      if (breaker) {
+        this.held.add(breaker.id);
+        revealed = breaker;
+      }
+      return { kind: "deflect", target: t, via, text: line, revealed };
     }
 
     // Nothing left to hide behind — it concedes.

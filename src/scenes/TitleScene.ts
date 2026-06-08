@@ -66,16 +66,16 @@ export class TitleScene extends Phaser.Scene {
 
     // The redesign prototype — a real case, evidence, the new loop.
     const beta = this.add
-      .text(GAME_WIDTH / 2, 400, "❖  PHASES  (beta)  ❖", { fontFamily: MONO, fontSize: "12px", color: CSS.crimsonBright })
+      .text(GAME_WIDTH / 2, 400, "❖  THE CASE  (beta)  ❖", { fontFamily: MONO, fontSize: "12px", color: CSS.crimsonBright })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
     beta.on("pointerup", () => {
       startAmbience();
-      this.scene.start("Interrogation");
+      this.scene.start("CaseRun");
     });
     this.input.keyboard?.on("keydown-N", () => {
       startAmbience();
-      this.scene.start("Interrogation");
+      this.scene.start("CaseRun");
     });
 
     const web = this.add
