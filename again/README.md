@@ -24,11 +24,25 @@ npm run build                    # type-check + production build
 
 ## How it plays
 
-- Read the statements. Tap **TELL ME AGAIN** to make the subject repeat.
+- Read the statements. Hit **AGAIN** to make the subject repeat.
 - A line that **moves** between tellings has been caught (amber marker — your
   ledger remembers, even when theirs doesn't).
-- Select a caught line and **PIN THE LIE**. Pin enough and the story breaks.
+- Select a caught line and **PIN** it. Pin enough and the story breaks.
 - Pin a line that never moved and you've accused the truth — that costs a strike.
+- **PRESS** a line to make it slip harder next time — but watch the pressure
+  bar; max it out and the subject steadies, undoing your work.
+
+## Controls
+
+Touch, gamepad, and keyboard are all supported.
+
+| Action            | Touch            | Gamepad         | Keyboard      |
+| ----------------- | ---------------- | --------------- | ------------- |
+| Move selection    | tap a line       | D-pad / L-stick | ↑ / ↓         |
+| Tell me again     | AGAIN            | A / cross       | Enter / Space |
+| Press the line    | PRESS            | X / square      | P             |
+| Pin the lie       | PIN              | Y / triangle    | K             |
+| Continue (at end) | tap the button   | A / cross       | Enter         |
 
 ## Versions
 
@@ -39,3 +53,6 @@ npm run build                    # type-check + production build
 - **v3** — a title screen, a **recovery** mechanic (lean too hard and the subject
   steadies, resetting the instability you'd built — so timing matters), and a
   third case that starts bending toward the strange.
+- **v4** — full **gamepad** support (and keyboard): navigate statements with the
+  d-pad / stick, act with the face buttons, confirm endings without touching the
+  screen.

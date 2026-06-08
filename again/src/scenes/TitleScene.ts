@@ -41,13 +41,27 @@ export class TitleScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
+    const begin = () => this.scene.start("CaseScene", { caseIndex: 0 });
     new Button(this, GAME_WIDTH / 2, 600, {
       w: 240,
       h: 56,
       label: "SIT DOWN",
       accent: COLORS.crimson,
-      onClick: () => this.scene.start("CaseScene", { caseIndex: 0 }),
+      onClick: begin,
     });
+
+    // Gamepad / keyboard: any face button or Enter/Space begins.
+    this.input.gamepad?.once("down", begin);
+    this.input.keyboard?.once("keydown-ENTER", begin);
+    this.input.keyboard?.once("keydown-SPACE", begin);
+
+    this.add
+      .text(GAME_WIDTH / 2, 660, "touch · gamepad · keyboard", {
+        fontFamily: MONO,
+        fontSize: "10px",
+        color: CSS.faint,
+      })
+      .setOrigin(0.5);
 
     this.add
       .text(GAME_WIDTH / 2, 800, "an arrow travels in only one direction", {

@@ -5,6 +5,7 @@ import { Button } from "../ui";
 import { Interrogation, LineView } from "../game/engine";
 import { CASES } from "../game/cases";
 import { SFX } from "../game/audio";
+import { PAD, STICK_THRESHOLD, STICK_REPEAT_MS } from "../input";
 
 const CARD_X = GAME_WIDTH / 2;
 const CARD_W = 432;
@@ -23,6 +24,8 @@ export class CaseScene extends Phaser.Scene {
   private pinBtn!: Button;
   private ledger: string[][] = [];
   private busy = false;
+  private overlayAction: (() => void) | null = null;
+  private stickCooldown = 0;
 
   constructor() {
     super("CaseScene");
@@ -43,6 +46,94 @@ export class CaseScene extends Phaser.Scene {
     this.buildControls();
     this.renderCards();
     this.updateHud();
+    this.setupDeviceInput();
+  }
+
+  // ---- gamepad + keyboard ----------------------------------------------------
+
+  private setupDeviceInput(): void {
+    this.input.gamepad?.on("down", (_pad: Phaser.Input.Gamepad.Gamepad, button: Phaser.Input.Gamepad.Button) => {
+      this.onButton(button.index);
+    });
+
+    const kb = this.input.keyboard;
+    kb?.on("keydown-UP", () => this.onButton(PAD.UP));
+    kb?.on("keydown-DOWN", () => this.onButton(PAD.DOWN));
+    kb?.on("keydown-ENTER", () => this.onButton(PAD.A));
+    kb?.on("keydown-SPACE", () => this.onButton(PAD.A));
+    kb?.on("keydown-P", () => this.onButton(PAD.X));
+    kb?.on("keydown-K", () => this.onButton(PAD.Y));
+  }
+
+  /** Map a (gamepad or keyboard-aliased) button to an action. */
+  private onButton(index: number): void {
+    if (this.busy) {
+      if ((index === PAD.A || index === PAD.START) && this.overlayAction) this.overlayAction();
+      return;
+    }
+    switch (index) {
+      case PAD.UP:
+        this.moveSelection(-1);
+        break;
+      case PAD.DOWN:
+        this.moveSelection(1);
+        break;
+      case PAD.A:
+        this.doAgain();
+        break;
+      case PAD.X:
+        this.doPress();
+        break;
+      case PAD.Y:
+        this.doPin();
+        break;
+      case PAD.B:
+        this.clearSelection();
+        break;
+    }
+  }
+
+  update(_time: number, delta: number): void {
+    // Left-stick (and d-pad-as-axis) discrete stepping through statements.
+    this.stickCooldown -= delta;
+    const pad = this.input.gamepad?.getPad(0);
+    if (!pad || this.busy || this.stickCooldown > 0) return;
+    const y = pad.leftStick.y;
+    if (Math.abs(y) > STICK_THRESHOLD) {
+      this.moveSelection(y > 0 ? 1 : -1);
+      this.stickCooldown = STICK_REPEAT_MS;
+    }
+  }
+
+  private selectableIds(): string[] {
+    return this.game_.view().filter((v) => !v.pinned).map((v) => v.id);
+  }
+
+  private moveSelection(dir: number): void {
+    const ids = this.selectableIds();
+    if (ids.length === 0) return;
+    const cur = this.selected ? ids.indexOf(this.selected) : -1;
+    const next = cur < 0 ? (dir > 0 ? 0 : ids.length - 1) : Phaser.Math.Wrap(cur + dir, 0, ids.length);
+    this.selected = ids[next];
+    this.pinBtn.setEnabled(true);
+    this.pressBtn.setEnabled(true);
+    this.repaintCards();
+    SFX.select();
+  }
+
+  private clearSelection(): void {
+    this.selected = null;
+    this.pinBtn.setEnabled(false);
+    this.pressBtn.setEnabled(false);
+    this.repaintCards();
+  }
+
+  private repaintCards(): void {
+    const views = this.game_.view();
+    this.cards.forEach((card) => {
+      const cv = views.find((x) => x.id === (card.getData("id") as string))!;
+      this.paintCard(card, cv);
+    });
   }
 
   private buildHeader(): void {
@@ -187,10 +278,7 @@ export class CaseScene extends Phaser.Scene {
     const v = this.game_.view().find((x) => x.id === id)!;
     if (v.pinned) return;
     this.selected = this.selected === id ? null : id;
-    this.cards.forEach((card) => {
-      const cv = this.game_.view().find((x) => x.id === (card.getData("id") as string))!;
-      this.paintCard(card, cv);
-    });
+    this.repaintCards();
     this.pinBtn.setEnabled(this.selected !== null);
     this.pressBtn.setEnabled(this.selected !== null);
     SFX.select();
@@ -320,6 +408,7 @@ export class CaseScene extends Phaser.Scene {
     ledger?: string;
     button: { label: string; onClick: () => void };
   }): void {
+    this.overlayAction = opts.button.onClick;
     const c = this.add.container(0, 0).setDepth(100);
     const dim = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.95);
     c.add(dim);
