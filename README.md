@@ -221,3 +221,14 @@ Touch, gamepad, and keyboard are all supported.
   (who/what/where/why) and resolution, the question→present→corner loop, and a
   `weirdness` dial baked in for the future generator. Reachable from the
   "THE NEW CASE (beta)" title link; the existing game is untouched.
+- **v56** — beta fixes: brief continuity (rain vs death window), the file toggles
+  shut with Y, used leads marked in the picker.
+- **v57** — **phases + a leveled confrontation**: the beta becomes the real loop.
+  Three QUESTION PHASES (catch the line that shifts, pin it for a lead — three
+  wrong accusations and he walks the phase), then a CONFRONTATION where he gives
+  one integrated statement. Leads attack *facts*, not sentences: each presses a
+  fact by `weight`, a single press only bends the story (a rebuttal, and maybe a
+  reveal of a lead you'd missed), and stacked pressure past the fact's
+  `resistance` collapses every claim resting on it. Solvable even if you fail
+  every phase — partial presses recover what you didn't gather. Engine verified
+  (scripts/test-deduction.ts) and played through in a headless browser.
