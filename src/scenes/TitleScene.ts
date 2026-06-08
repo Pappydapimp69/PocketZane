@@ -3,9 +3,10 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../config";
 import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere } from "../game/textures";
-import { startAmbience, isMuted, toggleMute } from "../game/audio";
+import { startAmbience, isMuted, toggleMute, SFX } from "../game/audio";
 import { getCleared, getDeepest } from "../game/save";
 import { CASES } from "../game/cases";
+import { PAD } from "../input";
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -67,15 +68,33 @@ export class TitleScene extends Phaser.Scene {
       this.scene.start("CaseScene", { mode: "coop" });
     };
 
-    new Button(this, GAME_WIDTH / 2, 540, { w: 240, h: 46, label: "SIT DOWN", accent: COLORS.crimson, onClick: begin });
-    new Button(this, GAME_WIDTH / 2, 592, { w: 240, h: 46, label: "AN ENDLESS NIGHT", accent: COLORS.slate, onClick: endless });
-    new Button(this, GAME_WIDTH / 2, 644, { w: 240, h: 46, label: "TWO DETECTIVES — VERSUS", accent: COLORS.amber, onClick: versus });
-    new Button(this, GAME_WIDTH / 2, 696, { w: 240, h: 46, label: "PARTNERS — CO-OP", accent: COLORS.amber, onClick: coop });
+    const items: { btn: Button; fn: () => void }[] = [
+      { btn: new Button(this, GAME_WIDTH / 2, 540, { w: 240, h: 46, label: "SIT DOWN", accent: COLORS.crimson, onClick: begin }), fn: begin },
+      { btn: new Button(this, GAME_WIDTH / 2, 592, { w: 240, h: 46, label: "AN ENDLESS NIGHT", accent: COLORS.slate, onClick: endless }), fn: endless },
+      { btn: new Button(this, GAME_WIDTH / 2, 644, { w: 240, h: 46, label: "TWO DETECTIVES — VERSUS", accent: COLORS.amber, onClick: versus }), fn: versus },
+      { btn: new Button(this, GAME_WIDTH / 2, 696, { w: 240, h: 46, label: "PARTNERS — CO-OP", accent: COLORS.amber, onClick: coop }), fn: coop },
+    ];
 
-    // Gamepad / keyboard: A / Enter takes the story; Space / X takes the endless night.
-    this.input.gamepad?.once("down", begin);
-    this.input.keyboard?.once("keydown-ENTER", begin);
-    this.input.keyboard?.once("keydown-SPACE", endless);
+    // Full gamepad / keyboard navigation of the menu.
+    let focus = 0;
+    const updateFocus = () => items.forEach((it, i) => it.btn.setActive2(i === focus));
+    updateFocus();
+    const move = (d: number) => {
+      focus = Phaser.Math.Wrap(focus + d, 0, items.length);
+      updateFocus();
+      SFX.select();
+    };
+    const confirm = () => items[focus].fn();
+
+    this.input.keyboard?.on("keydown-UP", () => move(-1));
+    this.input.keyboard?.on("keydown-DOWN", () => move(1));
+    this.input.keyboard?.on("keydown-ENTER", confirm);
+    this.input.keyboard?.on("keydown-SPACE", confirm);
+    this.input.gamepad?.on("down", (_p: Phaser.Input.Gamepad.Gamepad, b: Phaser.Input.Gamepad.Button) => {
+      if (b.index === PAD.UP) move(-1);
+      else if (b.index === PAD.DOWN) move(1);
+      else if (b.index === PAD.A || b.index === PAD.START) confirm();
+    });
 
     this.add
       .text(GAME_WIDTH / 2, 738, "touch · gamepad · keyboard", {

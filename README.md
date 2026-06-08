@@ -114,3 +114,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v22** — a sixth case, **The Same Man**: a Ship-of-Theseus interrogation where
   the lies are about identity itself — memory, promises, blame — and only the
   name and the body hold still. The new finale of the arc.
+- **v23** — **fully navigable title menu** by gamepad and keyboard: a moving focus
+  highlight with d-pad/arrows and select on A/Enter — no touch required to choose
+  a mode.
