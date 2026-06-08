@@ -52,3 +52,100 @@ export function deflectionPool(n: number, supportId: string, attackShort: string
   while (out.length < n) out.push(deflectionLine(supportId, attackShort, rng));
   return out;
 }
+
+/* ---------------------------------------------------------------------------
+ * The rest of the case's language. Only deflections were generative before; the
+ * alibi claims, the folds, the phase lies and the small truths all came from
+ * fixed strings, so two different seeds still read almost identically. These
+ * pools make every register vary while staying true to each support's identity
+ * and the seam that breaks it. Picked by the seeded rng → still deterministic.
+ * ------------------------------------------------------------------------- */
+
+// The confident statement of each support (shown as the web segment).
+const CLAIM: Record<string, string[]> = {
+  sleep: ["I'd been asleep since before ten. I heard nothing.", "I was in bed and dead to the world by ten. Nothing reached me.", "I turned in early and slept clean through the night."],
+  porch: ["I only stepped onto the porch a moment, for air.", "I went no further than my own porch, just to breathe.", "A minute on the porch — that's the whole of it."],
+  dark: ["The stairwell light was out. No one could've seen a thing.", "That stair was pitch dark — no eye could swear to anything.", "The light was dead; the whole stairwell was black."],
+  visitor: ["A friend sat with me the whole evening.", "I had company all night — a friend, right here with me.", "I wasn't alone; a friend kept me the whole evening."],
+  drink: ["I'd had a few. I don't remember the half of it.", "I'd been drinking — most of that night's a blur to me.", "I was deep in the bottle; I can't account for much."],
+  partner: ["My partner was beside me the whole night. She'll tell you so.", "She was with me every hour of it — ask her yourself.", "My partner never left my side that night, and she'll swear it."],
+  brother: ["My brother was here all evening — he saw the whole of it.", "My brother sat with me the night through; he watched it all.", "I had my brother for company all evening — ask him."],
+};
+
+// The fold — each gestures at the seam that broke the support.
+const CONCEDE: Record<string, string[]> = {
+  sleep: ["...Alright. I was awake — I took the call, from my bed.", "...Fine. I wasn't asleep. The phone rang and I answered it.", "...I was awake. I picked up the call, lying there."],
+  porch: ["...Fine. I went further than the porch. Up the stairs.", "...Alright. Past the porch — I went up the stairs.", "...I didn't stop at the porch. I climbed the stairs."],
+  dark: ["...The light worked. I know it worked.", "...Fine. The stair was lit. It always was.", "...The light was on. I only hoped you'd not check."],
+  visitor: ["...There was no friend. I was alone all night.", "...No one came. I made the friend up. I was alone.", "...Fine. No visitor. I sat here alone the whole night."],
+  drink: ["...I remember fine. I only hoped you wouldn't ask.", "...I was sober. I recall every minute of it.", "...Fine. I wasn't drunk. I remember all of it clearly."],
+  partner: ["...There was no partner beside me. I made her up to fill the bed.", "...She wasn't here. I invented her to fill the empty side.", "...Fine. No one shared my bed. I made her up."],
+  brother: ["...My brother wasn't here. He'd cover for me, but he wasn't here.", "...He wasn't here. He'd lie for me, but he stayed away.", "...Fine. My brother was nowhere near. I borrowed his name."],
+};
+
+const CORE_CLAIM = ["I never left my flat that night. Not once.", "I never went up those stairs. Not once.", "I was nowhere near his door all evening.", "I didn't set foot outside my own door that night.", "I stayed in my flat the whole night. I never moved."];
+const CORE_CONCEDE = ["...Fine. I went up. He was standing when I left him.", "...Alright. I went up. Only to talk to him.", "...I was at his door. I knocked. That's all.", "...I went up those stairs. He was alive when I left.", "...Fine. I was at his door that night. We talked."];
+
+const MOTIVE_CLAIM = ["We were square. I'd no reason to touch him.", "There was nothing between us. Why would I?", "We'd no quarrel. I'd no cause to hurt him."];
+const MOTIVE_CONCEDE = ["...He held a marker of mine. Months overdue, and he'd stopped pretending he'd pay.", "...I owed him, and he'd come to collecting. That's the truth of it.", "...There was money between us — my debt, long past due."];
+
+// Phase lies escalate deny → hedge → admit. Vary each rung but keep the arc.
+const SHIFT: Record<string, { deny: string[]; hedge: string[]; admit: string[] }> = {
+  call: { deny: ["My phone was off the whole night.", "The phone never rang once.", "I didn't touch the phone all night."], hedge: ["Off, or near enough — I didn't answer it.", "It may have rung. I didn't pick it up.", "If it rang, I slept through it."], admit: ["Fine. It rang, and I picked up. From my bed.", "Alright — it rang and I answered, lying there.", "It rang. I took the call. From bed."] },
+  mud: { deny: ["I never once opened my door.", "My door stayed shut all night.", "I didn't step out, not once."], hedge: ["I cracked it for air, no more than that.", "I opened it a moment, that's all.", "I put my head out, nothing further."], admit: ["Alright — I stepped out onto the landing.", "Fine. I went out onto the landing.", "I went out. Onto the upper landing."] },
+  log: { deny: ["That stairwell's been pitch black a month.", "The stair light's been dead for weeks.", "There's been no light on that stair in a month."], hedge: ["The light flickered, mostly out.", "It half-worked, if at all.", "It came and went, mostly dark."], admit: ["It was lit. I only hoped you'd think it wasn't.", "Fine — the light worked. It always did.", "The stair was lit. I knew it was."] },
+  alone: { deny: ["A friend sat with me all evening.", "I had a friend here the whole night.", "Someone was with me all evening."], hedge: ["He came by for a while, anyway.", "He looked in for a bit, I think.", "He was here part of the night, at least."], admit: ["Alright. No one came. I was alone.", "Fine — no friend. I sat here alone.", "No one came by. I was alone all night."] },
+  sober: { deny: ["I'd drunk too much to recall a thing.", "I was too far gone to remember.", "The drink wiped the night clean from me."], hedge: ["I'd had a couple, that's all.", "A drink or two, nothing that clouds me.", "I wasn't so far gone, I suppose."], admit: ["I was stone sober. I just didn't want to say.", "Fine. I was sober. I remember it all.", "I'd not touched a drop. I recall everything."] },
+  sister: { deny: ["My partner was beside me every minute.", "She never left my side all night.", "She was with me the whole night through."], hedge: ["She was in and out, but mostly with me.", "She stepped away once or twice, that's all.", "She was about, near enough the whole time."], admit: ["She... she wasn't there. I'll say it.", "Fine. She wasn't with me at all.", "She wasn't here. I'll admit that much."] },
+  ticket: { deny: ["My brother watched the whole evening with me.", "My brother was here the night through.", "My brother sat with me all evening."], hedge: ["He was around, in any case.", "He was here a while, anyhow.", "He came by, at least for a time."], admit: ["He wasn't here. I only wished he were.", "Fine. My brother was nowhere near.", "He never came. I made it up."] },
+  iou: { deny: ["Money never came up between us.", "There was no debt between us.", "We owed each other nothing."], hedge: ["We may have spoken of it, once.", "Money came up, maybe, in passing.", "There was some talk of it, perhaps."], admit: ["He held a marker of mine. Months old.", "Fine — he held my marker, long overdue.", "I owed him. An old debt, unpaid."] },
+};
+
+// Small, true asides for the phases — the lines that don't move.
+const TRUTHS: Record<string, string[]> = {
+  call: ["I turn in early. Always have.", "It was a quiet night, until your knock.", "The walls here are thin; I'd have heard a struggle.", "I sleep poorly, but I stay in bed."],
+  mud: ["I keep my door locked. Always have.", "The hall light's been out for weeks.", "I leave my boots at the door — I track in nothing.", "I'd no reason to go up there."],
+  log: ["I've complained about that light before.", "People trip on those stairs all the time.", "The whole building knows that stair's a hazard.", "I use the rail, not my eyes, on those steps."],
+  alone: ["I don't have many friends to speak of.", "I keep to myself most nights.", "Most evenings it's just me and the radio.", "I'd not have known what to do with company."],
+  sober: ["I drink at the same place every week.", "I always walk home, never drive.", "The barman knows me by name.", "I never make trouble when I drink."],
+  sister: ["We've been together some years now.", "She sleeps lighter than I do.", "We keep separate hours, mostly.", "She'd tell you herself if she could."],
+  ticket: ["My brother and I are close.", "He visits when he can.", "We grew up two streets apart.", "He'd come if I asked him to."],
+  iou: ["We'd been neighbors a long time.", "We argued about noise, nothing more.", "We passed on the stairs, said little.", "Whatever was between us was years old."],
+};
+
+export function claimLine(id: string, rng: () => number): string {
+  return pick(CLAIM[id] ?? CORE_CLAIM, rng);
+}
+export function concessionLine(id: string, rng: () => number): string {
+  return pick(CONCEDE[id] ?? CORE_CONCEDE, rng);
+}
+export function coreClaim(rng: () => number): string {
+  return pick(CORE_CLAIM, rng);
+}
+export function coreConcession(rng: () => number): string {
+  return pick(CORE_CONCEDE, rng);
+}
+export function motiveClaim(rng: () => number): string {
+  return pick(MOTIVE_CLAIM, rng);
+}
+export function motiveConcession(rng: () => number): string {
+  return pick(MOTIVE_CONCEDE, rng);
+}
+
+/** The three escalating tellings of a phase lie, keyed by its seam. */
+export function shiftTriple(seamId: string, rng: () => number): string[] {
+  const s = SHIFT[seamId];
+  if (!s) return ["I've told you all I know.", "That's all there is to it.", "Fine. There's more — but that's the shape of it."];
+  return [pick(s.deny, rng), pick(s.hedge, rng), pick(s.admit, rng)];
+}
+
+/** Two distinct true asides for a phase, keyed by its seam. */
+export function phaseTruths(seamId: string, rng: () => number): string[] {
+  const pool = TRUTHS[seamId] ?? ["I keep to myself, mostly.", "I'd no part in it."];
+  const x = [...pool];
+  for (let i = x.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [x[i], x[j]] = [x[j], x[i]];
+  }
+  return x.slice(0, 2);
+}

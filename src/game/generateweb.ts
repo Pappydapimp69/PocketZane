@@ -1,7 +1,7 @@
 import { WebCase, WebSegment, WebEvidence } from "./web";
 import { MergedCase, Phase, PhaseStatement } from "./merged";
 import { verifyWeb } from "./verify";
-import { deflectionPool } from "./phrasing";
+import { deflectionPool, claimLine, concessionLine, coreClaim, coreConcession, motiveClaim, motiveConcession, shiftTriple, phaseTruths } from "./phrasing";
 import { mulberry32 } from "./rng";
 
 /**
@@ -19,53 +19,15 @@ import { mulberry32 } from "./rng";
 interface SupportT {
   id: string;
   name: string;
-  claim: string;
-  concession: string;
   seam: { id: string; short: string; label: string };
-  deflect: string[]; // generic excuse phrasings (reference the attack as "that")
 }
 
 const SUPPORTS: SupportT[] = [
-  {
-    id: "sleep",
-    name: "the sleep story",
-    claim: "I'd been asleep since before ten. I heard nothing.",
-    concession: "...Alright. I was awake — I took the call, from my bed.",
-    seam: { id: "call", short: "the call", label: "Phone records: a call from the building at 10:50." },
-    deflect: ["I was dead asleep by then — how would I know anything about that?", "Asleep means asleep. That's nothing to do with me.", "Ask someone who was awake. I wasn't."],
-  },
-  {
-    id: "porch",
-    name: "the porch",
-    claim: "I only stepped onto the porch a moment, for air.",
-    concession: "...Fine. I went further than the porch. Up the stairs.",
-    seam: { id: "mud", short: "the mud", label: "Mud from the upper landing, dried on his boots." },
-    deflect: ["The porch, that's all — anything past that is your guess.", "A man can stand on his own porch. That explains it.", "I stepped out a moment. Nothing more than that."],
-  },
-  {
-    id: "dark",
-    name: "the dark stairwell",
-    claim: "The stairwell light was out. No one could've seen a thing.",
-    concession: "...The light worked. I know it worked.",
-    seam: { id: "log", short: "the light log", label: "Maintenance log: the stair light was working that week." },
-    deflect: ["In that dark, your witness saw nothing they'd swear to.", "No one sees clearly in an unlit stairwell.", "Whatever they think they saw, the dark says otherwise."],
-  },
-  {
-    id: "visitor",
-    name: "the visitor",
-    claim: "A friend sat with me the whole evening.",
-    concession: "...There was no friend. I was alone all night.",
-    seam: { id: "alone", short: "the empty book", label: "The desk's sign-in book: no visitor for him all night." },
-    deflect: ["My friend will tell you the same as I do.", "I wasn't alone — ask the man who was with me.", "There's your answer: I had company."],
-  },
-  {
-    id: "drink",
-    name: "the drink",
-    claim: "I'd had a few. I don't remember the half of it.",
-    concession: "...I remember fine. I only hoped you wouldn't ask.",
-    seam: { id: "sober", short: "the barman", label: "The barman: he left sober, and early." },
-    deflect: ["I'd been drinking — who's to say what I did or didn't?", "Don't hang a man on what he half-remembers.", "Ask the bottle, not me."],
-  },
+  { id: "sleep", name: "the sleep story", seam: { id: "call", short: "the call", label: "Phone records: a call from the building at 10:50." } },
+  { id: "porch", name: "the porch", seam: { id: "mud", short: "the mud", label: "Mud from the upper landing, dried on his boots." } },
+  { id: "dark", name: "the dark stairwell", seam: { id: "log", short: "the light log", label: "Maintenance log: the stair light was working that week." } },
+  { id: "visitor", name: "the visitor", seam: { id: "alone", short: "the empty book", label: "The desk's sign-in book: no visitor for him all night." } },
+  { id: "drink", name: "the drink", seam: { id: "sober", short: "the barman", label: "The barman: he left sober, and early." } },
 ];
 
 interface AttackT {
@@ -81,12 +43,6 @@ const ATTACKS: AttackT[] = [
   { id: "key", short: "the key", label: "A key with his tag, found in the upstairs lock." },
 ];
 
-const CORES = [
-  { claim: "I never left my flat that night. Not once.", concession: "...Fine. I went up. He was standing when I left him." },
-  { claim: "I never went up those stairs. Not once.", concession: "...Alright. I went up. Only to talk to him." },
-  { claim: "I was nowhere near his door all evening.", concession: "...I was at his door. I knocked. That's all." },
-];
-
 const HERRINGS = [
   { id: "cig", short: "a cigarette", label: "A cigarette stubbed out by the street door." },
   { id: "smudge", short: "a smudge", label: "A smudge on the bannister, too faint to read." },
@@ -95,45 +51,30 @@ const HERRINGS = [
 // Keystones: bluffs with no floor of their own. Many lies lean on one, and when
 // its tell is found, the whole structure cascades.
 const KEYSTONES: SupportT[] = [
-  {
-    id: "partner",
-    name: "the partner",
-    claim: "My partner was beside me the whole night. She'll tell you so.",
-    concession: "...There was no partner beside me. I made her up to fill the bed.",
-    seam: { id: "sister", short: "her sister", label: "Her sister puts her across town the whole night." },
-    deflect: ["My partner will swear to every word of it.", "Ask her — she was right beside me.", "I wasn't alone. That's the end of it."],
-  },
-  {
-    id: "brother",
-    name: "the brother's word",
-    claim: "My brother was here all evening — he saw the whole of it.",
-    concession: "...My brother wasn't here. He'd cover for me, but he wasn't here.",
-    seam: { id: "ticket", short: "the ticket stub", label: "A train stub: his brother was three towns over that night." },
-    deflect: ["My brother will tell you exactly what I told you.", "He was here. Ask him yourself.", "Family doesn't lie about a thing like this."],
-  },
+  { id: "partner", name: "the partner", seam: { id: "sister", short: "her sister", label: "Her sister puts her across town the whole night." } },
+  { id: "brother", name: "the brother's word", seam: { id: "ticket", short: "the ticket stub", label: "A train stub: his brother was three towns over that night." } },
 ];
 
-const VICTIMS = ["Edmund Carr", "Walter Brill", "Sam Okafor", "Henry Vance", "Leon Pryce"];
-const PLACES = ["Wells Street", "Harrow Lane", "Sutter Row", "the Macklin building", "Dover Court"];
-const SUBJECTS = ["the downstairs tenant", "the brother-in-law", "the landlord", "the old friend", "the night porter"];
+const VICTIMS = ["Edmund Carr", "Walter Brill", "Sam Okafor", "Henry Vance", "Leon Pryce", "Arthur Mosely", "Desmond Hale", "Conrad Webb", "Marcus Lyle", "Tobias Renn", "Gideon Frost", "Niall Ackroyd"];
+const PLACES = ["Wells Street", "Harrow Lane", "Sutter Row", "the Macklin building", "Dover Court", "Calder Mews", "Pennick Yard", "Ashby Walk", "the Greel building", "Marlow Rise", "Tanner's Close", "Verrick Court"];
+const SUBJECTS = ["the downstairs tenant", "the brother-in-law", "the landlord", "the old friend", "the night porter", "the upstairs lodger", "the rent collector", "the former partner", "the man across the hall", "the building's caretaker"];
 
-// Question-phase content, keyed by the seam evidence a phase yields. Pinning the
-// shifting lie in a phase hands the player that seam.
+// Question-phase framing, keyed by the seam evidence a phase yields. The lie's
+// shifting tellings and the true asides come from the phrasing grammar; this
+// just sets each phase's heading and the line that points the player at it.
 interface PhaseT {
   title: string;
   prompt: string;
-  lieShifts: string[];
-  truths: string[];
 }
 const PHASES_BY_SEAM: Record<string, PhaseT> = {
-  call: { title: "The Hour", prompt: "When he turned in. Find the line that drifts.", lieShifts: ["My phone was off the whole night.", "Off, or near enough — I didn't answer it.", "Fine. It rang, and I picked up. From my bed."], truths: ["I turn in early. Always have.", "It was a quiet night, until your knock."] },
-  mud: { title: "The Threshold", prompt: "How far he went. Catch the part he keeps shrinking.", lieShifts: ["I never once opened my door.", "I cracked it for air, no more than that.", "Alright — I stepped out onto the landing."], truths: ["I keep my door locked. Always have.", "The hall light's been out for weeks."] },
-  log: { title: "What Could Be Seen", prompt: "What the dark hid. Press the certainty.", lieShifts: ["That stairwell's been pitch black a month.", "The light flickered, mostly out.", "It was lit. I only hoped you'd think it wasn't."], truths: ["I've complained about that light before.", "People trip on those stairs all the time."] },
-  alone: { title: "The Company", prompt: "Who was with him. Find the friend who wasn't.", lieShifts: ["A friend sat with me all evening.", "He came by for a while, anyway.", "Alright. No one came. I was alone."], truths: ["I don't have many friends to speak of.", "I keep to myself most nights."] },
-  sober: { title: "The Drink", prompt: "How clear his head was. Catch the dodge.", lieShifts: ["I'd drunk too much to recall a thing.", "I'd had a couple, that's all.", "I was stone sober. I just didn't want to say."], truths: ["I drink at the same place every week.", "I always walk home, never drive."] },
-  sister: { title: "The Corroboration", prompt: "The one who'll vouch for him. Find the crack.", lieShifts: ["My partner was beside me every minute.", "She was in and out, but mostly with me.", "She... she wasn't there. I'll say it."], truths: ["We've been together some years now.", "She sleeps lighter than I do."] },
-  ticket: { title: "The Witness", prompt: "His witness. Press until it bends.", lieShifts: ["My brother watched the whole evening with me.", "He was around, in any case.", "He wasn't here. I only wished he were."], truths: ["My brother and I are close.", "He visits when he can."] },
-  iou: { title: "The Bad Blood", prompt: "What stood between them. Catch the thing he smooths over.", lieShifts: ["Money never came up between us.", "We may have spoken of it, once.", "He held a marker of mine. Months old."], truths: ["We'd been neighbors a long time.", "We argued about noise, nothing more."] },
+  call: { title: "The Hour", prompt: "When he turned in. Find the line that drifts." },
+  mud: { title: "The Threshold", prompt: "How far he went. Catch the part he keeps shrinking." },
+  log: { title: "What Could Be Seen", prompt: "What the dark hid. Press the certainty." },
+  alone: { title: "The Company", prompt: "Who was with him. Find the friend who wasn't." },
+  sober: { title: "The Drink", prompt: "How clear his head was. Catch the dodge." },
+  sister: { title: "The Corroboration", prompt: "The one who'll vouch for him. Find the crack." },
+  ticket: { title: "The Witness", prompt: "His witness. Press until it bends." },
+  iou: { title: "The Bad Blood", prompt: "What stood between them. Catch the thing he smooths over." },
 };
 const ROMAN = ["I", "II", "III", "IV"];
 
@@ -158,7 +99,6 @@ export interface GenOpts {
 function buildKeystone(seed: number, rng: () => number, opts: GenOpts): { web: WebCase; leadable: string[] } {
   const K = pick(KEYSTONES, rng);
   const dep = pick(SUPPORTS, rng);
-  const core = pick(CORES, rng);
   const homeAttacks = shuffle(ATTACKS, rng).slice(0, 2);
   const victim = pick(VICTIMS, rng);
   const place = pick(PLACES, rng);
@@ -166,18 +106,18 @@ function buildKeystone(seed: number, rng: () => number, opts: GenOpts): { web: W
   const victimShort = victim.split(" ").slice(-1)[0];
 
   const segments: WebSegment[] = [
-    { id: "home", name: "the alibi", key: true, base: core.claim },
-    { id: dep.id, name: dep.name, base: dep.claim },
-    { id: K.id, name: K.name, keystone: true, base: K.claim },
-    { id: "square", name: "the motive", base: "We were square. I'd no reason to touch him." },
+    { id: "home", name: "the alibi", key: true, base: coreClaim(rng) },
+    { id: dep.id, name: dep.name, base: claimLine(dep.id, rng) },
+    { id: K.id, name: K.name, keystone: true, base: claimLine(K.id, rng) },
+    { id: "square", name: "the motive", base: motiveClaim(rng) },
   ];
   const evidence: WebEvidence[] = [];
   const deflections: Record<string, string[]> = {};
   const concessions: Record<string, string> = {
-    home: core.concession,
-    [dep.id]: dep.concession,
-    [K.id]: K.concession,
-    square: "...He held a marker of mine. Months overdue, and he'd stopped pretending he'd pay.",
+    home: coreConcession(rng),
+    [dep.id]: concessionLine(dep.id, rng),
+    [K.id]: concessionLine(K.id, rng),
+    square: motiveConcession(rng),
   };
   for (const a of homeAttacks) {
     evidence.push({ id: a.id, short: a.short, label: a.label, targets: "home", deflectableBy: [K.id] });
@@ -226,15 +166,14 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
 
     const supports = shuffle(SUPPORTS, rng).slice(0, supN);
     const attacks = shuffle(ATTACKS, rng).slice(0, Math.max(2, supN));
-    const core = pick(CORES, rng);
     const victim = pick(VICTIMS, rng);
     const place = pick(PLACES, rng);
     const subject = pick(SUBJECTS, rng);
 
-    const segments: WebSegment[] = [{ id: "home", name: "the alibi", key: true, base: core.claim }];
+    const segments: WebSegment[] = [{ id: "home", name: "the alibi", key: true, base: coreClaim(rng) }];
     const evidence: WebEvidence[] = [];
     const deflections: Record<string, string[]> = {};
-    const concessions: Record<string, string> = { home: core.concession };
+    const concessions: Record<string, string> = { home: coreConcession(rng) };
 
     // attacks all hit the alibi, deflectable through every support
     const supportIds = supports.map((s) => s.id);
@@ -243,16 +182,16 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
     // supports + their seams; optionally make one support deep (propped by another)
     let deepUsed = false;
     for (const s of supports) {
-      segments.push({ id: s.id, name: s.name, base: s.claim });
-      concessions[s.id] = s.concession;
+      segments.push({ id: s.id, name: s.name, base: claimLine(s.id, rng) });
+      concessions[s.id] = concessionLine(s.id, rng);
       for (const a of attacks) deflections[`${a.id}:${s.id}`] = deflectionPool(3, s.id, a.short, rng);
 
       const makeDeep = depth >= 2 && !deepUsed && SUPPORTS.length > supN;
       if (makeDeep) {
         deepUsed = true;
         const deep = shuffle(SUPPORTS.filter((x) => !supportIds.includes(x.id)), rng)[0];
-        segments.push({ id: deep.id, name: deep.name, base: deep.claim });
-        concessions[deep.id] = deep.concession;
+        segments.push({ id: deep.id, name: deep.name, base: claimLine(deep.id, rng) });
+        concessions[deep.id] = concessionLine(deep.id, rng);
         // this support's seam is now itself deflected by the deeper support
         evidence.push({ id: s.seam.id, short: s.seam.short, label: s.seam.label, targets: s.id, deflectableBy: [deep.id] });
         deflections[`${s.seam.id}:${deep.id}`] = deflectionPool(3, deep.id, s.seam.short, rng);
@@ -267,8 +206,8 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
     leadable.push("iou");
 
     // a non-key motive thread for flavor
-    segments.push({ id: "square", name: "the motive", base: "We were square. I'd no reason to touch him." });
-    concessions["square"] = "...He held a marker of mine. Months overdue, and he'd stopped pretending he'd pay.";
+    segments.push({ id: "square", name: "the motive", base: motiveClaim(rng) });
+    concessions["square"] = motiveConcession(rng);
     evidence.push({ id: "iou", short: "the IOU", label: "An unpaid IOU — his name on it — in the desk.", targets: "square", deflectableBy: [] });
 
     // optional dead-end lead
@@ -318,11 +257,13 @@ export function generateMergedCase(seed: number, opts: GenOpts = {}): MergedCase
 
   const phases: Phase[] = leads.map((seamId, i) => {
     const ph = PHASES_BY_SEAM[seamId];
+    const shifts = shiftTriple(seamId, rng);
+    const truths = phaseTruths(seamId, rng);
     const statements: PhaseStatement[] = shuffle(
       [
-        { id: `l${i}`, text: ph.lieShifts[0], lie: { shifts: ph.lieShifts, lead: seamId } },
-        { id: `t${i}a`, text: ph.truths[0] },
-        { id: `t${i}b`, text: ph.truths[1] },
+        { id: `l${i}`, text: shifts[0], lie: { shifts, lead: seamId } },
+        { id: `t${i}a`, text: truths[0] },
+        { id: `t${i}b`, text: truths[1] },
       ],
       rng,
     );

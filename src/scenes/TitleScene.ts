@@ -266,7 +266,7 @@ export class TitleScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           200,
-          "A subject tells their story. The truth holds still — but a lie cannot tell itself the same way twice.\n\n• AGAIN — make them retell it. Watch what moves.\n• PRESS — lean on a line so it slips sooner; lean hard and its evidence may surface.\n• PIN — accuse a line you've seen move (or proven by evidence). Pin enough to break the story.\n\nPin a line that never moved and you've accused the truth — that costs a strike.\n\nMind the pressure: lean too hard and the subject steadies, undoing your work.",
+          "A subject tells their story. The truth holds still — but a lie cannot tell itself the same way twice.\n\nFIRST, you question them point by point:\n• QUESTION — make them say a line again. A lie shifts; the truth doesn't move.\n• PIN — accuse a line you've caught shifting, and it becomes a lead. Pin the truth and that's a strike; three closes the point — but you keep the leads you have.\n\nTHEN comes the confrontation — the whole alibi at once:\n• PRESS him with a lead. A head-on hit just deflects: the lie hides behind a supporting lie, so break that prop first, then the lie above it.\n• One lie may be holding up all the others. Find that keystone and the whole story caves at once.",
           { fontFamily: BODY, fontSize: "15px", color: CSS.ink, align: "left", wordWrap: { width: 400 }, lineSpacing: 6 },
         )
         .setOrigin(0.5, 0),
