@@ -58,19 +58,31 @@ export class TitleScene extends Phaser.Scene {
       this.scene.start("CaseScene", { mode: "endless", depth: 0 });
     };
 
-    new Button(this, GAME_WIDTH / 2, 576, {
+    const versus = () => {
+      startAmbience();
+      this.scene.start("CaseScene", { mode: "versus" });
+    };
+
+    new Button(this, GAME_WIDTH / 2, 560, {
       w: 240,
-      h: 54,
+      h: 50,
       label: "SIT DOWN",
       accent: COLORS.crimson,
       onClick: begin,
     });
-    new Button(this, GAME_WIDTH / 2, 640, {
+    new Button(this, GAME_WIDTH / 2, 618, {
       w: 240,
-      h: 50,
+      h: 48,
       label: "AN ENDLESS NIGHT",
       accent: COLORS.slate,
       onClick: endless,
+    });
+    new Button(this, GAME_WIDTH / 2, 672, {
+      w: 240,
+      h: 48,
+      label: "TWO DETECTIVES",
+      accent: COLORS.amber,
+      onClick: versus,
     });
 
     // Gamepad / keyboard: A / Enter takes the story; Space / X takes the endless night.
@@ -79,7 +91,7 @@ export class TitleScene extends Phaser.Scene {
     this.input.keyboard?.once("keydown-SPACE", endless);
 
     this.add
-      .text(GAME_WIDTH / 2, 696, "touch · gamepad · keyboard", {
+      .text(GAME_WIDTH / 2, 716, "touch · gamepad · keyboard", {
         fontFamily: MONO,
         fontSize: "10px",
         color: CSS.faint,
@@ -93,7 +105,7 @@ export class TitleScene extends Phaser.Scene {
     if (deepest > 0) lines.push(`deepest night: ${deepest}`);
     if (lines.length > 0) {
       this.add
-        .text(GAME_WIDTH / 2, 724, lines.join("      "), { fontFamily: MONO, fontSize: "11px", color: CSS.amber })
+        .text(GAME_WIDTH / 2, 742, lines.join("      "), { fontFamily: MONO, fontSize: "11px", color: CSS.amber })
         .setOrigin(0.5);
     }
 

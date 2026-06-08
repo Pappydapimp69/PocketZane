@@ -92,3 +92,7 @@ Touch, gamepad, and keyboard are all supported.
 - **v15** — **asset review pass** (every-fifth): a crimson tension vignette closes
   in as pressure climbs, a single heartbeat thumps the moment the room tips into
   HIGH, and the title lamp breathes. New generated `heart` sound.
+- **v16** — **multiplayer: Two Detectives** — local hot-seat versus. Players
+  alternate turns on one shared subject; pins are credited to whoever lands them,
+  and the most pins when the story breaks wins (accuse the truth and you may hand
+  it to your rival).

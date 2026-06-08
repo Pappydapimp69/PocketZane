@@ -19,8 +19,12 @@ const LIST_TOP = 150;
 export class CaseScene extends Phaser.Scene {
   private game_!: Interrogation;
   private caseIndex = 0;
-  private mode: "story" | "endless" = "story";
+  private mode: "story" | "endless" | "versus" = "story";
   private depth = 0;
+  private activePlayer = 0;
+  private scores = [0, 0];
+  private lastStriker = 0;
+  private turnBanner?: Phaser.GameObjects.Text;
   private hud!: Phaser.GameObjects.Text;
   private status!: Phaser.GameObjects.Text;
   private pressureBar!: Phaser.GameObjects.Graphics;
@@ -40,10 +44,12 @@ export class CaseScene extends Phaser.Scene {
     super("CaseScene");
   }
 
-  init(data: { caseIndex?: number; mode?: "story" | "endless"; depth?: number }): void {
+  init(data: { caseIndex?: number; mode?: "story" | "endless" | "versus"; depth?: number }): void {
     this.mode = data?.mode ?? "story";
     this.caseIndex = data?.caseIndex ?? 0;
     this.depth = data?.depth ?? 0;
+    this.activePlayer = 0;
+    this.scores = [0, 0];
   }
 
   create(): void {
@@ -61,7 +67,9 @@ export class CaseScene extends Phaser.Scene {
     }
     this.prevHigh = false;
 
-    this.game_ = new Interrogation(this.mode === "endless" ? generateCase(this.depth) : CASES[this.caseIndex]);
+    const theCase =
+      this.mode === "endless" ? generateCase(this.depth) : this.mode === "versus" ? generateCase(2) : CASES[this.caseIndex];
+    this.game_ = new Interrogation(theCase);
     this.ledger = [];
     this.selected = null;
     this.busy = false;
@@ -175,7 +183,7 @@ export class CaseScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(GAME_WIDTH / 2, 92, c.intro, {
+      .text(GAME_WIDTH / 2, 92, this.mode === "versus" ? "Two detectives, one room. Take turns. Most pins when it breaks wins." : c.intro, {
         fontFamily: BODY,
         fontSize: "13px",
         color: CSS.muted,
@@ -187,6 +195,25 @@ export class CaseScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, 118, "", { fontFamily: MONO, fontSize: "12px", color: CSS.faint })
       .setOrigin(0.5);
     this.pressureBar = this.add.graphics();
+    if (this.mode === "versus") {
+      this.turnBanner = this.add
+        .text(GAME_WIDTH / 2, GAME_HEIGHT - 8, "", { fontFamily: DISPLAY, fontSize: "15px", fontStyle: "italic" })
+        .setOrigin(0.5, 1)
+        .setDepth(95);
+    }
+  }
+
+  // ---- versus turns ----------------------------------------------------------
+
+  private playerColor(p: number): string {
+    return p === 0 ? CSS.amber : CSS.slate;
+  }
+
+  private passTurn(): void {
+    if (this.mode !== "versus") return;
+    this.activePlayer = this.activePlayer === 0 ? 1 : 0;
+    this.clearSelection();
+    this.updateHud();
   }
 
   private buildControls(): void {
@@ -342,6 +369,7 @@ export class CaseScene extends Phaser.Scene {
       SFX.select();
       this.setStatus(tell(r.ok ? "pressUseful" : "pressBarren"), r.ok ? CSS.amber : CSS.muted);
     }
+    this.passTurn();
   }
 
   private doAgain(): void {
@@ -364,6 +392,7 @@ export class CaseScene extends Phaser.Scene {
     } else {
       this.setStatus(tell("againHeld"), CSS.muted);
     }
+    this.passTurn();
   }
 
   /** A fading echo of what a line said a moment ago, so the change is legible. */
@@ -394,24 +423,29 @@ export class CaseScene extends Phaser.Scene {
         SFX.pin();
         this.lampFlicker();
         this.ledger.push(res.lines);
-        this.setStatus(tell("pinned"), CSS.crimsonBright);
+        if (this.mode === "versus") this.scores[this.activePlayer]++;
+        this.setStatus(this.mode === "versus" ? `Player ${this.activePlayer + 1} pins it.` : tell("pinned"), CSS.crimsonBright);
         this.selected = null;
         this.pinBtn.setEnabled(false);
         this.pressBtn.setEnabled(false);
         this.renderCards();
         this.updateHud();
         if (res.broke) this.time.delayedCall(600, () => this.breakStory());
+        else this.passTurn();
         break;
       case "not-yet":
         SFX.deny();
         this.setStatus(tell("notYet"), CSS.muted);
+        this.passTurn();
         break;
       case "false":
         SFX.wrong();
         this.cameras.main.shake(160, 0.004);
+        this.lastStriker = this.activePlayer;
         this.setStatus(res.out ? "That was the truth. It's done talking." : tell("falseStrike"), CSS.slate);
         this.updateHud();
         if (res.out) this.time.delayedCall(700, () => this.endLost());
+        else this.passTurn();
         break;
       case "already":
         break;
@@ -424,7 +458,16 @@ export class CaseScene extends Phaser.Scene {
     const g = this.game_;
     const strikes =
       "●".repeat(g.strikesUsed) + "○".repeat(Math.max(0, g.case.strikes - g.strikesUsed));
-    this.hud.setText(`telling ${g.telling}    ·    pinned ${g.pinsDone}/${g.case.pinsToBreak}    ·    ${strikes}`);
+    if (this.mode === "versus") {
+      this.hud.setText(`P1 ●${this.scores[0]}    ·    P2 ●${this.scores[1]}    ·    ${g.pinsDone}/${g.case.pinsToBreak}    ·    ${strikes}`);
+      if (this.turnBanner) {
+        this.turnBanner
+          .setText(`▲  Player ${this.activePlayer + 1} to act  ▲`)
+          .setColor(this.playerColor(this.activePlayer));
+      }
+    } else {
+      this.hud.setText(`telling ${g.telling}    ·    pinned ${g.pinsDone}/${g.case.pinsToBreak}    ·    ${strikes}`);
+    }
 
     // Pressure bar — composure giving way. Reddens as it climbs.
     const bw = 300;
@@ -482,6 +525,20 @@ export class CaseScene extends Phaser.Scene {
 
     const ledger = this.ledger.map((p) => "“" + p.join("”\n   …  “") + "”").join("\n\n");
 
+    if (this.mode === "versus") {
+      const [a, b] = this.scores;
+      const winner = a === b ? this.activePlayer : a > b ? 0 : 1; // tie → the one who landed the break
+      this.showOverlay({
+        heading: `Player ${winner + 1} wins`,
+        headColor: this.playerColor(winner),
+        stats: `Player 1 ●${a}      Player 2 ●${b}\nthe one who pinned more, before it broke`,
+        ledger,
+        body: g.case.resolution,
+        button: { label: "AGAIN, NEW SUBJECT", onClick: () => this.scene.restart({ mode: "versus" }) },
+      });
+      return;
+    }
+
     if (this.mode === "endless") {
       const night = this.depth + 1;
       markDeepest(night);
@@ -511,6 +568,18 @@ export class CaseScene extends Phaser.Scene {
 
   private endLost(): void {
     this.busy = true;
+    if (this.mode === "versus") {
+      const loser = this.lastStriker;
+      const winner = loser === 0 ? 1 : 0;
+      this.showOverlay({
+        heading: `Player ${winner + 1} wins`,
+        headColor: this.playerColor(winner),
+        stats: `Player ${loser + 1} accused the truth once too often.\nthe subject walks — the steadier hand takes it`,
+        body: "They stand and leave. In the end it wasn't about who pinned the most. It was about who blinked.",
+        button: { label: "AGAIN, NEW SUBJECT", onClick: () => this.scene.restart({ mode: "versus" }) },
+      });
+      return;
+    }
     if (this.mode === "endless") {
       const reached = this.depth + 1;
       markDeepest(this.depth); // nights fully broken before this one
