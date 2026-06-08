@@ -64,6 +64,7 @@ export class CaseRunScene extends Phaser.Scene {
   private runBase = 1;
   private standing = 3; // endless: marks of standing left; a sloppy break costs one
   private recorded = false;
+  private confrontEntered = false;
 
   // two-detective match state (shared seed, hot-seat)
   private vsMode?: "versus" | "coop";
@@ -222,6 +223,10 @@ export class CaseRunScene extends Phaser.Scene {
       this.btnL.setLabel("PRESS HIM  (A)");
       this.btnR.setLabel("THE FILE  (X)");
       this.renderWeb();
+      if (!this.confrontEntered) {
+        this.confrontEntered = true;
+        SFX.heart(); // a single thump as he commits to the whole story
+      }
     } else {
       this.title.setText(this.inq.phase.title);
       this.prompt.setText(this.inq.phase.prompt);
