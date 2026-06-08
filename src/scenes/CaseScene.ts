@@ -223,13 +223,26 @@ export class CaseScene extends Phaser.Scene {
       wordWrap: { width: WRAP },
       lineSpacing: 2,
     });
-    const h = Math.max(42, txt.height + 18);
-    txt.setPosition(-WRAP / 2, -h / 2 + 11);
+    let ev: Phaser.GameObjects.Text | undefined;
+    if (v.evidence) {
+      ev = this.add.text(0, 0, "⟐ " + v.evidence, {
+        fontFamily: MONO,
+        fontSize: "11px",
+        color: CSS.crimsonBright,
+        wordWrap: { width: WRAP },
+        lineSpacing: 1,
+      });
+    }
+    const h = ev ? txt.height + ev.height + 24 : Math.max(42, txt.height + 18);
+    txt.setPosition(-WRAP / 2, -h / 2 + 10);
+    ev?.setPosition(-WRAP / 2, -h / 2 + txt.height + 16);
 
     const bg = this.add.graphics();
     const marker = this.add.graphics();
 
-    const container = this.add.container(CARD_X, top + h / 2, [bg, marker, txt]);
+    const children: Phaser.GameObjects.GameObject[] = [bg, marker, txt];
+    if (ev) children.push(ev);
+    const container = this.add.container(CARD_X, top + h / 2, children);
     container.setData("h", h);
     container.setData("id", v.id);
     container.setSize(CARD_W, h);
@@ -289,13 +302,19 @@ export class CaseScene extends Phaser.Scene {
 
   private doPress(): void {
     if (this.busy || !this.selected) return;
-    const useful = this.game_.press(this.selected);
-    SFX.select();
+    const r = this.game_.press(this.selected);
     this.updateHud();
-    this.setStatus(
-      useful ? "You lean on it. It will be harder to keep straight." : "It doesn't give. Maybe there's nothing there.",
-      useful ? CSS.amber : CSS.muted,
-    );
+    if (r.evidence) {
+      SFX.pin();
+      this.renderCards();
+      this.setStatus("Proof. " + r.evidence, CSS.crimsonBright);
+    } else {
+      SFX.select();
+      this.setStatus(
+        r.ok ? "You lean on it. It will be harder to keep straight." : "It doesn't give. Maybe there's nothing there.",
+        r.ok ? CSS.amber : CSS.muted,
+      );
+    }
   }
 
   private doAgain(): void {

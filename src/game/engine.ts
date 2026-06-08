@@ -16,6 +16,8 @@ export interface Statement {
   text?: string;
   /** A lie: phrasings it slips between under repetition. */
   variants?: string[];
+  /** Hard fact that contradicts this lie. Surfaced by leaning on it hard enough. */
+  evidence?: string;
 }
 
 export interface Case {
@@ -37,6 +39,7 @@ export interface LineView {
   caught: boolean;
   pinned: boolean;
   pressed: number; // how hard you've leaned on it (for UI)
+  evidence?: string; // surfaced hard fact, once revealed
 }
 
 export type PinResult =
@@ -66,6 +69,7 @@ export class Interrogation {
   private changedNow = new Set<string>();
   private caught = new Set<string>();
   private pinned = new Set<string>();
+  private evidenceShown = new Set<string>();
 
   constructor(c: Case, private rng: () => number = Math.random) {
     this.case = c;
@@ -90,13 +94,26 @@ export class Interrogation {
     return this.pressure >= 66 ? "HIGH" : this.pressure >= 33 ? "MEDIUM" : "LOW";
   }
 
-  /** Lean on a line so it can't keep its story straight. Costs composure (pressure). */
-  press(id: string): boolean {
+  /**
+   * Lean on a line so it can't keep its story straight. Costs composure
+   * (pressure). Lean hard enough on a line that has a hard fact behind it and
+   * that fact surfaces — proof, which makes the lie pinnable on the spot.
+   */
+  press(id: string): { ok: boolean; evidence?: string } {
     const s = this.case.statements.find((x) => x.id === id);
-    if (!s || this.pinned.has(id)) return false;
-    if (s.variants) this.instab.set(id, Math.min(1.4, (this.instab.get(id) ?? 0) + PRESS_GAIN));
+    if (!s || this.pinned.has(id)) return { ok: false };
     this.pressure = Math.min(100, this.pressure + PRESS_PRESSURE);
-    return !!s.variants;
+    if (!s.variants) return { ok: false };
+
+    const next = Math.min(1.4, (this.instab.get(id) ?? 0) + PRESS_GAIN);
+    this.instab.set(id, next);
+
+    if (s.evidence && !this.evidenceShown.has(id) && next >= 1.0) {
+      this.evidenceShown.add(id);
+      this.caught.add(id); // proof is grounds enough to pin
+      return { ok: true, evidence: s.evidence };
+    }
+    return { ok: true };
   }
 
   /** Make them tell it again. Lies may slip; pressed lines slip harder. */
@@ -165,6 +182,7 @@ export class Interrogation {
       caught: this.caught.has(s.id),
       pinned: this.pinned.has(s.id),
       pressed: this.instab.get(s.id) ?? 0,
+      evidence: this.evidenceShown.has(s.id) ? s.evidence : undefined,
     }));
   }
 

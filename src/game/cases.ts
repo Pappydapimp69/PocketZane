@@ -35,6 +35,7 @@ export const CASES: Case[] = [
           "My coat was on the hook, dry, where it always is.",
           "My coat? On the hook. Dry. I told you I didn't go out.",
         ],
+        evidence: "Intake logged the coat soaked through.",
       },
       {
         id: "street",
@@ -65,6 +66,7 @@ export const CASES: Case[] = [
           "We were at the bar on Fifth, then my place.",
           "We were at his place, mostly. Then mine.",
         ],
+        evidence: "The Fifth Street camera has them at the bar at 9:40.",
       },
       {
         id: "what",
@@ -118,6 +120,7 @@ export const CASES: Case[] = [
           "The clock reads 11:14. I'd know it anywhere.",
           "The clock has no hands. It only ever did the once.",
         ],
+        evidence: "There was no clock in that room. There never was.",
       },
       {
         id: "her",

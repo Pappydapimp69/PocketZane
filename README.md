@@ -64,3 +64,6 @@ Touch, gamepad, and keyboard are all supported.
   and audio generated in code — paper grain, an overhead interrogation-lamp glow,
   an edge vignette, a low room tone, and a woody knock under *again*/*pin*. The
   game now lives at the repo root.
+- **v6** — **evidence**: lean hard enough on a line with a hard fact behind it and
+  the proof surfaces, making that lie pinnable on the spot — a deterministic
+  second route to the truth alongside catching the flicker.
