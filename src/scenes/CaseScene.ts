@@ -342,9 +342,29 @@ export class CaseScene extends Phaser.Scene {
     } else if (moved.length > 0) {
       SFX.flicker();
       this.setStatus(tell("againMoved"), CSS.amber);
+      moved.forEach((id) => this.floatGhost(id, this.game_.previousText(id)));
     } else {
       this.setStatus(tell("againHeld"), CSS.muted);
     }
+  }
+
+  /** A fading echo of what a line said a moment ago, so the change is legible. */
+  private floatGhost(id: string, prev?: string): void {
+    if (!prev) return;
+    const card = this.cards.find((c) => (c.getData("id") as string) === id);
+    if (!card) return;
+    const h = card.getData("h") as number;
+    const g = this.add
+      .text(card.x - CARD_W / 2 + 12, card.y - h / 2 - 4, "a moment ago:  " + prev, {
+        fontFamily: BODY,
+        fontSize: "11px",
+        color: CSS.faint,
+        fontStyle: "italic",
+        wordWrap: { width: WRAP },
+      })
+      .setOrigin(0, 1)
+      .setDepth(40);
+    this.tweens.add({ targets: g, y: g.y - 16, alpha: { from: 0.9, to: 0 }, duration: 1700, ease: "Cubic.easeOut", onComplete: () => g.destroy() });
   }
 
   private doPin(): void {

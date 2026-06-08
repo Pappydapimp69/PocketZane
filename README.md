@@ -77,3 +77,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v10** — **asset review pass** (every-fifth): film grain now drifts and breathes,
   dust motes turn over in the lamp's cone, and statement cards carry a soft
   top-lit gradient for depth. New generated `mote` texture; all still code-only.
+- **v11** — **the change made legible**: when a line slips, a fading echo of what
+  it said *a moment ago* rises off the card, so you can read the contradiction in
+  the instant it happens instead of trusting your memory.

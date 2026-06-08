@@ -70,6 +70,7 @@ export class Interrogation {
   private caught = new Set<string>();
   private pinned = new Set<string>();
   private evidenceShown = new Set<string>();
+  private prevShown = new Map<string, string>();
 
   constructor(c: Case, private rng: () => number = Math.random) {
     this.case = c;
@@ -142,6 +143,7 @@ export class Interrogation {
         const cur = this.shown.get(s.id) ?? 0;
         const next = this.pickOther(s.variants.length, cur);
         if (next !== cur) {
+          this.prevShown.set(s.id, s.variants[cur]);
           this.shown.set(s.id, next);
           this.changedNow.add(s.id);
           this.caught.add(s.id);
@@ -171,6 +173,11 @@ export class Interrogation {
   /** The distinct phrasings heard for a line — the ledger's quotation. */
   contradiction(id: string): string[] {
     return [...(this.seen.get(id) ?? [])];
+  }
+
+  /** What a line said just before its most recent slip. */
+  previousText(id: string): string | undefined {
+    return this.prevShown.get(id);
   }
 
   view(): LineView[] {
