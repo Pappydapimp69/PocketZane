@@ -4,7 +4,7 @@ import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere } from "../game/textures";
 import { startAmbience, isMuted, toggleMute, SFX } from "../game/audio";
-import { getCleared, getDeepest, hasSeenIntro, markSeenIntro } from "../game/save";
+import { getCleared, getDeepest, hasSeenIntro, markSeenIntro, getTotalBreaks, rankFor } from "../game/save";
 import { CASES } from "../game/cases";
 import { PAD } from "../input";
 
@@ -146,12 +146,14 @@ export class TitleScene extends Phaser.Scene {
 
     const cleared = getCleared();
     const deepest = getDeepest();
+    const total = getTotalBreaks();
     const lines: string[] = [];
-    if (cleared > 0) lines.push(`stories broken: ${Math.min(cleared, CASES.length)} / ${CASES.length}`);
-    if (deepest > 0) lines.push(`deepest night: ${deepest}`);
+    if (total > 0) lines.push(`rank: ${rankFor(total)}`);
+    if (cleared > 0) lines.push(`story ${Math.min(cleared, CASES.length)}/${CASES.length}`);
+    if (deepest > 0) lines.push(`deepest ${deepest}`);
     if (lines.length > 0) {
       this.add
-        .text(GAME_WIDTH / 2, 762, lines.join("      "), { fontFamily: MONO, fontSize: "11px", color: CSS.amber })
+        .text(GAME_WIDTH / 2, 762, lines.join("   ·   "), { fontFamily: MONO, fontSize: "11px", color: CSS.amber })
         .setOrigin(0.5);
     }
 

@@ -6,7 +6,7 @@ import { Interrogation, LineView } from "../game/engine";
 import { CASES } from "../game/cases";
 import { SFX, startAmbience } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
-import { markCleared, getBest, setBest, markDeepest, getDeepest } from "../game/save";
+import { markCleared, getBest, setBest, markDeepest, getDeepest, incBreaks } from "../game/save";
 import { generateCase } from "../game/generator";
 import { mulberry32, todaySeed, todayStamp } from "../game/rng";
 import { tell } from "../game/reactions";
@@ -599,7 +599,8 @@ export class CaseScene extends Phaser.Scene {
 
   private breakStory(): void {
     this.busy = true;
-    markCleared(this.caseIndex + 1);
+    incBreaks();
+    if (this.mode === "story") markCleared(this.caseIndex + 1);
     SFX.break();
 
     const g = this.game_;

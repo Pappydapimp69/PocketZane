@@ -64,6 +64,39 @@ export function markDeepest(night: number): void {
   }
 }
 
+const TOTAL_KEY = "again:breaks";
+
+/** Total stories broken, across every mode — drives the detective rank. */
+export function getTotalBreaks(): number {
+  try {
+    return parseInt(localStorage.getItem(TOTAL_KEY) ?? "0", 10) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function incBreaks(): void {
+  try {
+    localStorage.setItem(TOTAL_KEY, String(getTotalBreaks() + 1));
+  } catch {
+    /* ignore */
+  }
+}
+
+const RANKS: { at: number; title: string }[] = [
+  { at: 0, title: "Rookie" },
+  { at: 3, title: "Detective" },
+  { at: 8, title: "Inspector" },
+  { at: 16, title: "Closer" },
+  { at: 30, title: "The Confessor" },
+];
+
+export function rankFor(total: number): string {
+  let title = RANKS[0].title;
+  for (const r of RANKS) if (total >= r.at) title = r.title;
+  return title;
+}
+
 const INTRO_KEY = "again:seenIntro";
 
 export function hasSeenIntro(): boolean {

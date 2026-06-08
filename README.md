@@ -141,3 +141,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v32** — **deeper testimony pool**: the procedural generator gains a batch of new
   claims and truths (a note, a changed will, a safe, a fire, a moved car), so
   endless / daily / multiplayer subjects repeat themselves far less.
+- **v33** — **detective rank**: a persistent rank (Rookie → Detective → Inspector →
+  Closer → The Confessor) that climbs with every story you break, in any mode,
+  shown on the title — long-term progression across sittings.
