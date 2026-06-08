@@ -87,6 +87,7 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
     record.on("pointerup", () => this.scene.start("Stats"));
+    this.input.keyboard?.on("keydown-R", () => this.scene.start("Stats"));
 
     // Quiet shortcuts: the crafted case (N) and a fresh generated one (W).
     this.input.keyboard?.on("keydown-N", () => {
