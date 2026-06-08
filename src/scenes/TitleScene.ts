@@ -56,7 +56,7 @@ export class TitleScene extends Phaser.Scene {
     // Daily challenge — distinct from the main menu, same subject for everyone.
     const daily = () => {
       startAmbience();
-      this.scene.start("CaseScene", { mode: "daily" });
+      this.scene.start("CaseRun", { mode: "daily" });
     };
     const dailyText = this.add
       .text(GAME_WIDTH / 2, 360, "» today's subject «", { fontFamily: MONO, fontSize: "12px", color: CSS.slate })
@@ -71,27 +71,10 @@ export class TitleScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
     record.on("pointerup", () => this.scene.start("Stats"));
 
-    // The redesign prototype — a real case, evidence, the new loop.
-    const beta = this.add
-      .text(GAME_WIDTH / 2, 400, "❖  THE CASE  (beta)  ❖", { fontFamily: MONO, fontSize: "12px", color: CSS.crimsonBright })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    beta.on("pointerup", () => {
-      startAmbience();
-      this.scene.start("CaseRun");
-    });
+    // Quiet shortcuts: the crafted case (N) and a fresh generated one (W).
     this.input.keyboard?.on("keydown-N", () => {
       startAmbience();
       this.scene.start("CaseRun");
-    });
-
-    const web = this.add
-      .text(GAME_WIDTH / 2, 424, "❖  GENERATED  (beta)  ❖", { fontFamily: MONO, fontSize: "12px", color: CSS.crimsonBright })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    web.on("pointerup", () => {
-      startAmbience();
-      this.scene.start("CaseRun", { generate: true });
     });
     this.input.keyboard?.on("keydown-W", () => {
       startAmbience();
@@ -115,11 +98,11 @@ export class TitleScene extends Phaser.Scene {
 
     const begin = () => {
       startAmbience();
-      this.scene.start("CaseScene", { mode: "story", caseIndex: 0 });
+      this.scene.start("CaseRun");
     };
     const endless = () => {
       startAmbience();
-      this.scene.start("CaseScene", { mode: "endless", depth: 0 });
+      this.scene.start("CaseRun", { mode: "endless", night: 1 });
     };
 
     const versus = () => {

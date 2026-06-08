@@ -5,6 +5,8 @@ import { Button } from "../ui";
 import { MergedInquiry, PHASE_STRIKES, MergedCase } from "../game/merged";
 import { WELLS } from "../game/mergedcase";
 import { generateMergedCase } from "../game/generateweb";
+import { dailySeed, DAILY_OPTS, optsForNight, nightSeed } from "../game/ladder";
+import { incBreaks, markDeepest, rankFor, getTotalBreaks } from "../game/save";
 import { SFX, startAmbience, stopSpeech } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
 import { PAD } from "../input";
@@ -47,14 +49,30 @@ export class CaseRunScene extends Phaser.Scene {
 
   private theCase: MergedCase = WELLS;
   private seedVal = 1;
+  private mode: "free" | "daily" | "endless" = "free";
+  private night = 1;
+  private runBase = 1;
+  private recorded = false;
 
   constructor() {
     super("CaseRun");
   }
 
-  init(data: { generate?: boolean; seed?: number }): void {
-    this.seedVal = data?.seed ?? (Date.now() & 0xffff) + 1;
-    this.theCase = data?.generate ? generateMergedCase(this.seedVal, { weirdness: 0.5, herring: true }) : WELLS;
+  init(data: { generate?: boolean; seed?: number; mode?: "free" | "daily" | "endless"; night?: number; runBase?: number }): void {
+    this.mode = data?.mode ?? "free";
+    this.recorded = false;
+    if (this.mode === "daily") {
+      this.seedVal = dailySeed();
+      this.theCase = generateMergedCase(this.seedVal, DAILY_OPTS);
+    } else if (this.mode === "endless") {
+      this.night = Math.max(1, data?.night ?? 1);
+      this.runBase = data?.runBase ?? ((Date.now() & 0x7fffffff) >>> 0);
+      this.seedVal = nightSeed(this.runBase, this.night);
+      this.theCase = generateMergedCase(this.seedVal, optsForNight(this.night));
+    } else {
+      this.seedVal = data?.seed ?? (Date.now() & 0xffff) + 1;
+      this.theCase = data?.generate ? generateMergedCase(this.seedVal, { weirdness: 0.5, herring: true }) : WELLS;
+    }
   }
 
   create(): void {
@@ -71,6 +89,8 @@ export class CaseRunScene extends Phaser.Scene {
     this.add.text(GAME_WIDTH / 2, 30, "AGAIN", { fontFamily: DISPLAY, fontSize: "22px", color: CSS.ink }).setOrigin(0.5).setLetterSpacing(6);
     this.add.text(14, 14, "← leave", { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(0, 0).setInteractive({ useHandCursor: true }).on("pointerup", () => this.scene.start("TitleScene"));
     this.add.text(GAME_WIDTH - 14, 14, "the file  (Y)", { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(1, 0).setInteractive({ useHandCursor: true }).on("pointerup", () => this.showFile(false));
+    const tag = this.mode === "daily" ? "today's subject" : this.mode === "endless" ? `night ${this.night}` : "";
+    if (tag) this.add.text(GAME_WIDTH / 2, 44, tag, { fontFamily: MONO, fontSize: "10px", color: CSS.faint }).setOrigin(0.5);
     this.add.text(GAME_WIDTH / 2, 58, c.title, { fontFamily: DISPLAY, fontSize: "14px", color: CSS.muted, fontStyle: "italic" }).setOrigin(0.5);
     this.title = this.add.text(GAME_WIDTH / 2, 86, "", { fontFamily: DISPLAY, fontSize: "18px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5);
     this.hud = this.add.text(GAME_WIDTH / 2, 112, "", { fontFamily: MONO, fontSize: "12px", color: CSS.faint }).setOrigin(0.5);
@@ -469,8 +489,17 @@ export class CaseRunScene extends Phaser.Scene {
     o.add(new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 72, { w: 220, h: 50, label: initial ? "BEGIN  (A)" : "CLOSE  (A/Y)", accent: COLORS.crimson, onClick: close }));
   }
 
+  /** Solving a case feeds the record: a break toward rank, plus depth in endless. */
+  private recordWin(): void {
+    if (this.recorded) return;
+    this.recorded = true;
+    incBreaks();
+    if (this.mode === "endless") markDeepest(this.night);
+  }
+
   private solve(): void {
     this.busy = true;
+    this.recordWin();
     const o = this.add.container(0, 0).setDepth(140);
     o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.97));
     if (this.textures.exists("grain")) o.add(this.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, "grain").setOrigin(0).setAlpha(0.5));
@@ -480,10 +509,15 @@ export class CaseRunScene extends Phaser.Scene {
     const reso = this.add.container(0, 0);
     reso.add(this.add.text(GAME_WIDTH / 2, 110, "the story breaks", { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
     reso.add(this.add.text(GAME_WIDTH / 2, 158, this.inq.case.resolution, { fontFamily: BODY, fontSize: "15px", color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
+    if (this.mode === "endless") {
+      reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 150, `night ${this.night} closed  ·  rank ${rankFor(getTotalBreaks())}`, { fontFamily: MONO, fontSize: "11px", color: CSS.amber }).setOrigin(0.5));
+    }
     const diagram = this.buildDiagram().setVisible(false);
     o.add([reso, diagram]);
 
     const toTitle = () => this.scene.start("TitleScene");
+    const nextNight = () => this.scene.start("CaseRun", { mode: "endless", night: this.night + 1, runBase: this.runBase });
+    const onward = this.mode === "endless" ? nextNight : toTitle;
     const showBoard = () => {
       reso.setVisible(false);
       diagram.setVisible(true);
@@ -492,12 +526,16 @@ export class CaseRunScene extends Phaser.Scene {
     const backToReso = () => {
       diagram.setVisible(false);
       reso.setVisible(true);
-      this.overlayClose = toTitle;
+      this.overlayClose = onward;
     };
-    this.overlayClose = toTitle;
+    this.overlayClose = onward;
 
     reso.add(new Button(this, 132, GAME_HEIGHT - 68, { w: 220, h: 50, label: "▦  THE WEB", fontSize: 14, accent: COLORS.slate, onClick: showBoard }));
-    reso.add(new Button(this, 350, GAME_HEIGHT - 68, { w: 200, h: 50, label: "CLOSE  (A)", fontSize: 13, accent: COLORS.crimson, onClick: toTitle }));
+    reso.add(
+      this.mode === "endless"
+        ? new Button(this, 350, GAME_HEIGHT - 68, { w: 200, h: 50, label: "NEXT NIGHT  (A)", fontSize: 13, accent: COLORS.crimson, onClick: nextNight })
+        : new Button(this, 350, GAME_HEIGHT - 68, { w: 200, h: 50, label: "CLOSE  (A)", fontSize: 13, accent: COLORS.crimson, onClick: toTitle }),
+    );
     diagram.add(new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 56, { w: 200, h: 46, label: "BACK  (B)", accent: COLORS.slate, onClick: backToReso }));
   }
 
