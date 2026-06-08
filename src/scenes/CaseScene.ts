@@ -115,12 +115,13 @@ export class CaseScene extends Phaser.Scene {
     kb?.on("keydown-SPACE", () => this.onButton(PAD.A));
     kb?.on("keydown-P", () => this.onButton(PAD.X));
     kb?.on("keydown-K", () => this.onButton(PAD.Y));
+    kb?.on("keydown-L", () => this.onButton(PAD.LB));
   }
 
   /** Map a (gamepad or keyboard-aliased) button to an action. */
   private onButton(index: number): void {
     if (this.busy) {
-      if ((index === PAD.A || index === PAD.START) && this.overlayAction) this.overlayAction();
+      if ((index === PAD.A || index === PAD.START || index === PAD.B) && this.overlayAction) this.overlayAction();
       return;
     }
     switch (index) {
@@ -139,10 +140,52 @@ export class CaseScene extends Phaser.Scene {
       case PAD.Y:
         this.doPin();
         break;
+      case PAD.LB:
+        this.showLedger();
+        break;
       case PAD.B:
         this.clearSelection();
         break;
     }
+  }
+
+  private showLedger(): void {
+    if (this.busy) return;
+    const entries = this.game_.ledgerView();
+    const body =
+      entries.length === 0
+        ? "Nothing caught yet.\n\nMake them tell it again, and watch which lines won't hold their shape."
+        : entries
+            .map(
+              (e) =>
+                `${e.pinned ? "✕" : "▲"}  ` +
+                e.phrasings.map((p) => `“${p}”`).join("\n      …  ") +
+                (e.evidence ? `\n      ⟐ ${e.evidence}` : ""),
+            )
+            .join("\n\n");
+
+    this.busy = true;
+    const c = this.add.container(0, 0).setDepth(120);
+    c.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.96));
+    if (this.textures.exists("vignette")) c.add(this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, "vignette"));
+    c.add(
+      this.add
+        .text(GAME_WIDTH / 2, 90, "the ledger", { fontFamily: DISPLAY, fontSize: "24px", color: CSS.amber, fontStyle: "italic" })
+        .setOrigin(0.5),
+    );
+    c.add(
+      this.add
+        .text(GAME_WIDTH / 2, 140, body, { fontFamily: MONO, fontSize: "12px", color: CSS.ink, align: "left", wordWrap: { width: 404 }, lineSpacing: 3 })
+        .setOrigin(0.5, 0),
+    );
+    const close = () => {
+      c.destroy();
+      this.busy = false;
+      this.overlayAction = null;
+    };
+    this.overlayAction = close;
+    const btn = new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 60, { w: 200, h: 48, label: "CLOSE", accent: COLORS.slate, onClick: close });
+    c.add(btn);
   }
 
   update(_time: number, delta: number): void {
@@ -214,6 +257,11 @@ export class CaseScene extends Phaser.Scene {
     this.hud = this.add
       .text(GAME_WIDTH / 2, 118, "", { fontFamily: MONO, fontSize: "12px", color: CSS.faint })
       .setOrigin(0.5);
+    const ledgerLink = this.add
+      .text(GAME_WIDTH - 14, 118, "≡ ledger", { fontFamily: MONO, fontSize: "11px", color: CSS.faint })
+      .setOrigin(1, 0.5)
+      .setInteractive({ useHandCursor: true });
+    ledgerLink.on("pointerup", () => this.showLedger());
     this.pressureBar = this.add.graphics();
     // A faint rule separating the header from the testimony.
     const rule = this.add.graphics();

@@ -195,6 +195,17 @@ export class Interrogation {
     return this.prevShown.get(id);
   }
 
+  /** Every line caught so far, with the phrasings heard — the player's ledger. */
+  ledgerView(): { phrasings: string[]; pinned: boolean; evidence?: string }[] {
+    return this.case.statements
+      .filter((s) => this.caught.has(s.id))
+      .map((s) => ({
+        phrasings: [...(this.seen.get(s.id) ?? [])],
+        pinned: this.pinned.has(s.id),
+        evidence: this.evidenceShown.has(s.id) ? s.evidence : undefined,
+      }));
+  }
+
   view(): LineView[] {
     return this.case.statements.map((s) => ({
       id: s.id,

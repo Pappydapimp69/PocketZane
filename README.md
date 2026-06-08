@@ -129,3 +129,6 @@ Touch, gamepad, and keyboard are all supported.
   screen (date + tellings + strikes), so the shared puzzle is actually shareable.
 - **v28** — **onboarding**: a "how it works" panel (again / press / pin, strikes,
   pressure) reachable from the title and shown once automatically on first launch.
+- **v29** — **the ledger, browsable**: open an in-interrogation ledger (≡ / L /
+  shoulder button) listing every line you've caught and the phrasings heard —
+  the longitudinal record, on demand, for the heavier cases.
