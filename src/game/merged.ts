@@ -60,10 +60,12 @@ export class MergedInquiry {
   private gathered = new Set<string>();
   private web: WebInquiry | null = null;
   private seed: number;
+  readonly strikesAllowed: number;
 
-  constructor(c: MergedCase, seed = 1) {
+  constructor(c: MergedCase, seed = 1, strikesAllowed = PHASE_STRIKES) {
     this.case = c;
     this.seed = seed;
+    this.strikesAllowed = Math.max(1, strikesAllowed);
     c.startLeads.forEach((l) => this.gathered.add(l));
   }
 
@@ -108,14 +110,14 @@ export class MergedInquiry {
       return { kind: "lead", leadId: s.lie.lead, phaseDone: this.phaseCleared() };
     }
     this.strikes += 1;
-    return { kind: "strike", strikes: this.strikes, failed: this.strikes >= PHASE_STRIKES };
+    return { kind: "strike", strikes: this.strikes, failed: this.strikes >= this.strikesAllowed };
   }
 
   private phaseCleared(): boolean {
     return this.phase.statements.filter((s) => s.lie).every((s) => this.pinned.has(s.id));
   }
   get phaseOver(): boolean {
-    return this.phaseCleared() || this.strikes >= PHASE_STRIKES;
+    return this.phaseCleared() || this.strikes >= this.strikesAllowed;
   }
 
   advance(): void {

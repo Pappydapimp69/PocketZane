@@ -6,7 +6,7 @@ import { MergedInquiry, PHASE_STRIKES, MergedCase } from "../game/merged";
 import { WELLS } from "../game/mergedcase";
 import { generateMergedCase } from "../game/generateweb";
 import { dailySeed, DAILY_OPTS, optsForNight, nightSeed, randomSeed, freeOpts } from "../game/ladder";
-import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias, getBest, setBest, getNarration } from "../game/save";
+import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias, getBest, setBest, getNarration, getDifficulty, DIFFS } from "../game/save";
 import { SFX, startAmbience, stopSpeech, speak } from "../game/audio";
 import { addAtmosphere, addRain } from "../game/textures";
 import { paintPortrait, suspectName, temperament, Mood, Temperament } from "../game/portrait";
@@ -124,7 +124,7 @@ export class CaseRunScene extends Phaser.Scene {
     addAtmosphere(this, { lamp: true });
     addRain(this, -1, 1);
     startAmbience();
-    this.inq = new MergedInquiry(this.theCase, this.seedVal);
+    this.inq = new MergedInquiry(this.theCase, this.seedVal, PHASE_STRIKES + DIFFS[getDifficulty()].strikes);
     this.marks = this.add.graphics().setDepth(5);
     this.busy = false;
 
@@ -281,7 +281,7 @@ export class CaseRunScene extends Phaser.Scene {
       this.hud.setText(`alibi  ${this.inq.brokenCount}/${this.inq.total} broken    ·    leads ${this.inq.heldEvidence().length}`);
     } else {
       const s = this.inq.phaseStrikes;
-      const dots = "●".repeat(s) + "○".repeat(Math.max(0, PHASE_STRIKES - s));
+      const dots = "●".repeat(s) + "○".repeat(Math.max(0, this.inq.strikesAllowed - s));
       this.hud.setText(`patience ${dots}    ·    leads ${this.inq.leadCount}`);
     }
   }
