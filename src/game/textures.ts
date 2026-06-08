@@ -13,6 +13,29 @@ export function generateTextures(scene: Phaser.Scene): void {
   makeVignette(scene, "vignette", GAME_WIDTH, GAME_HEIGHT);
   makeMote(scene, "mote", 24);
   makeRaindrop(scene, "raindrop", 3, 26);
+  makeBlinds(scene, "blinds", GAME_WIDTH, GAME_HEIGHT);
+}
+
+/** Venetian-blind light bars slanting across the dark — pure noir staging. */
+function makeBlinds(scene: Phaser.Scene, key: string, w: number, h: number): void {
+  if (scene.textures.exists(key)) return;
+  const tex = scene.textures.createCanvas(key, w, h);
+  const ctx = tex?.getContext();
+  if (!ctx || !tex) return;
+  ctx.save();
+  ctx.translate(w / 2, h / 2);
+  ctx.rotate(-0.12);
+  ctx.translate(-w / 2, -h * 0.9);
+  const band = 34;
+  for (let y = 0; y < h * 1.9; y += band) {
+    const g = ctx.createLinearGradient(0, y, 0, y + band * 0.5);
+    g.addColorStop(0, "rgba(232,200,128,0.10)");
+    g.addColorStop(1, "rgba(232,200,128,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(-40, y, w + 80, band * 0.5);
+  }
+  ctx.restore();
+  tex.refresh();
 }
 
 /** A thin vertical streak — a single fall of rain on glass. */
