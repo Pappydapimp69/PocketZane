@@ -113,6 +113,24 @@ const TRUTHS: Record<string, string[]> = {
   iou: ["We'd been neighbors a long time.", "We argued about noise, nothing more.", "We passed on the stairs, said little.", "Whatever was between us was years old."],
 };
 
+// The bare facts of the death — varied, but all the same night-fall premise the
+// seams are built around (a man down at the foot of his stairs, in the rain).
+const WHAT = [
+  "{v} was found dead at the foot of his stairs, his neck broken. It reads like a fall.",
+  "{v} lay dead at the bottom of the stairwell, his skull split on the tile. A fall, by the look of it.",
+  "They found {v} crumpled at the foot of the stairs, cold since the night before. It reads as an accident.",
+  "{v} was found broken at the bottom of his own steps. The coroner wrote it a fall.",
+];
+const WHEN = [
+  "The rain ran all night; the fall came between ten and midnight.",
+  "It rained without let-up; he went down sometime between ten and twelve.",
+  "The storm covered every sound; he fell in the hours before midnight.",
+  "Rain all evening, and no witness to the fall — only that it came late.",
+];
+export function premise(victim: string, rng: () => number): { what: string; when: string } {
+  return { what: pick(WHAT, rng).replace("{v}", victim), when: pick(WHEN, rng) };
+}
+
 export function claimLine(id: string, rng: () => number): string {
   return pick(CLAIM[id] ?? CORE_CLAIM, rng);
 }

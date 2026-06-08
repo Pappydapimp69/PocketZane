@@ -1,7 +1,7 @@
 import { WebCase, WebSegment, WebEvidence } from "./web";
 import { MergedCase, Phase, PhaseStatement } from "./merged";
 import { verifyWeb } from "./verify";
-import { deflectionPool, claimLine, concessionLine, coreClaim, coreConcession, motiveClaim, motiveConcession, shiftTriple, phaseTruths } from "./phrasing";
+import { deflectionPool, claimLine, concessionLine, coreClaim, coreConcession, motiveClaim, motiveConcession, shiftTriple, phaseTruths, premise } from "./phrasing";
 import { mulberry32 } from "./rng";
 
 /**
@@ -134,9 +134,8 @@ function buildKeystone(seed: number, rng: () => number, opts: GenOpts): { web: W
     title: `The ${place} Stairs`,
     subject,
     brief: {
-      what: `${victim} was found dead at the foot of his stairs, his neck broken. It reads like a fall.`,
+      ...premise(victim, rng),
       where: `His building on ${place}.`,
-      when: "The rain ran all night; the fall came between ten and midnight.",
       why: `${subject} lived below ${victimShort}. They argued that evening — and his whole account rests on one corroboration that won't bear weight.`,
       goal: "His story leans hard on one claim. Find the seam in that, and the rest comes down together.",
     },
@@ -225,9 +224,8 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
       title: `The ${place} Stairs`,
       subject: `${subject}`,
       brief: {
-        what: `${victim} was found dead at the foot of his stairs, his neck broken. It reads like a fall.`,
+        ...premise(victim, rng),
         where: `His building on ${place}.`,
-        when: "The rain ran all night; the fall came between ten and midnight.",
         why: `${subject} lived below ${victimShort}. They argued that evening — he swears he never left his flat.`,
         goal: "Work him for leads, then break his statement. A head-on hit will only deflect.",
       },
