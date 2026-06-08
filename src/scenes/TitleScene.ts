@@ -14,7 +14,10 @@ export class TitleScene extends Phaser.Scene {
 
   create(): void {
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
-    addAtmosphere(this, { lamp: true });
+    const { lamp } = addAtmosphere(this, { lamp: true });
+    if (lamp) {
+      this.tweens.add({ targets: lamp, alpha: { from: 0.7, to: 1 }, scale: { from: 0.98, to: 1.05 }, duration: 3600, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    }
 
     const title = this.add
       .text(GAME_WIDTH / 2, 250, "AGAIN", { fontFamily: DISPLAY, fontSize: "76px", color: CSS.ink })

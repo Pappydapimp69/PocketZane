@@ -118,4 +118,9 @@ export const SFX = {
       { freq: 262, dur: 0.18, type: "triangle", vol: 0.1, delay: 0.14 },
       { freq: 392, dur: 0.5, type: "triangle", vol: 0.1, delay: 0.28 },
     ]),
+  heart: () =>
+    play([
+      { freq: 62, dur: 0.16, type: "sine", vol: 0.14 },
+      { freq: 52, dur: 0.2, type: "sine", vol: 0.1, delay: 0.22 },
+    ]),
 };

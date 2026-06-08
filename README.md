@@ -89,3 +89,6 @@ Touch, gamepad, and keyboard are all supported.
   from a pool of claims, ratcheting difficulty (more lies, fewer strikes) each
   night, until you accuse the truth one too many times. The title tracks how deep
   you got.
+- **v15** — **asset review pass** (every-fifth): a crimson tension vignette closes
+  in as pressure climbs, a single heartbeat thumps the moment the room tips into
+  HIGH, and the title lamp breathes. New generated `heart` sound.

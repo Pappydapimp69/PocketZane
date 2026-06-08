@@ -33,6 +33,8 @@ export class CaseScene extends Phaser.Scene {
   private overlayAction: (() => void) | null = null;
   private stickCooldown = 0;
   private lamp?: Phaser.GameObjects.Image;
+  private tension?: Phaser.GameObjects.Image;
+  private prevHigh = false;
 
   constructor() {
     super("CaseScene");
@@ -48,6 +50,17 @@ export class CaseScene extends Phaser.Scene {
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg);
     this.lamp = addAtmosphere(this, { lamp: true }).lamp;
     startAmbience();
+
+    // A crimson tension vignette that closes in as the pressure climbs.
+    if (this.textures.exists("vignette")) {
+      this.tension = this.add
+        .image(GAME_WIDTH / 2, GAME_HEIGHT / 2, "vignette")
+        .setDepth(91)
+        .setTint(0x8b1e1e)
+        .setAlpha(0);
+    }
+    this.prevHigh = false;
+
     this.game_ = new Interrogation(this.mode === "endless" ? generateCase(this.depth) : CASES[this.caseIndex]);
     this.ledger = [];
     this.selected = null;
@@ -431,6 +444,15 @@ export class CaseScene extends Phaser.Scene {
       this.lamp.setScale(1 + 0.12 * t);
       this.lamp.setTint(g.state === "HIGH" ? 0xffb38f : g.state === "MEDIUM" ? 0xffe0b8 : 0xffffff);
     }
+
+    // Tension vignette + a single heartbeat the moment the room tips into HIGH.
+    if (this.tension) {
+      const target = g.state === "HIGH" ? 0.36 : g.state === "MEDIUM" ? 0.12 : 0;
+      this.tweens.add({ targets: this.tension, alpha: target, duration: 300 });
+    }
+    const high = g.state === "HIGH";
+    if (high && !this.prevHigh) SFX.heart();
+    this.prevHigh = high;
   }
 
   private lampFlicker(): void {
