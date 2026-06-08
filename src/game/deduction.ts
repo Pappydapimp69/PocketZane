@@ -79,6 +79,7 @@ export class Inquiry {
   private broken = new Set<string>();
   private held = new Set<string>();
   private probed = new Set<string>();
+  private used = new Set<string>();
 
   constructor(c: DCase) {
     this.case = c;
@@ -101,6 +102,11 @@ export class Inquiry {
 
   evidenceLabel(id: string): string {
     return this.case.evidence.find((e) => e.id === id)?.label ?? id;
+  }
+
+  /** Has this lead ever been successfully presented? (For marking it spent.) */
+  isUsed(id: string): boolean {
+    return this.used.has(id);
   }
 
   private keyThreads(): Thread[] {
@@ -136,6 +142,7 @@ export class Inquiry {
     const i = this.idx.get(threadId) ?? 0;
     const def = t.defenses[i];
     if (!def.brokenBy.includes(evId)) return { kind: "nomatch" };
+    this.used.add(evId);
     if (i + 1 >= t.defenses.length) {
       this.broken.add(threadId);
       return { kind: "broke", key: !!t.key, solved: this.solved };

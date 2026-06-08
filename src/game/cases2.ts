@@ -18,8 +18,8 @@ export const WELLS_STREET: DCase = {
   subject: "Marcus Hale — the downstairs tenant",
   brief: {
     what: "Edmund Carr was found dead at the foot of his stairs, his neck broken. It reads like a fall.",
-    where: "His building on Wells Street. It rained, hard, all night.",
-    when: "Sometime between ten and midnight.",
+    where: "His building on Wells Street.",
+    when: "The rain ran all night; the fall came sometime between ten and midnight.",
     why: "You're sitting across from Hale, who lives below Carr. They argued — loudly — earlier that evening. He says he was home all night and never went up.",
     goal: "Break the alibi. Put him on those stairs.",
   },

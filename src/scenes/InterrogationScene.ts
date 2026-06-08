@@ -111,7 +111,8 @@ export class InterrogationScene extends Phaser.Scene {
         this.pickHandler(i);
         return;
       }
-      if ((i === PAD.A || i === PAD.B || i === PAD.START) && this.overlayClose) this.overlayClose();
+      // A / B / Start / Y all dismiss a panel (Y so it toggles the file shut).
+      if ((i === PAD.A || i === PAD.B || i === PAD.START || i === PAD.Y) && this.overlayClose) this.overlayClose();
       return;
     }
     if (i === PAD.UP) this.moveSelection(-1);
@@ -314,7 +315,15 @@ export class InterrogationScene extends Phaser.Scene {
     const rows: Button[] = [];
     let y = 170;
     held.forEach((e) => {
-      const b = new Button(this, GAME_WIDTH / 2, y, { w: 430, h: 46, label: e.label, fontSize: 12, accent: COLORS.slate, onClick: () => choose(e.id) });
+      const used = this.inq.isUsed(e.id);
+      const b = new Button(this, GAME_WIDTH / 2, y, {
+        w: 430,
+        h: 46,
+        label: used ? `${e.label}   ✓ used` : e.label,
+        fontSize: 12,
+        accent: used ? COLORS.faint : COLORS.slate,
+        onClick: () => choose(e.id),
+      });
       rows.push(b);
       o.add(b);
       y += 54;
