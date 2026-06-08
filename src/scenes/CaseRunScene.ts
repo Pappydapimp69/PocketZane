@@ -7,7 +7,7 @@ import { WELLS } from "../game/mergedcase";
 import { generateMergedCase } from "../game/generateweb";
 import { dailySeed, DAILY_OPTS, optsForNight, nightSeed, randomSeed, freeOpts } from "../game/ladder";
 import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias, getBest, setBest, getNarration, getDifficulty, DIFFS, getReduceMotion, markCleanCase } from "../game/save";
-import { SFX, startAmbience, stopSpeech, speak } from "../game/audio";
+import { SFX, startAmbience, stopSpeech, speak, toggleMute } from "../game/audio";
 import { addAtmosphere, addRain } from "../game/textures";
 import { paintPortrait, suspectName, temperament, Mood, Temperament } from "../game/portrait";
 import { paintScene } from "../game/scenery";
@@ -314,6 +314,7 @@ export class CaseRunScene extends Phaser.Scene {
     kb?.on("keydown-X", () => this.onPad(PAD.X));
     kb?.on("keydown-Y", () => this.onPad(PAD.Y));
     kb?.on("keydown-F", () => this.scale.toggleFullscreen());
+    kb?.on("keydown-M", () => void toggleMute());
     this.input.gamepad?.on("down", (_p: Phaser.Input.Gamepad.Gamepad, b: Phaser.Input.Gamepad.Button) => this.onPad(b.index));
   }
 
