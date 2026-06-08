@@ -433,6 +433,13 @@ export class CaseScene extends Phaser.Scene {
       marker.fillStyle(COLORS.amber, 1);
       marker.fillTriangle(CARD_W / 2 - 6, 0, CARD_W / 2 - 13, -5, CARD_W / 2 - 13, 5);
     }
+
+    // Instability pips — how worked-loose a pressed line is, so PRESS reads.
+    if (!v.pinned && v.pressed > 0) {
+      const pips = Math.min(3, Math.ceil(v.pressed / 0.5));
+      marker.fillStyle(COLORS.amber, 0.85);
+      for (let i = 0; i < pips; i++) marker.fillCircle(CARD_W / 2 - 14 - i * 8, h / 2 - 9, 2);
+    }
   }
 
   // ---- interaction -----------------------------------------------------------
@@ -463,6 +470,7 @@ export class CaseScene extends Phaser.Scene {
       SFX.select();
       this.setStatus(tell(r.ok ? "pressUseful" : "pressBarren"), r.ok ? CSS.amber : CSS.muted);
     }
+    this.repaintCards();
     this.passTurn();
   }
 

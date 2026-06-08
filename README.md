@@ -156,3 +156,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v37** — **named subjects**: procedural subjects now carry a name and a wider
   set of roles (bartender, landlord, the ex…), so the people across the table
   read as individuals instead of placeholders.
+- **v38** — **press feedback**: a line you've leaned on shows small instability
+  pips, so PRESS has a visible effect — you can see which lines are coming loose
+  before you ask again.
