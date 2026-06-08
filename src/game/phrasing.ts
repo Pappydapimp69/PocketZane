@@ -92,8 +92,8 @@ const CONCEDE: Record<string, string[]> = {
   lodger: ["...There's no lodger. That room's been empty for weeks.", "...I made the lodger up. No one's taken that room.", "...Fine. The room's empty. There was never any lodger."],
 };
 
-const CORE_CLAIM = ["I never left my flat that night. Not once.", "I never went up those stairs. Not once.", "I was nowhere near his door all evening.", "I didn't set foot outside my own door that night.", "I stayed in my flat the whole night. I never moved."];
-const CORE_CONCEDE = ["...Fine. I went up. He was standing when I left him.", "...Alright. I went up. Only to talk to him.", "...I was at his door. I knocked. That's all.", "...I went up those stairs. He was alive when I left.", "...Fine. I was at his door that night. We talked."];
+const CORE_CLAIM = ["I never left my flat that night. Not once.", "I never went up those stairs. Not once.", "I was nowhere near his door all evening.", "I didn't set foot outside my own door that night.", "I stayed in my flat the whole night. I never moved.", "I never so much as opened my door after dark.", "My door was shut and bolted from dusk on.", "I'd no call to go up there, and I didn't."];
+const CORE_CONCEDE = ["...Fine. I went up. He was standing when I left him.", "...Alright. I went up. Only to talk to him.", "...I was at his door. I knocked. That's all.", "...I went up those stairs. He was alive when I left.", "...Fine. I was at his door that night. We talked.", "...I climbed up to have it out with him. Nothing more.", "...Alright — I went up. We had words, and I left him standing."];
 
 // What stood between them — picked whole so the motive, its fold, and the tell
 // that breaks it all agree (a debt, a woman, an old ruin).

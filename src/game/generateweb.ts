@@ -61,9 +61,9 @@ const KEYSTONES: SupportT[] = [
   { id: "lodger", name: "the lodger's word", seam: { id: "rent", short: "the rent book", label: "The rent book: that room sat empty all month — no lodger at all." } },
 ];
 
-const VICTIMS = ["Edmund Carr", "Walter Brill", "Sam Okafor", "Henry Vance", "Leon Pryce", "Arthur Mosely", "Desmond Hale", "Conrad Webb", "Marcus Lyle", "Tobias Renn", "Gideon Frost", "Niall Ackroyd"];
-const PLACES = ["Wells Street", "Harrow Lane", "Sutter Row", "the Macklin building", "Dover Court", "Calder Mews", "Pennick Yard", "Ashby Walk", "the Greel building", "Marlow Rise", "Tanner's Close", "Verrick Court"];
-const SUBJECTS = ["the downstairs tenant", "the brother-in-law", "the landlord", "the old friend", "the night porter", "the upstairs lodger", "the rent collector", "the former partner", "the man across the hall", "the building's caretaker"];
+const VICTIMS = ["Edmund Carr", "Walter Brill", "Sam Okafor", "Henry Vance", "Leon Pryce", "Arthur Mosely", "Desmond Hale", "Conrad Webb", "Marcus Lyle", "Tobias Renn", "Gideon Frost", "Niall Ackroyd", "Oscar Reed", "Julius Mott", "Albert Crane", "Stefan Voss", "Roland Pyke", "Ezra Linden"];
+const PLACES = ["Wells Street", "Harrow Lane", "Sutter Row", "the Macklin building", "Dover Court", "Calder Mews", "Pennick Yard", "Ashby Walk", "the Greel building", "Marlow Rise", "Tanner's Close", "Verrick Court", "Halloway Steps", "Cobden Wharf", "the Renfield rooms", "Ardwick Terrace"];
+const SUBJECTS = ["the downstairs tenant", "the brother-in-law", "the landlord", "the old friend", "the night porter", "the upstairs lodger", "the rent collector", "the former partner", "the man across the hall", "the building's caretaker", "the debt collector", "the estranged son", "the business partner", "the jealous neighbor"];
 
 // Question-phase framing, keyed by the seam evidence a phase yields. The lie's
 // shifting tellings and the true asides come from the phrasing grammar; this
