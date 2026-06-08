@@ -556,7 +556,10 @@ export class CaseScene extends Phaser.Scene {
       this.setStatus(tell("againMoved"), CSS.amber);
       moved.forEach((id) => this.floatGhost(id, this.game_.previousText(id)));
     } else {
-      this.setStatus(tell("againHeld"), CSS.muted);
+      // Gentle nudge if you're sitting on caught-but-unpinned lines.
+      const hasUnpinnedCaught = this.game_.view().some((v) => v.caught && !v.pinned);
+      if (hasUnpinnedCaught) this.setStatus("It held — but you've already caught lines left unpinned. Pin them.", CSS.amber);
+      else this.setStatus(tell("againHeld"), CSS.muted);
     }
     this.passTurn();
   }

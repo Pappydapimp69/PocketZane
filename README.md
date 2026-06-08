@@ -189,3 +189,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v48** — **pin juice**: the line you pin gives a quick confirming pulse (paired
   with the existing lamp flicker and strike sound), so landing a contradiction
   lands physically too. Respects reduce-motion.
+- **v49** — **gentle nudge**: if a telling holds while you're sitting on lines you've
+  already caught but not pinned, the status quietly points it out — help without
+  hand-holding.
