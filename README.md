@@ -107,3 +107,7 @@ Touch, gamepad, and keyboard are all supported.
   for fresh directions (banked: subject *temperaments*, a Ship-of-Theseus case);
   end-screen overlays now keep the room's grain and vignette with a dossier
   divider rule, and the selected line shows a pointer.
+- **v21** — **subject temperaments**: every subject now has a personality
+  (rattled, guarded, composed, ordinary) that tilts how readily lies slip, how
+  much pressure helps, and how fast composure returns — shown as a first "read,"
+  so different subjects want different approaches.

@@ -85,6 +85,9 @@ export class CaseScene extends Phaser.Scene {
     this.renderCards();
     this.updateHud();
     this.setupDeviceInput();
+
+    const t = this.game_.case.temperament;
+    if (t) this.setStatus(`reads as: ${t.label} — ${t.hint}`, CSS.slate);
   }
 
   // ---- gamepad + keyboard ----------------------------------------------------

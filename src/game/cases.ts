@@ -1,4 +1,5 @@
 import { Case } from "./engine";
+import { TEMPERAMENTS } from "./temperaments";
 
 /**
  * Cases. Constant lines are context or truths that never move. `variants` lines
@@ -12,6 +13,7 @@ export const CASES: Case[] = [
     intro: "He says he was home all night. Ask him to tell it. Then ask again.",
     pinsToBreak: 3,
     strikes: 3,
+    temperament: TEMPERAMENTS.steady,
     statements: [
       { id: "rain", text: "It rained the whole night. That part's true. You can check it." },
       {
@@ -57,6 +59,7 @@ export const CASES: Case[] = [
     intro: "She came to vouch for him. Loyalty is steady. An alibi built to order is not.",
     pinsToBreak: 4,
     strikes: 3,
+    temperament: TEMPERAMENTS.cool,
     statements: [
       { id: "knew", text: "I've known him fifteen years. That doesn't change." },
       {
@@ -111,6 +114,7 @@ export const CASES: Case[] = [
     intro: "He says the same evening keeps happening. Maybe it does. The evening still can't agree with itself.",
     pinsToBreak: 4,
     strikes: 2,
+    temperament: TEMPERAMENTS.nervous,
     statements: [
       { id: "begins", text: "It always begins the same way. A clock. A door. Rain that hasn't started yet." },
       {
@@ -166,6 +170,7 @@ export const CASES: Case[] = [
     intro: "It is not a person. It returns values. It insists it cannot contradict itself. Ask it the same thing.",
     pinsToBreak: 4,
     strikes: 2,
+    temperament: TEMPERAMENTS.guarded,
     statements: [
       { id: "closed", text: "I am a closed system. I return what I am asked. I do not choose." },
       {
@@ -219,6 +224,7 @@ export const CASES: Case[] = [
     intro: "This one is yours. The night you don't discuss, in your own hand. Read it back. Then read it back again.",
     pinsToBreak: 4,
     strikes: 2,
+    temperament: TEMPERAMENTS.steady,
     statements: [
       { id: "call", text: "I took the call. That much is on the record, in my handwriting." },
       {

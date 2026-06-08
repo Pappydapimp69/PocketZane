@@ -20,6 +20,8 @@ export interface Statement {
   evidence?: string;
 }
 
+import type { Temperament } from "./temperaments";
+
 export interface Case {
   id: string;
   title: string;
@@ -29,6 +31,8 @@ export interface Case {
   pinsToBreak: number;
   strikes: number;
   resolution: string;
+  /** Optional personality that tilts the interrogation dynamics. */
+  temperament?: Temperament;
 }
 
 export interface LineView {
@@ -72,8 +76,19 @@ export class Interrogation {
   private evidenceShown = new Set<string>();
   private prevShown = new Map<string, string>();
 
+  // Dynamics, tilted by the subject's temperament (or sensible defaults).
+  private slipBase: number;
+  private boostMax: number;
+  private recoverAt: number;
+  private pressGain: number;
+
   constructor(c: Case, private rng: () => number = Math.random) {
     this.case = c;
+    const t = c.temperament;
+    this.slipBase = t?.slip ?? BASE_SLIP;
+    this.boostMax = t?.boost ?? 0.28;
+    this.recoverAt = t?.recoverAt ?? 92;
+    this.pressGain = t?.pressGain ?? PRESS_GAIN;
     for (const s of c.statements) {
       if (s.variants) {
         this.shown.set(s.id, 0);
@@ -106,7 +121,7 @@ export class Interrogation {
     this.pressure = Math.min(100, this.pressure + PRESS_PRESSURE);
     if (!s.variants) return { ok: false };
 
-    const next = Math.min(1.4, (this.instab.get(id) ?? 0) + PRESS_GAIN);
+    const next = Math.min(1.4, (this.instab.get(id) ?? 0) + this.pressGain);
     this.instab.set(id, next);
 
     if (s.evidence && !this.evidenceShown.has(id) && next >= 1.0) {
@@ -126,7 +141,7 @@ export class Interrogation {
     // Lean too hard and they gather themselves: composure resets, and every
     // line you'd been working loose tightens back up. (What you already caught
     // stays caught — your ledger keeps it.)
-    if (this.pressure >= 92) {
+    if (this.pressure >= this.recoverAt) {
       this.recovered = true;
       this.instab.clear();
       this.pressure = 45;
@@ -134,11 +149,11 @@ export class Interrogation {
     }
 
     const moved: string[] = [];
-    const boost = (this.pressure / 100) * 0.28;
+    const boost = (this.pressure / 100) * this.boostMax;
 
     for (const s of this.case.statements) {
       if (!s.variants || this.pinned.has(s.id)) continue;
-      const chance = Math.min(0.95, BASE_SLIP + (this.instab.get(s.id) ?? 0) + boost);
+      const chance = Math.min(0.95, this.slipBase + (this.instab.get(s.id) ?? 0) + boost);
       if (this.rng() < chance) {
         const cur = this.shown.get(s.id) ?? 0;
         const next = this.pickOther(s.variants.length, cur);

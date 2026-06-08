@@ -1,4 +1,5 @@
 import { Case, Statement } from "./engine";
+import { randomTemperament } from "./temperaments";
 
 /**
  * Procedural case generation for the endless mode ("an endless night"). Cases
@@ -83,6 +84,7 @@ export function generateCase(depth: number): Case {
     statements: ordered,
     pinsToBreak: pins,
     strikes,
+    temperament: randomTemperament(),
     resolution:
       `The truth held. The rest did not.\n\nYou asked, and asked again, and the account rearranged itself each time — ${pins} details that couldn't agree with themselves, and under them the shape of a night someone needed to be a different night.\n\nAn arrow travels in only one direction. This telling kept trying to travel back.`,
   };
