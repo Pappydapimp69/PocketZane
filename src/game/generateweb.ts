@@ -146,7 +146,7 @@ function buildKeystone(seed: number, rng: () => number, opts: GenOpts): { web: W
   evidence.push({ id: K.seam.id, short: K.seam.short, label: K.seam.label, targets: K.id, deflectableBy: [] });
   evidence.push({ id: "iou", short: mot.evShort, label: mot.evLabel, targets: "square", deflectableBy: [] });
 
-    const pr = premise(victim, rng);
+  const pr = premise(victim, rng);
   if (rng() < (opts.weirdness ?? 0.6)) pr.what += " " + weirdDetail(rng);
   const web: WebCase = {
     id: `gen-k-${seed}`,
