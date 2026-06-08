@@ -132,3 +132,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v29** — **the ledger, browsable**: open an in-interrogation ledger (≡ / L /
   shoulder button) listing every line you've caught and the phrasings heard —
   the longitudinal record, on demand, for the heavier cases.
+- **v30** — **tenth-mark history re-read + asset review**: re-read the source notes
+  (banked: a "deflation" reaction to pressing the truth; a Babylon "instructions
+  outlive authority" case). Asset/UX pass: buttons now warm on hover/focus.

@@ -17,6 +17,7 @@ export class Button extends Phaser.GameObjects.Container {
   private opts: ButtonOpts;
   private selected = false;
   private enabled = true;
+  private hover = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number, opts: ButtonOpts) {
     super(scene, x, y);
@@ -43,7 +44,15 @@ export class Button extends Phaser.GameObjects.Container {
       this.setScale(1);
       opts.onClick();
     });
-    this.on("pointerout", () => this.setScale(1));
+    this.on("pointerover", () => {
+      this.hover = true;
+      this.render();
+    });
+    this.on("pointerout", () => {
+      this.hover = false;
+      this.setScale(1);
+      this.render();
+    });
 
     scene.add.existing(this);
     this.render();
@@ -70,7 +79,9 @@ export class Button extends Phaser.GameObjects.Container {
     this.bg.clear();
     this.bg.fillStyle(this.selected ? a : COLORS.panel, this.selected ? 0.9 : 1);
     this.bg.fillRoundedRect(-w / 2, -h / 2, w, h, 8);
-    this.bg.lineStyle(1.5, this.selected ? a : COLORS.panelEdge, 1);
+    // Hover/focus warms the border without committing to the selected fill.
+    const edge = this.selected ? a : this.hover ? a : COLORS.panelEdge;
+    this.bg.lineStyle(this.selected || this.hover ? 2 : 1.5, edge, this.hover && !this.selected ? 0.8 : 1);
     this.bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 8);
   }
 }
