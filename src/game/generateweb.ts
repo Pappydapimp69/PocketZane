@@ -62,7 +62,7 @@ const KEYSTONES: SupportT[] = [
 ];
 
 const VICTIMS = ["Edmund Carr", "Walter Brill", "Sam Okafor", "Henry Vance", "Leon Pryce", "Arthur Mosely", "Desmond Hale", "Conrad Webb", "Marcus Lyle", "Tobias Renn", "Gideon Frost", "Niall Ackroyd", "Oscar Reed", "Julius Mott", "Albert Crane", "Stefan Voss", "Roland Pyke", "Ezra Linden"];
-const PLACES = ["Wells Street", "Harrow Lane", "Sutter Row", "the Macklin building", "Dover Court", "Calder Mews", "Pennick Yard", "Ashby Walk", "the Greel building", "Marlow Rise", "Tanner's Close", "Verrick Court", "Halloway Steps", "Cobden Wharf", "the Renfield rooms", "Ardwick Terrace"];
+const PLACES = ["Wells Street", "Harrow Lane", "Sutter Row", "the Macklin building", "Dover Court", "Calder Mews", "Pennick Yard", "Ashby Walk", "the Greel building", "Marlow Rise", "Tanner's Close", "Verrick Court", "Halloway Steps", "Cobden Wharf", "Ardwick Terrace"];
 const SUBJECTS = ["the downstairs tenant", "the brother-in-law", "the landlord", "the old friend", "the night porter", "the upstairs lodger", "the rent collector", "the former partner", "the man across the hall", "the building's caretaker", "the debt collector", "the estranged son", "the business partner", "the jealous neighbor"];
 
 // Question-phase framing, keyed by the seam evidence a phase yields. The lie's
@@ -97,8 +97,12 @@ function shuffle<T>(a: T[], rng: () => number): T[] {
 }
 const pick = <T>(a: T[], rng: () => number): T => a[Math.floor(rng() * a.length)];
 
-// "the Macklin building" -> title "The Macklin building Stairs" (no doubled "the")
-const caseTitle = (place: string): string => `The ${place.replace(/^the\s+/i, "")} Stairs`;
+// "the Macklin building" -> "The Macklin building Stairs" (no doubled "the");
+// places already ending in a stair-word ("Halloway Steps") don't take the suffix.
+const caseTitle = (place: string): string => {
+  const p = place.replace(/^the\s+/i, "");
+  return /(steps|stairs|wharf)$/i.test(p) ? `The ${p}` : `The ${p} Stairs`;
+};
 const locWhere = (place: string): string => (/building/i.test(place) ? `At ${place}.` : `His building on ${place}.`);
 
 export interface GenOpts {
