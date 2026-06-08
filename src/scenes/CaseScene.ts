@@ -6,7 +6,7 @@ import { Interrogation, LineView } from "../game/engine";
 import { CASES } from "../game/cases";
 import { SFX, startAmbience } from "../game/audio";
 import { addAtmosphere } from "../game/textures";
-import { markCleared } from "../game/save";
+import { markCleared, getBest, setBest } from "../game/save";
 import { tell } from "../game/reactions";
 import { PAD, STICK_THRESHOLD, STICK_REPEAT_MS } from "../input";
 
@@ -442,13 +442,25 @@ export class CaseScene extends Phaser.Scene {
     this.busy = true;
     markCleared(this.caseIndex + 1);
     SFX.break();
+
+    const g = this.game_;
+    const id = g.case.id;
+    const prevBest = getBest(id);
+    setBest(id, g.telling);
+    const best = getBest(id) ?? g.telling;
+    const par = g.case.pinsToBreak * 2 + 1;
+    const verdict = g.strikesUsed === 0 && g.telling <= par ? "a clean break" : g.telling <= par + 4 ? "it broke" : "it broke, eventually";
+    const fresh = prevBest === null || g.telling < prevBest ? "   ⟐ new best" : "";
+    const stats = `${verdict}\ntold again ${g.telling}×  ·  ${g.strikesUsed} strike${g.strikesUsed === 1 ? "" : "s"}  ·  best ${best}×${fresh}`;
+
     const ledger = this.ledger.map((p) => "“" + p.join("”\n   …  “") + "”").join("\n\n");
     const hasNext = this.caseIndex + 1 < CASES.length;
     this.showOverlay({
       heading: "the story breaks",
       headColor: CSS.amber,
+      stats,
       ledger,
-      body: this.game_.case.resolution,
+      body: g.case.resolution,
       button: hasNext
         ? { label: "THE NEXT ONE", onClick: () => this.scene.restart({ caseIndex: this.caseIndex + 1 }) }
         : { label: "THAT'S ALL OF THEM", onClick: () => this.scene.start("TitleScene") },
@@ -469,6 +481,7 @@ export class CaseScene extends Phaser.Scene {
     heading: string;
     headColor: string;
     body: string;
+    stats?: string;
     ledger?: string;
     button: { label: string; onClick: () => void };
   }): void {
@@ -482,7 +495,21 @@ export class CaseScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, y, opts.heading, { fontFamily: DISPLAY, fontSize: "26px", color: opts.headColor, fontStyle: "italic" })
       .setOrigin(0.5, 0);
     c.add(head);
-    y += head.height + 22;
+    y += head.height + 14;
+
+    if (opts.stats) {
+      const st = this.add
+        .text(GAME_WIDTH / 2, y, opts.stats, {
+          fontFamily: MONO,
+          fontSize: "12px",
+          color: CSS.slate,
+          align: "center",
+          lineSpacing: 3,
+        })
+        .setOrigin(0.5, 0);
+      c.add(st);
+      y += st.height + 16;
+    }
 
     if (opts.ledger) {
       const led = this.add

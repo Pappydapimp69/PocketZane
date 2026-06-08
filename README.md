@@ -80,3 +80,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v11** — **the change made legible**: when a line slips, a fading echo of what
   it said *a moment ago* rises off the card, so you can read the contradiction in
   the instant it happens instead of trusting your memory.
+- **v12** — **a verdict**: each break is scored on tellings used and strikes taken,
+  with a per-case best saved — an optimization layer for breaking a story clean
+  and fast, not just breaking it.

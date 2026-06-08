@@ -20,3 +20,27 @@ export function markCleared(count: number): void {
     /* storage unavailable — ignore */
   }
 }
+
+const BEST_KEY = "again:best";
+
+/** Fewest tellings a case has ever been broken in. */
+export function getBest(caseId: string): number | null {
+  try {
+    const o = JSON.parse(localStorage.getItem(BEST_KEY) ?? "{}");
+    return typeof o[caseId] === "number" ? o[caseId] : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setBest(caseId: string, tellings: number): void {
+  try {
+    const o = JSON.parse(localStorage.getItem(BEST_KEY) ?? "{}");
+    if (o[caseId] == null || tellings < o[caseId]) {
+      o[caseId] = tellings;
+      localStorage.setItem(BEST_KEY, JSON.stringify(o));
+    }
+  } catch {
+    /* storage unavailable — ignore */
+  }
+}
