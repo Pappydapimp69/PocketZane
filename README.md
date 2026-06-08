@@ -147,3 +147,6 @@ Touch, gamepad, and keyboard are all supported.
 - **v34** — **endless boss nights**: every fifth night of the endless run is a
   harder, named "hard case," giving the survival grind a rhythm of escalating
   set-pieces instead of a flat ramp.
+- **v35** — **asset review pass** (every-fifth): end screens now get a case-file
+  stamp — a crimson **CLOSED** when you break it, a slate **WALKED** when they
+  leave — slapped on at an angle with a little snap.

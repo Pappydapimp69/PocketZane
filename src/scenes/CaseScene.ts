@@ -755,6 +755,24 @@ export class CaseScene extends Phaser.Scene {
     if (this.textures.exists("grain")) c.add(this.add.tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, "grain").setOrigin(0).setAlpha(0.5));
     if (this.textures.exists("vignette")) c.add(this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, "vignette"));
 
+    // A case-file stamp, slapped at an angle.
+    const walked = opts.heading.toLowerCase().includes("walk");
+    const stampText = walked ? "WALKED" : "CLOSED";
+    const stampColor = walked ? COLORS.slate : COLORS.crimson;
+    const stamp = this.add
+      .text(GAME_WIDTH - 78, 120, stampText, { fontFamily: DISPLAY, fontSize: "22px", color: walked ? CSS.slate : CSS.crimsonBright, fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setRotation(-0.22)
+      .setAlpha(0.9);
+    const box = this.add
+      .rectangle(GAME_WIDTH - 78, 120, stamp.width + 18, stamp.height + 8)
+      .setStrokeStyle(2.5, stampColor, 0.9)
+      .setRotation(-0.22);
+    c.add([box, stamp]);
+    stamp.setScale(2).setAlpha(0);
+    box.setScale(2).setAlpha(0);
+    this.tweens.add({ targets: [stamp, box], scale: 1, alpha: 0.9, duration: 220, ease: "Back.easeIn" });
+
     let y = 150;
     const head = this.add
       .text(GAME_WIDTH / 2, y, opts.heading, { fontFamily: DISPLAY, fontSize: "26px", color: opts.headColor, fontStyle: "italic" })
