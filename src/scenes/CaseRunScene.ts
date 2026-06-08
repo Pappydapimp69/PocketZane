@@ -818,9 +818,11 @@ export class CaseRunScene extends Phaser.Scene {
     if (this.vsMode === "coop") return this.coopEnd();
     this.busy = true;
     this.recordWin();
-    // Efficiency grade, computed once — and in endless, a sloppy break costs standing.
+    // Efficiency grade, computed once. In endless only a genuinely inefficient
+    // break (worse than "workmanlike" — past 1.5x the solver's par) costs standing,
+    // so a competent run carries on; sloppiness is what ends the night.
     const grade = this.gradeRun();
-    if (this.mode === "endless" && !grade.clean) this.standing -= 1;
+    if (this.mode === "endless" && this.moves > grade.par * 1.5) this.standing -= 1;
     const runOver = this.mode === "endless" && this.standing <= 0;
     const o = this.add.container(0, 0).setDepth(140);
     o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.97));

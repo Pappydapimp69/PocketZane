@@ -57,9 +57,10 @@ see it; unsolvable rewrites are reseeded, so a case is always winnable.
 - **today's subject** — a daily case from a calendar seed; the same for everyone.
 - **sit down** — a fresh, randomly seeded case every time.
 - **an endless night** — cases that deepen night over night (wider webs, then
-  propped supports, then keystone-prone). You carry three marks of standing:
-  break a case at or under par and you keep it, break it sloppily and you lose
-  one. Run out and the night beats you — how deep you reached is the score.
+  propped supports, then keystone-prone). You carry three marks of standing: a
+  clean or workmanlike break keeps them, but take a case the long way round
+  (past 1.5x the solver's par) and you lose one. Run out and the night beats
+  you — how deep you reached is the score.
 - **two detectives — versus** — hot-seat: both play the *same* case; fewer moves
   takes it.
 - **partners — co-op** — one shared case, control passing back and forth.
