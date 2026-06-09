@@ -73,10 +73,15 @@ export class WebInquiry {
   private rng: () => number;
   private tick = 0;
 
-  constructor(c: WebCase, seed = 1, initialHeld?: string[]) {
+  constructor(c: WebCase, seed = 1, initialHeld?: string[], initialBroken?: string[]) {
     this.case = c;
     (initialHeld ?? c.startEvidence).forEach((e) => this.held.add(e));
     c.segments.forEach((s) => this.text.set(s.id, s.base));
+    // Props caught in the interview arrive already conceded.
+    (initialBroken ?? []).forEach((id) => {
+      this.broken.add(id);
+      this.text.set(id, c.concessions[id] ?? c.segments.find((s) => s.id === id)?.base ?? "");
+    });
     this.rng = mulberry32(seed);
   }
 

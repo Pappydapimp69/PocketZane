@@ -2,6 +2,7 @@ import { WebCase, WebSegment, WebEvidence } from "./web";
 import { MergedCase, Phase, PhaseStatement } from "./merged";
 import { verifyWeb } from "./verify";
 import { deflectionPool, claimLine, concessionLine, coreClaim, coreConcession, motivePick, shiftTriple, phaseTruths, premise, whyLine, goalLine, weirdDetail } from "./phrasing";
+import { buildQuestions, ROUNDS } from "./interview";
 import { mulberry32 } from "./rng";
 
 /**
@@ -298,6 +299,8 @@ export function generateMergedCase(seed: number, opts: GenOpts = {}): MergedCase
     subject: web.subject,
     brief: web.brief,
     phases,
+    questions: buildQuestions(web, mulberry32((seed ^ 0x1b56c4f9) >>> 0)),
+    rounds: ROUNDS,
     startLeads: web.startEvidence,
     web,
     resolution: web.resolution,

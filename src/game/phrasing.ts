@@ -35,6 +35,87 @@ const DISMISS = [
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const pick = <T>(a: T[], rng: () => number): T => a[Math.floor(rng() * a.length)];
 
+/* ---------------------------------------------------------------------------
+ * The interview (Act 1). The detective asks one of five questions; the suspect
+ * either tells a lie (a propping claim), lets slip a lever (a fact that cracks
+ * one of his lies), or gives a dud (character, no purchase). You can only crack
+ * a lie by holding the lever from another round — and when you do, he patches
+ * the hole by retreating toward his core alibi.
+ * ------------------------------------------------------------------------- */
+
+// The question that surfaces each support's lie.
+const Q_LIE: Record<string, string> = {
+  sleep: "When did you turn in for the night?",
+  porch: "Did you step outside your door at all?",
+  dark: "Could you have seen anyone on those stairs?",
+  visitor: "Was anyone here with you that evening?",
+  drink: "How much had you had to drink?",
+  errand: "Did you leave the building at any point?",
+  bath: "What were you doing around ten?",
+  square: "What was between the two of you?",
+};
+
+// The question that pries loose the lever — the record that breaks that lie.
+const Q_LEVER: Record<string, string> = {
+  sleep: "Did your telephone ring that night?",
+  porch: "What was on your boots when they brought you in?",
+  dark: "Was the stair light in order that week?",
+  visitor: "Did anyone sign in at the desk to see you?",
+  drink: "How long did the barman serve you?",
+  errand: "Was the corner shop even open by then?",
+  bath: "Did you draw any water that evening?",
+  square: "Was there money owed between you?",
+};
+
+// His grudging reaction when you ask the lever question (the record speaks; he stalls).
+const A_LEVER: Record<string, string[]> = {
+  sleep: ["The phone? ...It may have rung. I don't keep count.", "I... I don't recall the phone, no."],
+  porch: ["My boots? They'd nothing on them worth a word.", "Mud, maybe. It rained. It means nothing."],
+  dark: ["The light? It's been dead for weeks, I told you.", "I couldn't say. I don't mind the light."],
+  visitor: ["The desk? I don't sign a book to sit in my own rooms.", "No one needed to sign. He just... came up."],
+  drink: ["The barman knows me. He'd tell you I'd had plenty.", "Long enough. I was in no state, I said."],
+  errand: ["The shop keeps its own hours. I don't watch the clock.", "It was open when I went. It must have been."],
+  bath: ["Water? I ran a bath, like any night.", "The meter wouldn't show much. It was a quick one."],
+  square: ["Money? There was nothing between us worth killing over.", "A small matter. Long settled, near enough."],
+};
+
+// What he throws up when you catch the lie — he patches toward the core alibi.
+const PATCH: Record<string, string> = {
+  sleep: "...All right — I took the call. But I never once left this floor.",
+  porch: "...I went up a step, no more. He was standing when I turned back.",
+  dark: "...The light worked, fine. I'd my own reason to be on the stair.",
+  visitor: "...There was no friend. I was alone — which proves nothing against me.",
+  drink: "...I was sober. That doesn't put my hands anywhere near him.",
+  errand: "...The shop was shut, then. I stayed in all the same.",
+  bath: "...No bath, then. But I never went up those stairs, whatever you think.",
+  square: "...He held a marker of mine. That's a debt, not a reason to kill.",
+};
+
+const DUDS: { ask: string; answer: string }[] = [
+  { ask: "How long had you lived below him?", answer: "Years. We kept to our own floors." },
+  { ask: "What sort of man was he?", answer: "Quiet. Owed the world nothing, far as I knew." },
+  { ask: "Did you hear anything that night?", answer: "The rain. There's always the rain here." },
+  { ask: "Were the two of you on good terms?", answer: "Neighbors. Nothing more, nothing less." },
+  { ask: "Who found him?", answer: "Not me. I came out when I heard the commotion." },
+  { ask: "Had he seemed himself lately?", answer: "Same as ever. I don't pry into a man's moods." },
+];
+
+export function questionLie(id: string): string {
+  return Q_LIE[id] ?? "Tell me about that night.";
+}
+export function questionLever(id: string): string {
+  return Q_LEVER[id] ?? "Is there anything that would back that up?";
+}
+export function leverReaction(id: string, rng: () => number): string {
+  return pick(A_LEVER[id] ?? ["...I've nothing to say to that."], rng);
+}
+export function patchLine(id: string): string {
+  return PATCH[id] ?? "...Think what you like. I never went up there.";
+}
+export function dudExchange(rng: () => number): { ask: string; answer: string } {
+  return pick(DUDS, rng);
+}
+
 export function deflectionLine(supportId: string, attackShort: string, rng: () => number): string {
   const assert = pick(ASSERT[supportId] ?? ["I had my reasons"], rng);
   const dismiss = pick(DISMISS, rng).replace("{a}", attackShort);

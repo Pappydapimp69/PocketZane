@@ -1,4 +1,5 @@
 import { WebInquiry, WebCase, SegmentView, PresentResult } from "./web";
+import type { Question } from "./interview";
 
 /**
  * The merged loop: three QUESTION PHASES gather leads (catch the line that
@@ -30,6 +31,8 @@ export interface MergedCase {
   subject: string;
   brief: { what: string; where: string; when: string; why: string; goal: string };
   phases: Phase[];
+  questions?: Question[]; // the interview (Act 1 redesign); when present, drives the new flow
+  rounds?: number; // how many questions may be asked (default 3)
   startLeads: string[]; // web evidence held before the phases
   web: WebCase; // the confrontation (its startEvidence is ignored; we seed from leads)
   resolution: string;
