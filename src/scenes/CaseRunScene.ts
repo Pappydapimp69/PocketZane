@@ -43,6 +43,7 @@ export class CaseRunScene extends Phaser.Scene {
   private role = "";
   private temper!: Temperament;
   private tense = false;
+  private showHints = false; // structural confrontation cues — lenient difficulty only
 
   private paintSuspect(mood: Mood, blink = false): void {
     paintPortrait(this, "suspect", this.seedVal, mood, blink, this.tense && mood === "neutral");
@@ -152,6 +153,7 @@ export class CaseRunScene extends Phaser.Scene {
     }
     this.temper = temperament(this.seedVal);
     this.tense = /nervous|rattled/.test(this.temper.name);
+    this.showHints = getDifficulty() === 0; // only lenient spells out the web's structure
     this.paintSuspect("neutral");
     paintScene(this, "crime", this.seedVal);
     this.mood = "neutral";
@@ -541,13 +543,14 @@ export class CaseRunScene extends Phaser.Scene {
         g.lineStyle(1.6, COLORS.crimson, 0.9);
         g.lineBetween(LEFT, y + lg + body.height / 2, LEFT + body.width, y + lg + body.height / 2);
         this.blocks.push(g);
-      } else if (s.leansOn) {
+      } else if (this.showHints && s.leansOn) {
+        // lenient only: spell out the dependency so newcomers can learn the shape
         const gone = broken.has(s.leansOn);
         const txt = gone ? `↳ its cover (${this.inq.segmentName(s.leansOn)}) is gone — press it now` : `↳ leaning on ${this.inq.segmentName(s.leansOn)} — break that first`;
         const note = this.add.text(LEFT + 12, cy, txt, { fontFamily: MONO, fontSize: fs(11), color: gone ? CSS.crimsonBright : CSS.amber }).setDepth(6);
         this.blocks.push(note);
         cy += note.height + 2;
-      } else if (s.propsUp.length > 0) {
+      } else if (this.showHints && s.propsUp.length > 0) {
         const note = this.add.text(LEFT + 12, cy, `↑ this is holding up ${s.propsUp.map((p) => this.inq.segmentName(p)).join(", ")}`, { fontFamily: MONO, fontSize: fs(11), color: CSS.amber }).setDepth(6);
         this.blocks.push(note);
         cy += note.height + 2;
@@ -578,7 +581,7 @@ export class CaseRunScene extends Phaser.Scene {
         const via = this.inq.segmentName(r.via);
         const tgt = this.inq.segmentName(r.target);
         this.say(r.text);
-        this.setStatus(`He slips it. ${tgt} hides behind ${via} — so take ${via} apart first.`, CSS.amber);
+        this.setStatus(this.showHints ? `He slips it. ${tgt} hides behind ${via} — so take ${via} apart first.` : `He slips it. ${tgt} hides behind ${via}.`, CSS.amber);
         if (r.revealed) this.time.delayedCall(900, () => this.centerToast("That shakes loose:  " + r.revealed!.label));
         break;
       }
@@ -593,7 +596,7 @@ export class CaseRunScene extends Phaser.Scene {
           this.flash(COLORS.crimson, 0.32);
           this.setStatus("It evaporates — there was never a floor under it. Everything leaning on it comes down at once.", CSS.crimsonBright);
         } else {
-          this.setStatus(r.solved ? "It caves — and the whole story with it." : `${this.inq.segmentName(r.target)} collapses. Whatever it covered is exposed now — press it.`, CSS.crimsonBright);
+          this.setStatus(r.solved ? "It caves — and the whole story with it." : this.showHints ? `${this.inq.segmentName(r.target)} collapses. Whatever it covered is exposed now — press it.` : `${this.inq.segmentName(r.target)} collapses.`, CSS.crimsonBright);
         }
         if (r.solved) {
           this.flash(COLORS.amber, 0.22);
@@ -654,7 +657,8 @@ export class CaseRunScene extends Phaser.Scene {
       const b = new Button(this, GAME_WIDTH / 2, y, { w: 430, h: 46, label: e.label, fontSize: 12, accent: COLORS.slate, onClick: () => choose(e.id) });
       rows.push(b);
       o.add(b);
-      o.add(this.add.text(GAME_WIDTH / 2, y + 27, `bears on  ${this.inq.segmentName(e.targets)}`, { fontFamily: MONO, fontSize: fs(10), color: CSS.faint }).setOrigin(0.5));
+      // lenient only: name the claim each lead bears on; otherwise that's for you to work out
+      if (this.showHints) o.add(this.add.text(GAME_WIDTH / 2, y + 27, `bears on  ${this.inq.segmentName(e.targets)}`, { fontFamily: MONO, fontSize: fs(10), color: CSS.faint }).setOrigin(0.5));
       y += 66;
     });
     const cancelBtn = new Button(this, GAME_WIDTH / 2, Math.min(y + 8, GAME_HEIGHT - 56), { w: 180, h: 46, label: "CANCEL  (B)", accent: COLORS.crimson, onClick: () => close() });
