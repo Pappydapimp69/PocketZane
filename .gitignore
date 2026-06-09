@@ -3,3 +3,6 @@ dist
 *.local
 .DS_Store
 .vite
+
+# throwaway scratch scripts (checker/builder temp drives)
+scripts/_*
