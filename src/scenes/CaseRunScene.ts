@@ -26,7 +26,6 @@ export class CaseRunScene extends Phaser.Scene {
   private interview!: Interview;
   private web?: WebInquiry;
   private confronting = false;
-  private lastAnswer = "";
   private title!: Phaser.GameObjects.Text;
   private prompt!: Phaser.GameObjects.Text;
   private hud!: Phaser.GameObjects.Text;
@@ -131,7 +130,6 @@ export class CaseRunScene extends Phaser.Scene {
     this.interview = new Interview(this.theCase.questions ?? [], this.theCase.rounds ?? 3);
     this.web = undefined;
     this.confronting = false;
-    this.lastAnswer = "";
     this.marks = this.add.graphics().setDepth(5);
     this.busy = false;
 
@@ -365,46 +363,59 @@ export class CaseRunScene extends Phaser.Scene {
     const s = uiScale();
     let y = this.contentTop;
 
-    if (this.lastAnswer) {
-      const q = this.add.text(LEFT, y, `“${this.lastAnswer}”`, { fontFamily: BODY, fontSize: fs(16), color: CSS.amber, fontStyle: "italic", wordWrap: { width: GAME_WIDTH - 56 }, lineSpacing: 3 }).setDepth(6);
-      this.blocks.push(q);
-      y += q.height + Math.round(20 * s);
-    }
-
+    // The list reads as a transcript: an asked question keeps his answer beneath
+    // it, so the player can re-read his own words and spot what doesn't square.
     for (const q of this.interview.questions) {
       const asked = this.interview.isAsked(q.id);
       const caught = this.interview.isCaught(q.id);
       const pressable = this.interview.canPress(q.id);
       const locked = !asked && this.interview.roundsLeft <= 0;
       const selectable = (!asked && this.interview.roundsLeft > 0) || pressable;
+      const top = y;
 
       let prefix = "▸ ";
-      let color: string = CSS.ink;
-      let label = q.ask;
+      let qColor: string = CSS.ink;
+      let qLabel = q.ask;
       if (caught) {
         prefix = "✓ ";
-        color = CSS.crimsonBright;
-      } else if (pressable) {
-        prefix = "‣ ";
-        color = CSS.amber;
-        label = this.interview.pressVia(q.id) === "contradiction" ? `${q.ask}   — his own words don't square; press him` : `${q.ask}   — press him on it`;
+        qColor = CSS.crimsonBright;
       } else if (asked) {
         prefix = "· ";
-        color = CSS.faint;
+        qColor = CSS.muted;
+        // only lenient names the slip outright; otherwise it's the player's to spot
+        if (pressable && this.showHints) {
+          prefix = "‣ ";
+          qColor = CSS.amber;
+          qLabel = this.interview.pressVia(q.id) === "contradiction" ? `${q.ask}   — his own words don't square; press` : `${q.ask}   — press him on it`;
+        }
       } else if (locked) {
         prefix = "  ";
-        color = CSS.faint;
-        label = "— a question you'll never get to ask —";
+        qColor = CSS.faint;
+        qLabel = "— a question you'll never get to ask —";
       }
 
-      const t = this.add.text(LEFT + 6, y, prefix + label, { fontFamily: BODY, fontSize: fs(15), color, wordWrap: { width: GAME_WIDTH - 64 }, lineSpacing: 2 }).setDepth(6);
+      const qt = this.add.text(LEFT + 6, y, prefix + qLabel, { fontFamily: BODY, fontSize: fs(15), color: qColor, fontStyle: asked && !caught ? "normal" : "normal", wordWrap: { width: GAME_WIDTH - 64 }, lineSpacing: 2 }).setDepth(6);
       if (selectable) {
-        t.setInteractive({ useHandCursor: true });
-        t.on("pointerup", () => this.onQuestionTap(q.id));
+        qt.setInteractive({ useHandCursor: true });
+        qt.on("pointerup", () => this.onQuestionTap(q.id));
       }
-      this.blocks.push(t);
-      this.interviewRows.push({ id: q.id, y, h: t.height, selectable });
-      y += t.height + Math.round(11 * s);
+      this.blocks.push(qt);
+      y += qt.height + 2;
+
+      // his recorded answer beneath the question
+      if (asked) {
+        const aColor = caught ? CSS.faint : q.kind === "dud" ? CSS.faint : CSS.amber;
+        const at = this.add.text(LEFT + 22, y, `“${q.answer}”`, { fontFamily: BODY, fontSize: fs(13), color: aColor, fontStyle: "italic", wordWrap: { width: GAME_WIDTH - 80 }, lineSpacing: 2 }).setDepth(6);
+        if (selectable) {
+          at.setInteractive({ useHandCursor: true });
+          at.on("pointerup", () => this.onQuestionTap(q.id));
+        }
+        this.blocks.push(at);
+        y += at.height + 2;
+      }
+
+      this.interviewRows.push({ id: q.id, y: top, h: y - top, selectable });
+      y += Math.round(10 * s);
     }
 
     this.updateInterviewButton();
@@ -470,34 +481,34 @@ export class CaseRunScene extends Phaser.Scene {
     this.tick();
     this.selected = null;
     SFX.murmur(this.seedVal);
-    this.lastAnswer = r.q.answer;
+
     this.say(r.q.answer);
     if (r.kind === "lever") {
       this.setMood("evasive");
       this.renderInterview();
       this.time.delayedCall(450, () => this.centerToast("A lever:  " + this.leadLabel(r.q.evId!)));
-      this.setStatus("A record he can't wave off. Use it on the right lie.", CSS.amber);
+      this.setStatus("A record he can't wave off. It breaks one of his claims.", CSS.amber);
     } else if (r.kind === "lie") {
-      const canNow = this.interview.canPress(id);
-      this.setMood(canNow ? "pressed" : "neutral");
+      this.setMood(this.interview.canPress(id) ? "pressed" : "neutral");
       this.renderInterview();
-      this.setStatus(canNow ? "That squares with nothing he's said — press him." : "A claim. You'll need a lever, or a slip elsewhere, to break it.", CSS.muted);
+      this.setStatus("He commits to it. Watch it against the rest.", CSS.muted);
     } else if (r.kind === "tell") {
       this.setMood("neutral");
       this.renderInterview();
-      this.setStatus("Mark that — it may not square with something else he says.", CSS.amber);
+      this.setStatus("Mark that — it may not square with something else he's said.", CSS.amber);
     } else {
       this.setMood("neutral");
       this.renderInterview();
       this.setStatus("Nothing in that. A round spent.", CSS.slate);
     }
-    // the moment two of his own answers collide, surface it to the player
+    // The moment two of his own answers collide, surface the conflict (always —
+    // the goal requires it visible). Naming what to *do* about it is lenient-only.
     const fresh = this.interview.contradictions();
     if (fresh.length > before) {
       const c = fresh[fresh.length - 1];
       this.shake(120, 0.003);
-      this.time.delayedCall(r.kind === "lever" ? 1500 : 500, () => this.centerToast("His own words don't square — " + (c.tell.clash ?? "press that lie")));
-      this.setStatus("His own words don't square. You don't need a record — press that lie.", CSS.crimsonBright);
+      this.time.delayedCall(r.kind === "lever" ? 1500 : 550, () => this.centerToast("His own words don't square — " + (c.tell.clash ?? "two answers collide")));
+      this.setStatus(this.showHints ? "His own words don't square. No record needed — press that lie." : "His own words don't square. There's a lie in there to break.", CSS.crimsonBright);
     }
     this.updateHud();
   }
@@ -521,7 +532,7 @@ export class CaseRunScene extends Phaser.Scene {
     this.setStatus("Caught him cold. That prop's down before he's even confronted.", CSS.crimsonBright);
     // …and a beat later he patches the hole with a fresh lie (a non-blocking flourish)
     this.time.delayedCall(750, () => {
-      this.lastAnswer = r.patch;
+
       this.say(r.patch);
       this.setMood("evasive");
       this.renderInterview();
