@@ -181,8 +181,12 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
       continue;
     }
     const leadable: string[] = [];
-    const supN = Math.max(1, Math.min(3, opts.supports ?? 2));
-    const depth = Math.max(1, Math.min(2, opts.depth ?? 1));
+    // Structural variety is intrinsic: unless the caller pins them, the number of
+    // supports and the depth scatter by seed, so even a bare generate() differs
+    // case to case rather than emitting one fixed shape.
+    const supN = Math.max(1, Math.min(3, opts.supports ?? (rng() < 0.4 ? 3 : 2)));
+    const depth = Math.max(1, Math.min(2, opts.depth ?? (rng() < 0.4 ? 2 : 1)));
+    const useHerring = opts.herring ?? rng() < 0.5;
 
     const supports = shuffle(SUPPORTS, rng).slice(0, supN);
     const attacks = shuffle(ATTACKS, rng).slice(0, Math.max(2, supN));
@@ -232,7 +236,7 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
     evidence.push({ id: "iou", short: mot.evShort, label: mot.evLabel, targets: "square", deflectableBy: [] });
 
     // optional dead-end lead
-    if (opts.herring) {
+    if (useHerring) {
       const h = pick(HERRINGS, rng);
       segments.push({ id: "noise", name: "a loose end", base: "Whatever else you found means nothing." });
       concessions["noise"] = "...That? That's nothing. I told you it was nothing.";

@@ -4,7 +4,21 @@
  * the same — while staying deterministic per seed and structurally intact. Run:
  * npx tsx scripts/test-content.ts
  */
-import { generateMergedCase } from "../src/game/generateweb";
+import { generateMergedCase, generateWeb } from "../src/game/generateweb";
+
+// Structural variety must be INTRINSIC — a bare generate() (no opts pinning the
+// shape) must differ case to case, not emit one fixed shape. Guards against the
+// variety being only a configuration the callers happen to pass.
+{
+  const shapes = new Set<string>();
+  for (let s = 1; s <= 200; s++) {
+    const w = generateWeb(s * 7 + 1, {});
+    shapes.add(`${w.segments.length}`);
+  }
+  const ok = shapes.size >= 3;
+  console.log(`${ok ? "✓" : "✗"} bare generator structurally varies (${[...shapes].sort().join("/")} segments across seeds)`);
+  if (!ok) process.exitCode = 1;
+}
 
 let ok = true;
 const check = (p: boolean, m: string) => {
