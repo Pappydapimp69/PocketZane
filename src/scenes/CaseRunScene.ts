@@ -2,11 +2,13 @@ import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../dimensions";
 import { COLORS, CSS, DISPLAY, BODY, MONO, fs, uiScale } from "../theme";
 import { Button } from "../ui";
-import { MergedInquiry, PHASE_STRIKES, MergedCase } from "../game/merged";
+import { MergedCase } from "../game/merged";
+import { Interview } from "../game/interview";
+import { WebInquiry } from "../game/web";
 import { WELLS } from "../game/mergedcase";
 import { generateMergedCase } from "../game/generateweb";
 import { dailySeed, DAILY_OPTS, optsForNight, nightSeed, randomSeed, freeOpts } from "../game/ladder";
-import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias, getBest, setBest, getNarration, getDifficulty, DIFFS, getReduceMotion, markCleanCase } from "../game/save";
+import { incBreaks, markDeepest, rankFor, getTotalBreaks, weirdnessBias, getBest, setBest, getNarration, getDifficulty, getReduceMotion, markCleanCase } from "../game/save";
 import { SFX, startAmbience, stopSpeech, speak, toggleMute } from "../game/audio";
 import { addAtmosphere, addRain } from "../game/textures";
 import { paintPortrait, suspectName, temperament, Mood, Temperament } from "../game/portrait";
@@ -17,19 +19,14 @@ import { PAD } from "../input";
 
 const LEFT = 30;
 const WRAP = GAME_WIDTH - 60;
-const FONT = 16;
-const LINE_H = 28;
 
-interface ClauseLayout {
-  id: string;
-  struck: boolean;
-  words: Phaser.GameObjects.Text[];
-  runs: { x0: number; x1: number; top: number; bottom: number }[];
-}
-
-/** The merged loop: question phases → constraint-web confrontation. */
+/** The merged loop: the interview (five questions, three rounds) → the
+ *  constraint-web confrontation. */
 export class CaseRunScene extends Phaser.Scene {
-  private inq!: MergedInquiry;
+  private interview!: Interview;
+  private web?: WebInquiry;
+  private confronting = false;
+  private lastAnswer = "";
   private title!: Phaser.GameObjects.Text;
   private prompt!: Phaser.GameObjects.Text;
   private hud!: Phaser.GameObjects.Text;
@@ -49,14 +46,12 @@ export class CaseRunScene extends Phaser.Scene {
     paintPortrait(this, "suspect", this.seedVal, mood, blink, this.tense && mood === "neutral");
   }
 
-  // phase render
-  private clauses: ClauseLayout[] = [];
   private marks!: Phaser.GameObjects.Graphics;
   private selected: string | null = null;
-  private spaceW = 6;
-  private spaceMeasured = false;
   // confront render
   private blocks: Phaser.GameObjects.GameObject[] = [];
+  // interview render
+  private interviewRows: { id: string; y: number; h: number; selectable: boolean }[] = [];
 
   private busy = false;
   private overlayClose: (() => void) | null = null;
@@ -133,11 +128,14 @@ export class CaseRunScene extends Phaser.Scene {
     addAtmosphere(this, { lamp: true });
     addRain(this, -1, 1);
     startAmbience();
-    this.inq = new MergedInquiry(this.theCase, this.seedVal, PHASE_STRIKES + DIFFS[getDifficulty()].strikes);
+    this.interview = new Interview(this.theCase.questions ?? [], this.theCase.rounds ?? 3);
+    this.web = undefined;
+    this.confronting = false;
+    this.lastAnswer = "";
     this.marks = this.add.graphics().setDepth(5);
     this.busy = false;
 
-    const c = this.inq.case;
+    const c = this.theCase;
     // The case may already name its subject ("Name — role"); a generated one gives
     // only a role ("the night porter"), so we supply a seeded name to go with it.
     if (c.subject.includes("—")) {
@@ -235,11 +233,9 @@ export class CaseRunScene extends Phaser.Scene {
   private enterMode(): void {
     this.selected = null;
     this.marks.clear();
-    this.clauses.forEach((c) => c.words.forEach((w) => w.destroy()));
-    this.clauses = [];
     this.blocks.forEach((b) => b.destroy());
     this.blocks = [];
-    if (this.inq.confronting) {
+    if (this.confronting) {
       this.title.setText("The Confrontation");
       this.prompt.setText("He gives it to you whole now. A head-on hit will deflect — find what's propping each lie up.");
       this.btnL.setLabel("PRESS HIM  (A)");
@@ -250,11 +246,10 @@ export class CaseRunScene extends Phaser.Scene {
         SFX.heart(); // a single thump as he commits to the whole story
       }
     } else {
-      this.title.setText(this.inq.phase.title);
-      this.prompt.setText(this.inq.phase.prompt);
-      this.btnL.setLabel("QUESTION  (A)");
-      this.btnR.setLabel("PIN  (X)");
-      this.renderPhase();
+      this.title.setText("The Interview");
+      this.prompt.setText("Three questions — two he'll never answer. Make them count.");
+      this.btnR.setLabel("THE FILE  (X)");
+      this.renderInterview();
     }
     this.setMood("neutral");
     this.updateHud();
@@ -306,12 +301,12 @@ export class CaseRunScene extends Phaser.Scene {
   }
 
   private updateHud(): void {
-    if (this.inq.confronting) {
-      this.hud.setText(`alibi  ${this.inq.brokenCount}/${this.inq.total} broken    ·    leads ${this.inq.heldEvidence().length}`);
+    if (this.confronting && this.web) {
+      this.hud.setText(`alibi  ${this.web.brokenCount}/${this.web.total} broken    ·    leads ${this.web.heldEvidence().length}`);
     } else {
-      const s = this.inq.phaseStrikes;
-      const dots = "●".repeat(s) + "○".repeat(Math.max(0, this.inq.strikesAllowed - s));
-      this.hud.setText(`patience ${dots}    ·    leads ${this.inq.leadCount}`);
+      const left = this.interview.roundsLeft;
+      const dots = "●".repeat(left) + "○".repeat(Math.max(0, this.interview.rounds - left));
+      this.hud.setText(`questions ${dots}    ·    leads ${this.interview.heldLevers().length}`);
     }
   }
 
@@ -343,175 +338,197 @@ export class CaseRunScene extends Phaser.Scene {
       if ((i === PAD.A || i === PAD.B || i === PAD.START || i === PAD.Y) && this.overlayClose) this.overlayClose();
       return;
     }
-    if (this.inq.confronting) {
+    if (this.confronting) {
       if (i === PAD.A || i === PAD.LT) this.doPresent();
       else if (i === PAD.X || i === PAD.Y) this.showFile(false);
       return;
     }
     if (i === PAD.UP) this.moveSelection(-1);
     else if (i === PAD.DOWN) this.moveSelection(1);
-    else if (i === PAD.A) this.doQuestion();
-    else if (i === PAD.X || i === PAD.LT) this.doPin();
+    else if (i === PAD.A) this.doAct();
     else if (i === PAD.Y) this.showFile(false);
   }
   private actL(): void {
-    if (this.inq.confronting) this.doPresent();
-    else this.doQuestion();
+    if (this.confronting) this.doPresent();
+    else this.doAct();
   }
   private actR(): void {
-    if (this.inq.confronting) this.showFile(false);
-    else this.doPin();
+    this.showFile(false);
   }
 
-  // ---- phase: flowing testimony ----------------------------------------------
+  // ---- interview: five questions, three rounds -------------------------------
 
-  private measureSpace(): void {
-    if (this.spaceMeasured) return;
-    const a = this.add.text(0, 0, "n n", { fontFamily: BODY, fontSize: fs(FONT) });
-    const b = this.add.text(0, 0, "nn", { fontFamily: BODY, fontSize: fs(FONT) });
-    this.spaceW = Math.max(3, a.width - b.width);
-    a.destroy();
-    b.destroy();
-    this.spaceMeasured = true;
-  }
-
-  private renderPhase(): void {
-    this.measureSpace();
-    this.clauses.forEach((c) => c.words.forEach((w) => w.destroy()));
-    this.clauses = [];
-    let x = LEFT;
+  private renderInterview(): void {
+    this.blocks.forEach((b) => b.destroy());
+    this.blocks = [];
+    this.interviewRows = [];
+    const s = uiScale();
     let y = this.contentTop;
-    for (const l of this.inq.phaseLines()) {
-      const objs: Phaser.GameObjects.Text[] = [];
-      const runs: ClauseLayout["runs"] = [];
-      let run: ClauseLayout["runs"][number] | null = null;
-      for (const w of l.text.split(/\s+/).filter(Boolean)) {
-        const t = this.add.text(0, 0, w, { fontFamily: BODY, fontSize: fs(FONT), color: l.pinned ? CSS.faint : CSS.ink }).setDepth(6);
-        if (x + t.width > GAME_WIDTH - 28 && x > LEFT) {
-          x = LEFT;
-          y += Math.round(LINE_H * uiScale());
-          run = null;
-        }
-        t.setPosition(x, y);
+
+    if (this.lastAnswer) {
+      const q = this.add.text(LEFT, y, `“${this.lastAnswer}”`, { fontFamily: BODY, fontSize: fs(16), color: CSS.amber, fontStyle: "italic", wordWrap: { width: GAME_WIDTH - 56 }, lineSpacing: 3 }).setDepth(6);
+      this.blocks.push(q);
+      y += q.height + Math.round(20 * s);
+    }
+
+    for (const q of this.interview.questions) {
+      const asked = this.interview.isAsked(q.id);
+      const caught = this.interview.isCaught(q.id);
+      const pressable = this.interview.canPress(q.id);
+      const locked = !asked && this.interview.roundsLeft <= 0;
+      const selectable = (!asked && this.interview.roundsLeft > 0) || pressable;
+
+      let prefix = "▸ ";
+      let color: string = CSS.ink;
+      let label = q.ask;
+      if (caught) {
+        prefix = "✓ ";
+        color = CSS.crimsonBright;
+      } else if (pressable) {
+        prefix = "‣ ";
+        color = CSS.amber;
+        label = `${q.ask}   — press him on it`;
+      } else if (asked) {
+        prefix = "· ";
+        color = CSS.faint;
+      } else if (locked) {
+        prefix = "  ";
+        color = CSS.faint;
+        label = "— a question you'll never get to ask —";
+      }
+
+      const t = this.add.text(LEFT + 6, y, prefix + label, { fontFamily: BODY, fontSize: fs(15), color, wordWrap: { width: GAME_WIDTH - 64 }, lineSpacing: 2 }).setDepth(6);
+      if (selectable) {
         t.setInteractive({ useHandCursor: true });
-        t.on("pointerup", () => this.onClauseTap(l.id));
-        objs.push(t);
-        if (!run || run.top !== y) {
-          run = { x0: x, x1: x + t.width, top: y, bottom: y + t.height };
-          runs.push(run);
-        } else run.x1 = x + t.width;
-        x += t.width + this.spaceW;
+        t.on("pointerup", () => this.onQuestionTap(q.id));
       }
-      x += this.spaceW;
-      this.clauses.push({ id: l.id, struck: l.pinned, words: objs, runs });
+      this.blocks.push(t);
+      this.interviewRows.push({ id: q.id, y, h: t.height, selectable });
+      y += t.height + Math.round(11 * s);
     }
-    this.drawMarks();
+
+    this.updateInterviewButton();
+    this.drawSelection();
   }
 
-  private drawMarks(): void {
-    const g = this.marks;
-    g.clear();
-    const fontH = Math.round(FONT * uiScale()) + 4;
-    for (const cl of this.clauses) {
-      if (this.selected === cl.id && !cl.struck) {
-        g.fillStyle(COLORS.amber, 0.16);
-        for (const r of cl.runs) g.fillRoundedRect(r.x0 - 4, r.top - 2, r.x1 - r.x0 + 8, fontH + 6, 4);
-      }
-      if (cl.struck) {
-        g.lineStyle(1.6, COLORS.crimson, 0.95);
-        for (const r of cl.runs) g.lineBetween(r.x0, r.top + fontH / 2, r.x1, r.top + fontH / 2);
-      }
-    }
+  private updateInterviewButton(): void {
+    this.btnL.setLabel(this.interviewExhausted() ? "CONFRONT HIM  (A)" : "ASK / PRESS  (A)");
+  }
+  private interviewExhausted(): boolean {
+    return this.interview.roundsLeft <= 0 && !this.interview.questions.some((q) => this.interview.canPress(q.id));
   }
 
-  private selectableIds(): string[] {
-    return this.inq.phaseLines().filter((l) => !l.pinned).map((l) => l.id);
+  private interviewSelectable(): string[] {
+    return this.interviewRows.filter((r) => r.selectable).map((r) => r.id);
   }
   private moveSelection(dir: number): void {
-    const ids = this.selectableIds();
+    if (this.confronting) return;
+    const ids = this.interviewSelectable();
     if (ids.length === 0) return;
     const cur = this.selected ? ids.indexOf(this.selected) : -1;
     const next = cur < 0 ? (dir > 0 ? 0 : ids.length - 1) : Phaser.Math.Wrap(cur + dir, 0, ids.length);
     this.selected = ids[next];
-    this.drawMarks();
+    this.drawSelection();
     SFX.select();
   }
-  private onClauseTap(id: string): void {
-    if (this.busy || this.inq.confronting) return;
-    const l = this.inq.phaseLines().find((x) => x.id === id);
-    if (!l || l.pinned) return;
-    this.selected = this.selected === id ? null : id;
-    this.drawMarks();
+  private onQuestionTap(id: string): void {
+    if (this.busy || this.confronting) return;
+    this.selected = id;
+    this.drawSelection();
     SFX.select();
+    this.doAct();
+  }
+  private drawSelection(): void {
+    const g = this.marks;
+    g.clear();
+    const row = this.interviewRows.find((r) => r.id === this.selected);
+    if (row) {
+      g.fillStyle(COLORS.amber, 0.14);
+      g.fillRoundedRect(LEFT - 2, row.y - 3, GAME_WIDTH - 2 * LEFT + 8, row.h + 6, 4);
+    }
   }
 
-  private doQuestion(): void {
+  private doAct(): void {
     if (this.busy) return;
-    if (!this.selected) {
-      this.setStatus("Pick a line of his account, then question it.", CSS.muted);
+    if (this.interviewExhausted()) {
+      this.startConfront();
       return;
     }
+    const sel = this.selected ?? this.interviewSelectable()[0];
+    if (!sel) {
+      this.startConfront();
+      return;
+    }
+    if (this.interview.canPress(sel)) this.doPress(sel);
+    else this.doAsk(sel);
+  }
+
+  private doAsk(id: string): void {
+    const r = this.interview.ask(id);
+    if (r.kind === "none") return;
     this.tick();
-    const sel = this.selected;
-    if (this.inq.question(this.selected).shifted) {
-      SFX.flicker();
-      SFX.murmur(this.seedVal);
-      this.renderPhase();
+    this.selected = null;
+    SFX.murmur(this.seedVal);
+    this.lastAnswer = r.q.answer;
+    this.say(r.q.answer);
+    if (r.kind === "lever") {
       this.setMood("evasive");
-      this.say(this.inq.phaseLines().find((l) => l.id === sel)?.text ?? "");
-      this.setStatus("Something in it moves.", CSS.amber);
+      this.renderInterview();
+      this.time.delayedCall(450, () => this.centerToast("A lever:  " + this.leadLabel(r.q.evId!)));
+      this.setStatus("A record he can't wave off. Use it on the right lie.", CSS.amber);
+    } else if (r.kind === "lie") {
+      const canNow = this.interview.canPress(id);
+      this.setMood(canNow ? "pressed" : "neutral");
+      this.renderInterview();
+      this.setStatus(canNow ? "You can break that one — press him." : "A claim. You'll need a lever to break it.", CSS.muted);
     } else {
-      SFX.again();
       this.setMood("neutral");
-      this.setStatus("He says it the same way. Unmoved.", CSS.muted);
+      this.renderInterview();
+      this.setStatus("Nothing in that. A round spent.", CSS.slate);
     }
+    this.updateHud();
   }
 
-  private doPin(): void {
-    if (this.busy) return;
-    if (!this.selected) {
-      this.setStatus("Select the line you mean to call a lie.", CSS.muted);
-      return;
-    }
+  private doPress(id: string): void {
+    const r = this.interview.press(id);
+    if (r.kind !== "caught") return;
     this.tick();
-    const r = this.inq.pin(this.selected);
-    switch (r.kind) {
-      case "lead":
-        SFX.pin();
-        this.renderPhase();
-        this.updateHud();
-        this.setMood("pressed");
-        this.setStatus("Caught. That's a lead.", CSS.crimsonBright);
-        this.centerToast("New lead:  " + this.inq.leadLabel(r.leadId));
-        if (r.phaseDone) this.time.delayedCall(1300, () => this.phaseBeat(true));
-        break;
-      case "not-caught":
-        SFX.deny();
-        this.setStatus("You haven't caught it shift yet. Press it first.", CSS.muted);
-        break;
-      case "strike":
-        SFX.wrong();
-        this.shake(150, 0.004);
-        this.updateHud();
-        if (r.failed) {
-          this.setStatus("He's had enough — he won't talk this point again.", CSS.slate);
-          this.time.delayedCall(1300, () => this.phaseBeat(false));
-        } else this.setStatus("He bristles. That line was straight.", CSS.slate);
-        break;
-    }
+    const name = this.theCase.web.segments.find((sg) => sg.id === r.q.seg)?.name ?? "his story";
+    SFX.pin();
+    SFX.break();
+    this.flash(COLORS.crimson, 0.22);
+    this.shake(180, 0.005);
+    this.setMood("pressed");
+    this.selected = null;
+    // the catch lands at once — the prop is struck, the toast hits
+    this.renderInterview();
+    this.updateHud();
+    this.centerToast(`Caught — ${name} was a lie.`);
+    this.setStatus("Caught him cold. That prop's down before he's even confronted.", CSS.crimsonBright);
+    // …and a beat later he patches the hole with a fresh lie (a non-blocking flourish)
+    this.time.delayedCall(750, () => {
+      this.lastAnswer = r.patch;
+      this.say(r.patch);
+      this.setMood("evasive");
+      this.renderInterview();
+    });
   }
 
-  private phaseBeat(cleared: boolean): void {
+  private leadLabel(evId: string): string {
+    return this.theCase.web.evidence.find((e) => e.id === evId)?.label ?? evId;
+  }
+
+  private startConfront(): void {
     this.busy = true;
-    const last = this.inq.phaseIdx + 1 >= this.inq.case.phases.length;
+    this.web = this.interview.toWeb(this.theCase.web, this.seedVal);
     const o = this.add.container(0, 0).setDepth(110);
     o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.9));
-    o.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 20, cleared ? "— the point is yours —" : "— he closes that door —", { fontFamily: DISPLAY, fontSize: fs(20), color: cleared ? CSS.amber : CSS.slate, fontStyle: "italic" }).setOrigin(0.5));
-    o.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 16, last ? "Now he gives you the whole of it." : "On to the next.", { fontFamily: BODY, fontSize: fs(14), color: CSS.muted }).setOrigin(0.5));
+    o.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 20, "— he gives you the whole of it —", { fontFamily: DISPLAY, fontSize: fs(20), color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
+    o.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 16, "Now break what he's left standing.", { fontFamily: BODY, fontSize: fs(14), color: CSS.muted }).setOrigin(0.5));
     this.time.delayedCall(1500, () => {
       o.destroy();
       this.busy = false;
-      this.inq.advance();
+      this.confronting = true;
       this.enterMode();
     });
   }
@@ -521,9 +538,9 @@ export class CaseRunScene extends Phaser.Scene {
   private renderWeb(): void {
     this.blocks.forEach((b) => b.destroy());
     this.blocks = [];
-    const views = this.inq.segments();
+    const views = this.web!.segments();
     const broken = new Set(views.filter((v) => v.broken).map((v) => v.id));
-    const baseOf = new Map(this.inq.case.web.segments.map((s) => [s.id, s.base]));
+    const baseOf = new Map(this.theCase.web.segments.map((s) => [s.id, s.base]));
     // tighten for big webs so they never run past the status line
     const big = views.length > 5;
     const bodyPx = big ? 15 : 16;
@@ -546,12 +563,12 @@ export class CaseRunScene extends Phaser.Scene {
       } else if (this.showHints && s.leansOn) {
         // lenient only: spell out the dependency so newcomers can learn the shape
         const gone = broken.has(s.leansOn);
-        const txt = gone ? `↳ its cover (${this.inq.segmentName(s.leansOn)}) is gone — press it now` : `↳ leaning on ${this.inq.segmentName(s.leansOn)} — break that first`;
+        const txt = gone ? `↳ its cover (${this.web!.segmentName(s.leansOn)}) is gone — press it now` : `↳ leaning on ${this.web!.segmentName(s.leansOn)} — break that first`;
         const note = this.add.text(LEFT + 12, cy, txt, { fontFamily: MONO, fontSize: fs(11), color: gone ? CSS.crimsonBright : CSS.amber }).setDepth(6);
         this.blocks.push(note);
         cy += note.height + 2;
       } else if (this.showHints && s.propsUp.length > 0) {
-        const note = this.add.text(LEFT + 12, cy, `↑ this is holding up ${s.propsUp.map((p) => this.inq.segmentName(p)).join(", ")}`, { fontFamily: MONO, fontSize: fs(11), color: CSS.amber }).setDepth(6);
+        const note = this.add.text(LEFT + 12, cy, `↑ this is holding up ${s.propsUp.map((p) => this.web!.segmentName(p)).join(", ")}`, { fontFamily: MONO, fontSize: fs(11), color: CSS.amber }).setDepth(6);
         this.blocks.push(note);
         cy += note.height + 2;
       }
@@ -561,7 +578,7 @@ export class CaseRunScene extends Phaser.Scene {
 
   private doPresent(): void {
     if (this.busy) return;
-    if (this.inq.heldEvidence().length === 0) {
+    if (this.web!.heldEvidence().length === 0) {
       this.setStatus("Your file is empty.", CSS.muted);
       return;
     }
@@ -570,7 +587,7 @@ export class CaseRunScene extends Phaser.Scene {
 
   private resolve(evId: string): void {
     this.tick();
-    const r = this.inq.present(evId);
+    const r = this.web!.present(evId);
     switch (r.kind) {
       case "deflect": {
         SFX.flicker();
@@ -578,8 +595,8 @@ export class CaseRunScene extends Phaser.Scene {
         this.renderWeb();
         this.updateHud();
         this.setMood("evasive");
-        const via = this.inq.segmentName(r.via);
-        const tgt = this.inq.segmentName(r.target);
+        const via = this.web!.segmentName(r.via);
+        const tgt = this.web!.segmentName(r.target);
         this.say(r.text);
         this.setStatus(this.showHints ? `He slips it. ${tgt} hides behind ${via} — so take ${via} apart first.` : `He slips it. ${tgt} hides behind ${via}.`, CSS.amber);
         if (r.revealed) this.time.delayedCall(900, () => this.centerToast("That shakes loose:  " + r.revealed!.label));
@@ -596,7 +613,7 @@ export class CaseRunScene extends Phaser.Scene {
           this.flash(COLORS.crimson, 0.32);
           this.setStatus("It evaporates — there was never a floor under it. Everything leaning on it comes down at once.", CSS.crimsonBright);
         } else {
-          this.setStatus(r.solved ? "It caves — and the whole story with it." : this.showHints ? `${this.inq.segmentName(r.target)} collapses. Whatever it covered is exposed now — press it.` : `${this.inq.segmentName(r.target)} collapses.`, CSS.crimsonBright);
+          this.setStatus(r.solved ? "It caves — and the whole story with it." : this.showHints ? `${this.web!.segmentName(r.target)} collapses. Whatever it covered is exposed now — press it.` : `${this.web!.segmentName(r.target)} collapses.`, CSS.crimsonBright);
         }
         if (r.solved) {
           this.flash(COLORS.amber, 0.22);
@@ -647,7 +664,7 @@ export class CaseRunScene extends Phaser.Scene {
 
   private showPicker(): void {
     this.busy = true;
-    const leads = this.inq.heldEvidence();
+    const leads = this.web!.heldEvidence();
     const o = this.add.container(0, 0).setDepth(120);
     o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.96));
     o.add(this.add.text(GAME_WIDTH / 2, 100, "press him with what?", { fontFamily: DISPLAY, fontSize: fs(23), color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
@@ -658,7 +675,7 @@ export class CaseRunScene extends Phaser.Scene {
       rows.push(b);
       o.add(b);
       // lenient only: name the claim each lead bears on; otherwise that's for you to work out
-      if (this.showHints) o.add(this.add.text(GAME_WIDTH / 2, y + 27, `bears on  ${this.inq.segmentName(e.targets)}`, { fontFamily: MONO, fontSize: fs(10), color: CSS.faint }).setOrigin(0.5));
+      if (this.showHints) o.add(this.add.text(GAME_WIDTH / 2, y + 27, `bears on  ${this.web!.segmentName(e.targets)}`, { fontFamily: MONO, fontSize: fs(10), color: CSS.faint }).setOrigin(0.5));
       y += 66;
     });
     const cancelBtn = new Button(this, GAME_WIDTH / 2, Math.min(y + 8, GAME_HEIGHT - 56), { w: 180, h: 46, label: "CANCEL  (B)", accent: COLORS.crimson, onClick: () => close() });
@@ -695,7 +712,7 @@ export class CaseRunScene extends Phaser.Scene {
   }
 
   private showFile(initial: boolean): void {
-    const c = this.inq.case;
+    const c = this.theCase;
     this.busy = true;
     const o = this.add.container(0, 0).setDepth(120);
     o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 1));
@@ -736,8 +753,8 @@ export class CaseRunScene extends Phaser.Scene {
     const bodyY = Math.max(mugY + 56, partic.y + partic.height + 14);
     const body = `${c.brief.what}\n\n${c.brief.why}\n\n— ${c.brief.goal}`;
     o.add(this.add.text(GAME_WIDTH / 2, bodyY, body, { fontFamily: BODY, fontSize: fs(14), color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
-    const leads = this.inq.confronting ? this.inq.heldEvidence().map((e) => e.label) : [];
-    const ev = this.inq.confronting && leads.length ? "leads in hand:\n" + leads.map((l) => "•  " + l).join("\n") : "";
+    const leads = this.confronting ? this.web!.heldEvidence().map((e) => e.label) : [];
+    const ev = this.confronting && leads.length ? "leads in hand:\n" + leads.map((l) => "•  " + l).join("\n") : "";
     if (ev) o.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 150, ev, { fontFamily: MONO, fontSize: fs(11), color: CSS.muted, align: "left", wordWrap: { width: 408 }, lineSpacing: 4 }).setOrigin(0.5, 1));
     const close = () => {
       o.destroy();
@@ -798,7 +815,7 @@ export class CaseRunScene extends Phaser.Scene {
       o.add(this.add.image(GAME_WIDTH / 2, 206, "suspect").setDisplaySize(66, 84));
       o.add(this.inkStamp(GAME_WIDTH / 2 + 20, 188, "CASE CLOSED"));
     }
-    o.add(this.add.text(GAME_WIDTH / 2, 268, this.inq.case.resolution, { fontFamily: BODY, fontSize: fs(14), color: CSS.muted, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
+    o.add(this.add.text(GAME_WIDTH / 2, 268, this.theCase.resolution, { fontFamily: BODY, fontSize: fs(14), color: CSS.muted, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
     o.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 150, flavor, { fontFamily: MONO, fontSize: fs(11), color: CSS.faint, align: "center", wordWrap: { width: 408 } }).setOrigin(0.5));
     this.overlayClose = onGo;
     o.add(new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 72, { w: 240, h: 50, label: btnLabel, accent: COLORS.crimson, onClick: onGo }));
@@ -807,8 +824,8 @@ export class CaseRunScene extends Phaser.Scene {
   /** Rate the run against the solver's par: phases (a question+pin each) plus the
    * number of lies that had to fall. Records a personal best for repeatable cases. */
   private gradeRun(): { par: number; rating: string; best: number | null; clean: boolean } {
-    const order = verifyWeb(this.inq.case.web, this.inq.case.web.startEvidence).order;
-    const par = Math.max(2, this.inq.case.phases.length * 2 + order.length);
+    const order = verifyWeb(this.theCase.web, this.theCase.web.startEvidence).order;
+    const par = Math.max(2, (this.theCase.rounds ?? 3) + 0 + order.length);
     const ratio = this.moves / par;
     const clean = this.moves <= par; // at or under the solver's par
     const rating = clean ? "a clean break  ✦" : ratio <= 1.5 ? "workmanlike" : ratio <= 2.1 ? "the long way round" : "you got there in the end";
@@ -870,7 +887,7 @@ export class CaseRunScene extends Phaser.Scene {
       // a struck ink stamp across the photo — case closed (or, if the run ended, unsolved-on-time)
       if (!runOver) reso.add(this.inkStamp(GAME_WIDTH / 2 + 24, 150, "CASE CLOSED"));
     }
-    reso.add(this.add.text(GAME_WIDTH / 2, 272, this.inq.case.resolution, { fontFamily: BODY, fontSize: fs(14), color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
+    reso.add(this.add.text(GAME_WIDTH / 2, 272, this.theCase.resolution, { fontFamily: BODY, fontSize: fs(14), color: CSS.ink, align: "left", wordWrap: { width: 408 }, lineSpacing: 6 }).setOrigin(0.5, 0));
 
     // Efficiency grade: the player's moves against the solver's par.
     reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 176, `broke it in ${this.moves}  ·  par ${grade.par}${grade.best != null ? `  ·  best ${grade.best}` : ""}`, { fontFamily: MONO, fontSize: fs(12), color: CSS.ink }).setOrigin(0.5));
@@ -913,11 +930,11 @@ export class CaseRunScene extends Phaser.Scene {
     c.add(this.add.text(GAME_WIDTH / 2, 64, "the web", { fontFamily: DISPLAY, fontSize: fs(24), color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
     c.add(this.add.text(GAME_WIDTH / 2, 90, "one lie holding up another", { fontFamily: MONO, fontSize: fs(11), color: CSS.muted }).setOrigin(0.5));
 
-    const segs = this.inq.case.web.segments;
-    const evs = this.inq.case.web.evidence;
-    const brokenSet = new Set(this.inq.segments().filter((s) => s.broken).map((s) => s.id));
+    const segs = this.theCase.web.segments;
+    const evs = this.theCase.web.evidence;
+    const brokenSet = new Set(this.web!.segments().filter((s) => s.broken).map((s) => s.id));
     // the order the lies have to fall — from the solver, for ①②③ labels
-    const order = verifyWeb(this.inq.case.web, this.inq.case.web.startEvidence).order;
+    const order = verifyWeb(this.theCase.web, this.theCase.web.startEvidence).order;
     const orderOf = new Map(order.map((id, i) => [id, i + 1]));
 
     // support edges (d props target) and per-segment "support depth"

@@ -25,7 +25,7 @@ for (const [name, data] of modes) {
   await w(900);
   const good = await page.evaluate(() => {
     const s = window.__game.scene.getScene("CaseRun");
-    return !!(s && s.inq && s.theCase);
+    return !!(s && s.interview && s.theCase);
   });
   if (!good) ok = false;
   console.log(`${good ? "✓" : "✗"} ${name}`);

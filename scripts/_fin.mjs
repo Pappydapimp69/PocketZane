@@ -1,0 +1,21 @@
+import { chromium } from "playwright";
+const exe="/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+const b=await chromium.launch({executablePath:exe,args:["--no-sandbox","--disable-setuid-sandbox"]});
+const page=await b.newPage({viewport:{width:480,height:854}});
+const w=ms=>page.waitForTimeout(ms);
+await page.goto("http://localhost:5173/",{waitUntil:"load"}); await w(3000);
+await page.evaluate(()=>{ window.__game.scene.getScene("TitleScene").scene.start("CaseRun",{generate:true,seed:11,fixed:true}); });
+await w(1100);
+await page.evaluate(()=>{ const s=window.__game.scene.getScene("CaseRun"); if(s.overlayClose)s.overlayClose();
+  const iv=s.interview; const lever=iv.questions.find(q=>q.kind==='lever'); s.selected=lever.id; s.doAct(); });
+await w(2500);
+await page.evaluate(()=>{ const s=window.__game.scene.getScene("CaseRun"); const iv=s.interview; const lever=iv.questions.find(q=>q.kind==='lever'); const lie=iv.questions.find(q=>q.kind==='lie'&&q.leverId===lever.evId); s.selected=lie.id; s.doAct(); });
+await w(2500);
+await page.evaluate(()=>{ const s=window.__game.scene.getScene("CaseRun"); const lie=s.interview.questions.find(q=>q.kind==='lie'&&s.interview.canPress(q.id)); s.selected=lie.id; s.doAct(); });
+await w(4000); await page.screenshot({ path:"/tmp/fin-catch.png" });
+// confront
+await page.evaluate(()=>{ const s=window.__game.scene.getScene("CaseRun"); while(s.interview.roundsLeft>0){const q=s.interview.questions.find(x=>!s.interview.isAsked(x.id)); if(!q)break; s.selected=q.id; s.doAct();} });
+await w(2500);
+await page.evaluate(()=>{ const s=window.__game.scene.getScene("CaseRun"); if(!s.confronting) s.startConfront(); });
+await w(3000); await page.screenshot({ path:"/tmp/fin-confront.png" });
+await b.close();
