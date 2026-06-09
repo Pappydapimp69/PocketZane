@@ -1,8 +1,8 @@
-# LOCKED GOAL
+# LOCKED GOAL (loop 2)
 
-This file is the fixed end-state specification for AGAIN. It is the only bar the
-independent checker measures against. It is not edited during the development
-loop.
+Fixed end-state specification for AGAIN. The only bar the independent checker
+measures against. Not edited during the loop. Amended between loops by the
+ratchet only.
 
 ## The intended end state (observable terms)
 
@@ -14,19 +14,9 @@ preserves **PW's gotcha, escalation, and theater** without sacrificing
 **generativity**, the **keystone**, or the principle that **"a lie can't tell
 itself the same way twice."**
 
-## Criteria the checker reports on
+## Ratchet amendment (loop 2)
 
-1. The suspect reacts, lies, and lies back (observable in play).
-2. Lies are introduced through questioning and grow under pressure.
-3. Every case differs meaningfully (across seeds).
-4. All content is generated in code; no asset/content files.
-5. Every case is verified solvable.
-6. An optimization layer is present and meaningful.
-7. PW's gotcha — a crisp, earned catch beat.
-8. PW's escalation — the story grows/patches under pressure.
-9. PW's theater — drama around the key moments.
-10. Generativity, the keystone, and "a lie can't tell itself the same way
-    twice" are all preserved.
-
-For each: **met / partial / missing**. Plus the **biggest gap** and
-**on-track: yes / no**.
+**Act 1 must generate at least one contradiction, instability, or vulnerability
+from the suspect's OWN answers before external evidence is introduced. That
+instability must be visible to the player, stored by the system, and usable
+later as interrogation leverage.**
