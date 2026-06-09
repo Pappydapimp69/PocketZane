@@ -1,5 +1,5 @@
 import { WebCase, WebInquiry, WebEvidence } from "./web";
-import { questionLie, questionLever, leverReaction, patchLine, dudExchange } from "./phrasing";
+import { questionLie, questionLever, leverReaction, patchLine, dudExchange, tellQuestion, tellAnswer, tellClash } from "./phrasing";
 
 /**
  * The interview (Act 1), the new front half of the game. The detective is given
@@ -17,17 +17,18 @@ import { questionLie, questionLever, leverReaction, patchLine, dudExchange } fro
  * having toppled (caught props). Deterministic.
  */
 
-export type QuestionKind = "lie" | "lever" | "dud";
+export type QuestionKind = "lie" | "lever" | "tell" | "dud";
 
 export interface Question {
   id: string;
   ask: string; // the detective's question
   kind: QuestionKind;
   answer: string; // his immediate reply
-  seg?: string; // (lie) the prop segment this claim is
+  seg?: string; // (lie) the prop segment this claim is | (tell) the lie it conflicts with
   leverId?: string; // (lie) the evidence that cracks it
   patch?: string; // (lie) what he says when caught
   evId?: string; // (lever) evidence handed to you
+  clash?: string; // (tell) why this answer doesn't square with the lie it targets
 }
 
 export const ROUNDS = 3;
@@ -38,21 +39,36 @@ export const ROUNDS = 3;
 export function buildQuestions(web: WebCase, rng: () => number): Question[] {
   const cleanBreaker = (segId: string): WebEvidence | undefined =>
     web.evidence.find((e) => e.targets === segId && e.deflectableBy.length === 0);
+  const claimOf = (segId: string) => web.segments.find((s) => s.id === segId)!.base;
 
-  // catchable props: non-key, non-keystone, not the dead-end herring, with a clean lever
-  const props = web.segments.filter((s) => !s.key && !s.keystone && s.id !== "noise").map((s) => ({ seg: s.id, lever: cleanBreaker(s.id) })).filter((p) => p.lever) as { seg: string; lever: WebEvidence }[];
+  // SUPPORTS carry a "tell" (an own-words contradiction); the motive does not.
+  // They can be cracked by the tell whether or not their seam is a clean lever,
+  // so the contradiction always lands on a support with in-character clash text —
+  // even in keystone cases, where a support's seam is itself deflectable.
+  const supports = web.segments.filter((s) => !s.key && !s.keystone && s.id !== "noise" && s.id !== "square").map((s) => s.id);
+  // LEVER props are anything with a clean external breaker (supports + the motive).
+  const leverProps = web.segments.filter((s) => !s.key && !s.keystone && s.id !== "noise").map((s) => ({ seg: s.id, lever: cleanBreaker(s.id) })).filter((p): p is { seg: string; lever: WebEvidence } => !!p.lever);
 
   const out: Question[] = [];
-  // up to two full lie+lever pairs
-  const paired = props.slice(0, 2);
-  paired.forEach((p, i) => {
-    out.push({ id: `L${i}`, kind: "lie", ask: questionLie(p.seg), answer: web.segments.find((s) => s.id === p.seg)!.base, seg: p.seg, leverId: p.lever.id, patch: patchLine(p.seg) });
-    out.push({ id: `V${i}`, kind: "lever", ask: questionLever(p.seg), answer: leverReaction(p.seg, rng), evId: p.lever.id });
-  });
-  // a third prop as a lie with no lever offered (only catchable later), else a dud
-  if (props[2]) {
-    const p = props[2];
-    out.push({ id: "L2", kind: "lie", ask: questionLie(p.seg), answer: web.segments.find((s) => s.id === p.seg)!.base, seg: p.seg, leverId: p.lever.id, patch: patchLine(p.seg) });
+
+  // The CONTRADICTION pair: his lie + a "tell" he gives elsewhere that conflicts.
+  // No record needed — the only way to catch it in the interview is to connect
+  // his own two answers. This is the self-incriminating instability the goal wants.
+  const cs = supports[0];
+  if (cs) {
+    out.push({ id: "L0", kind: "lie", ask: questionLie(cs), answer: claimOf(cs), seg: cs, leverId: cleanBreaker(cs)?.id, patch: patchLine(cs) });
+    out.push({ id: "T0", kind: "tell", ask: tellQuestion(cs), answer: tellAnswer(cs), seg: cs, clash: tellClash(cs) });
+  }
+  // a LEVER pair: a different prop that HAS a clean record, plus that record.
+  const ls = leverProps.find((p) => p.seg !== cs);
+  if (ls) {
+    out.push({ id: "L1", kind: "lie", ask: questionLie(ls.seg), answer: claimOf(ls.seg), seg: ls.seg, leverId: ls.lever.id, patch: patchLine(ls.seg) });
+    out.push({ id: "V1", kind: "lever", ask: questionLever(ls.seg), answer: leverReaction(ls.seg, rng), evId: ls.lever.id });
+  }
+  // a third prop as a lie with no lever offered, else a dud — to reach five
+  const extra = leverProps.find((p) => p.seg !== cs && p.seg !== ls?.seg);
+  if (out.length < 5 && extra) {
+    out.push({ id: "L2", kind: "lie", ask: questionLie(extra.seg), answer: claimOf(extra.seg), seg: extra.seg, leverId: extra.lever.id, patch: patchLine(extra.seg) });
   }
   // pad to five with duds (distinct)
   let guard = 0;
@@ -70,7 +86,7 @@ export function buildQuestions(web: WebCase, rng: () => number): Question[] {
   return out.slice(0, 5);
 }
 
-export type AskResult = { kind: "lie" | "lever" | "dud"; q: Question } | { kind: "none" };
+export type AskResult = { kind: "lie" | "lever" | "tell" | "dud"; q: Question } | { kind: "none" };
 export type PressResult = { kind: "caught"; q: Question; patch: string } | { kind: "blocked" };
 
 export class Interview {
@@ -118,10 +134,40 @@ export class Interview {
     return { kind: q.kind, q };
   }
 
-  /** Can this asked lie be cracked right now — i.e. do we hold its lever? */
+  /** A tell he's already given that contradicts this lie's prop (his own words). */
+  contradictionFor(lieId: string): Question | undefined {
+    const q = this.byId(lieId);
+    if (!q || q.kind !== "lie") return undefined;
+    return this.questions.find((t) => t.kind === "tell" && this.asked.has(t.id) && t.seg === q.seg);
+  }
+  /** Every live contradiction the player has surfaced (both answers heard, not yet
+   *  spent) — the stored, queryable instability from his own answers. */
+  contradictions(): { lie: Question; tell: Question }[] {
+    const out: { lie: Question; tell: Question }[] = [];
+    for (const lie of this.questions) {
+      if (lie.kind !== "lie" || !this.asked.has(lie.id) || this.caught.has(lie.seg!)) continue;
+      const tell = this.contradictionFor(lie.id);
+      if (tell) out.push({ lie, tell });
+    }
+    return out;
+  }
+
+  /** Can this asked lie be cracked right now — by a held lever OR by a
+   *  contradiction between two of his own answers (no external evidence). */
   canPress(id: string): boolean {
     const q = this.byId(id);
-    return !!q && q.kind === "lie" && this.asked.has(id) && !!q.leverId && this.held.has(q.leverId) && !this.caught.has(q.seg!);
+    if (!q || q.kind !== "lie" || !this.asked.has(id) || this.caught.has(q.seg!)) return false;
+    const byLever = !!q.leverId && this.held.has(q.leverId);
+    const byContradiction = !!this.contradictionFor(id);
+    return byLever || byContradiction;
+  }
+  /** How the press would land — for the catch line / cue. */
+  pressVia(id: string): "lever" | "contradiction" | null {
+    const q = this.byId(id);
+    if (!q || q.kind !== "lie") return null;
+    if (this.contradictionFor(id)) return "contradiction";
+    if (q.leverId && this.held.has(q.leverId)) return "lever";
+    return null;
   }
 
   press(id: string): PressResult {

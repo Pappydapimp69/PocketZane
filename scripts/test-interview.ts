@@ -42,8 +42,12 @@ for (let seed = 1; seed <= 200; seed++) {
     const evIds = new Set(c.web.evidence.map((e) => e.id));
     const segIds = new Set(c.web.segments.map((s) => s.id));
     for (const q of c.questions ?? []) {
-      if (q.kind === "lie" && (!segIds.has(q.seg!) || !evIds.has(q.leverId!))) fail(`seed ${seed}/${q.id}: bad lie wiring`);
+      if (q.kind === "lie") {
+        if (!segIds.has(q.seg!)) fail(`seed ${seed}/${q.id}: lie targets no segment`);
+        if (q.leverId && !evIds.has(q.leverId)) fail(`seed ${seed}/${q.id}: lie names a bad lever`); // leverId optional (contradiction-only lies)
+      }
       if (q.kind === "lever" && !evIds.has(q.evId!)) fail(`seed ${seed}/${q.id}: bad lever`);
+      if (q.kind === "tell" && !segIds.has(q.seg!)) fail(`seed ${seed}/${q.id}: tell targets no segment`);
       // never interview the keystone — it's the confrontation's payoff
       if (q.kind === "lie" && c.web.segments.find((s) => s.id === q.seg)?.keystone) fail(`seed ${seed}/${q.id}: keystone leaked into interview`);
     }
@@ -80,10 +84,45 @@ if (JSON.stringify(generateMergedCase(7).questions) !== JSON.stringify(generateM
 {
   const c = generateMergedCase(3, { supports: 2, herring: true });
   const a = new Interview(c.questions!, c.rounds);
-  const lie = c.questions!.find((q) => q.kind === "lie")!;
-  a.ask(lie.id); // asked, but no lever held
-  if (a.canPress(lie.id)) fail("pressed a lie with no lever");
-  if (a.press(lie.id).kind !== "blocked") fail("press not blocked without lever");
+  const lever = c.questions!.find((q) => q.kind === "lever")!;
+  const lie = c.questions!.find((q) => q.kind === "lie" && q.leverId === lever.evId)!;
+  a.ask(lie.id); // asked, but no lever held and no contradiction surfaced
+  if (a.canPress(lie.id)) fail("pressed a lie with no lever and no contradiction");
+  if (a.press(lie.id).kind !== "blocked") fail("press not blocked without leverage");
+}
+
+// CRITERION 11: a contradiction from his OWN answers, before external evidence.
+{
+  let withContradiction = 0;
+  let crackedByOwnWords = 0;
+  for (let seed = 1; seed <= 200; seed++) {
+    const c = generateMergedCase(seed, { supports: 2, depth: 1, weirdness: 0.2, herring: true });
+    const qs = c.questions!;
+    // 11a: a lie and a tell that targets the same prop both exist (own answers conflict)
+    const tell = qs.find((q) => q.kind === "tell");
+    const lie = tell && qs.find((q) => q.kind === "lie" && q.seg === tell.seg);
+    if (!tell || !lie) continue;
+    withContradiction++;
+    if (!tell.clash) fail(`seed ${seed}: contradiction has no player-facing clash text`);
+
+    const a = new Interview(qs, c.rounds);
+    // 11e: before hearing the tell, the lie is NOT crackable from the lie alone
+    a.ask(lie.id);
+    if (a.canPress(lie.id)) fail(`seed ${seed}: lie crackable before the tell (would be rote)`);
+    // 11a/d: hearing his other answer surfaces a usable contradiction — no external evidence
+    a.ask(tell.id);
+    if (a.contradictions().length < 1) fail(`seed ${seed}: contradiction not stored`); // 11c stored
+    if (a.pressVia(lie.id) !== "contradiction") fail(`seed ${seed}: not crackable via his own words`);
+    if (!a.canPress(lie.id)) fail(`seed ${seed}: contradiction not usable as leverage`); // 11d
+    if (a.heldLevers().length !== 0) fail(`seed ${seed}: contradiction leaked an external lever`); // 11e
+    const r = a.press(lie.id);
+    if (r.kind !== "caught") fail(`seed ${seed}: own-words press did not catch`);
+    crackedByOwnWords++;
+  }
+  if (withContradiction < 190) fail(`too few self-contradictions (${withContradiction}/200)`);
+  else console.log(`✓ every case carries a self-contradiction (${withContradiction}/200)`);
+  if (crackedByOwnWords !== withContradiction) fail(`some contradictions not crackable by own words (${crackedByOwnWords}/${withContradiction})`);
+  else console.log(`✓ each crackable by his own words, no lever (${crackedByOwnWords}/${withContradiction})`);
 }
 
 console.log(`\nplayed ${n} interviews`);

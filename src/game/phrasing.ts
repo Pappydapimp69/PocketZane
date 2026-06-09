@@ -116,6 +116,47 @@ export function dudExchange(rng: () => number): { ask: string; answer: string } 
   return pick(DUDS, rng);
 }
 
+// A "tell": an innocuous-sounding answer to a different question that quietly
+// contradicts one of his lies. The player must connect the two — no record
+// needed. Keyed by the support whose lie it conflicts with.
+const TELL_ASK: Record<string, string> = {
+  sleep: "How did you pass the evening?",
+  porch: "Did you go anywhere in the building at all?",
+  dark: "How did you spend the hours before bed?",
+  visitor: "Did you see anyone the whole night?",
+  drink: "How did you get yourself home?",
+  errand: "So you stepped out for cigarettes?",
+  bath: "What were you doing just before bed?",
+};
+const TELL_ANS: Record<string, string> = {
+  sleep: "Quietly. I sat up with the wireless till the small hours.",
+  porch: "Only up to his door, earlier — to return a tool. Nothing after.",
+  dark: "Reading, mostly. By the lamp out on the landing.",
+  visitor: "Not a soul. I kept to myself, like always.",
+  drink: "Walked it, steady enough. I always walk home.",
+  errand: "No need to — I keep a carton in the desk drawer.",
+  bath: "Just sitting. Still had my coat on, truth be told.",
+};
+// the short reason the two answers don't square, for the player-facing cue
+const TELL_CLASH: Record<string, string> = {
+  sleep: "he says he was asleep by ten — yet up with the wireless till late",
+  porch: "he says only the porch — yet admits going up to the door",
+  dark: "he says the stair was pitch dark — yet read by the landing lamp",
+  visitor: "he says a friend was with him — yet says he saw no one",
+  drink: "he says he was too drunk to recall — yet walked home steady",
+  errand: "he says he was out for cigarettes — yet keeps a carton in the drawer",
+  bath: "he says he was in the bath — yet sat in his coat instead",
+};
+export function tellQuestion(id: string): string {
+  return TELL_ASK[id] ?? "Walk me through your evening.";
+}
+export function tellAnswer(id: string): string {
+  return TELL_ANS[id] ?? "Nothing worth telling. A quiet night.";
+}
+export function tellClash(id: string): string {
+  return TELL_CLASH[id] ?? "two of his own answers don't square";
+}
+
 export function deflectionLine(supportId: string, attackShort: string, rng: () => number): string {
   const assert = pick(ASSERT[supportId] ?? ["I had my reasons"], rng);
   const dismiss = pick(DISMISS, rng).replace("{a}", attackShort);

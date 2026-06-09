@@ -387,7 +387,7 @@ export class CaseRunScene extends Phaser.Scene {
       } else if (pressable) {
         prefix = "‣ ";
         color = CSS.amber;
-        label = `${q.ask}   — press him on it`;
+        label = this.interview.pressVia(q.id) === "contradiction" ? `${q.ask}   — his own words don't square; press him` : `${q.ask}   — press him on it`;
       } else if (asked) {
         prefix = "· ";
         color = CSS.faint;
@@ -464,6 +464,7 @@ export class CaseRunScene extends Phaser.Scene {
   }
 
   private doAsk(id: string): void {
+    const before = this.interview.contradictions().length;
     const r = this.interview.ask(id);
     if (r.kind === "none") return;
     this.tick();
@@ -480,16 +481,29 @@ export class CaseRunScene extends Phaser.Scene {
       const canNow = this.interview.canPress(id);
       this.setMood(canNow ? "pressed" : "neutral");
       this.renderInterview();
-      this.setStatus(canNow ? "You can break that one — press him." : "A claim. You'll need a lever to break it.", CSS.muted);
+      this.setStatus(canNow ? "That squares with nothing he's said — press him." : "A claim. You'll need a lever, or a slip elsewhere, to break it.", CSS.muted);
+    } else if (r.kind === "tell") {
+      this.setMood("neutral");
+      this.renderInterview();
+      this.setStatus("Mark that — it may not square with something else he says.", CSS.amber);
     } else {
       this.setMood("neutral");
       this.renderInterview();
       this.setStatus("Nothing in that. A round spent.", CSS.slate);
     }
+    // the moment two of his own answers collide, surface it to the player
+    const fresh = this.interview.contradictions();
+    if (fresh.length > before) {
+      const c = fresh[fresh.length - 1];
+      this.shake(120, 0.003);
+      this.time.delayedCall(r.kind === "lever" ? 1500 : 500, () => this.centerToast("His own words don't square — " + (c.tell.clash ?? "press that lie")));
+      this.setStatus("His own words don't square. You don't need a record — press that lie.", CSS.crimsonBright);
+    }
     this.updateHud();
   }
 
   private doPress(id: string): void {
+    const via = this.interview.pressVia(id);
     const r = this.interview.press(id);
     if (r.kind !== "caught") return;
     this.tick();
@@ -503,7 +517,7 @@ export class CaseRunScene extends Phaser.Scene {
     // the catch lands at once — the prop is struck, the toast hits
     this.renderInterview();
     this.updateHud();
-    this.centerToast(`Caught — ${name} was a lie.`);
+    this.centerToast(via === "contradiction" ? `Caught in his own words — ${name} was a lie.` : `Caught — ${name} was a lie.`);
     this.setStatus("Caught him cold. That prop's down before he's even confronted.", CSS.crimsonBright);
     // …and a beat later he patches the hole with a fresh lie (a non-blocking flourish)
     this.time.delayedCall(750, () => {
