@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../dimensions";
-import { COLORS, CSS, DISPLAY, MONO } from "../theme";
+import { COLORS, CSS, DISPLAY, MONO, fs } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere } from "../game/textures";
 import { generateMergedCase } from "../game/generateweb";
@@ -27,11 +27,11 @@ export class CaseSelectScene extends Phaser.Scene {
     addAtmosphere(this, { lamp: true });
 
     this.add
-      .text(GAME_WIDTH / 2, 52, "COLD FILES", { fontFamily: DISPLAY, fontSize: "30px", color: CSS.ink })
+      .text(GAME_WIDTH / 2, 52, "COLD FILES", { fontFamily: DISPLAY, fontSize: fs(30), color: CSS.ink })
       .setOrigin(0.5)
       .setLetterSpacing(6);
     this.add
-      .text(GAME_WIDTH / 2, 84, "fixed cases — break them tighter", { fontFamily: MONO, fontSize: "11px", color: CSS.faint })
+      .text(GAME_WIDTH / 2, 84, "fixed cases — break them tighter", { fontFamily: MONO, fontSize: fs(11), color: CSS.faint })
       .setOrigin(0.5);
 
     const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
@@ -50,7 +50,7 @@ export class CaseSelectScene extends Phaser.Scene {
     let y = 128;
     entries.forEach((e, i) => {
       const btn = new Button(this, GAME_WIDTH / 2, y, { w: 410, h: 46, label: `${ROMAN[i]}.  ${e.title}`, fontSize: 14, accent: COLORS.slate, onClick: e.fn });
-      this.add.text(GAME_WIDTH / 2, y + 24, `${e.sub}${e.best != null ? `   ·   best ${e.best}` : ""}`, { fontFamily: MONO, fontSize: "10px", color: CSS.faint }).setOrigin(0.5);
+      this.add.text(GAME_WIDTH / 2, y + 24, `${e.sub}${e.best != null ? `   ·   best ${e.best}` : ""}`, { fontFamily: MONO, fontSize: fs(10), color: CSS.faint }).setOrigin(0.5);
       items.push({ btn, fn: e.fn });
       y += 64;
     });

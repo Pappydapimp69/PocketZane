@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../dimensions";
-import { COLORS, CSS, DISPLAY, MONO } from "../theme";
+import { COLORS, CSS, DISPLAY, MONO, fs } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere } from "../game/textures";
 import { generateMergedCase } from "../game/generateweb";
@@ -22,7 +22,7 @@ export class StatsScene extends Phaser.Scene {
     addAtmosphere(this, { lamp: true });
 
     this.add
-      .text(GAME_WIDTH / 2, 56, "THE RECORD", { fontFamily: DISPLAY, fontSize: "30px", color: CSS.ink })
+      .text(GAME_WIDTH / 2, 56, "THE RECORD", { fontFamily: DISPLAY, fontSize: fs(30), color: CSS.ink })
       .setOrigin(0.5)
       .setLetterSpacing(6);
 
@@ -31,10 +31,10 @@ export class StatsScene extends Phaser.Scene {
     const dailyBest = getBest(`daily-${todayStamp()}`);
 
     this.add
-      .text(GAME_WIDTH / 2, 108, `${rankFor(total)}`, { fontFamily: DISPLAY, fontSize: "20px", color: CSS.amber, fontStyle: "italic" })
+      .text(GAME_WIDTH / 2, 108, `${rankFor(total)}`, { fontFamily: DISPLAY, fontSize: fs(20), color: CSS.amber, fontStyle: "italic" })
       .setOrigin(0.5);
     this.add
-      .text(GAME_WIDTH / 2, 138, `${total} broken, all told   ·   ${getCleanCount()} clean ✦`, { fontFamily: MONO, fontSize: "12px", color: CSS.muted })
+      .text(GAME_WIDTH / 2, 138, `${total} broken, all told   ·   ${getCleanCount()} clean ✦`, { fontFamily: MONO, fontSize: fs(12), color: CSS.muted })
       .setOrigin(0.5);
 
     const rows: string[] = ["— the cold files —"];
@@ -51,7 +51,7 @@ export class StatsScene extends Phaser.Scene {
     rows.push(`today's subject (best)  ${dailyBest != null ? dailyBest + " moves" : "—"}`);
 
     this.add
-      .text(GAME_WIDTH / 2, 180, rows.join("\n"), { fontFamily: MONO, fontSize: "13px", color: CSS.ink, align: "left", lineSpacing: 6 })
+      .text(GAME_WIDTH / 2, 180, rows.join("\n"), { fontFamily: MONO, fontSize: fs(13), color: CSS.ink, align: "left", lineSpacing: 6 })
       .setOrigin(0.5, 0);
 
     const back = new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 70, {

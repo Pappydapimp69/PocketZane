@@ -28,3 +28,17 @@ export const CSS = {
 export const DISPLAY = "'Playfair Display', Georgia, serif";
 export const BODY = "'Newsreader', Georgia, serif";
 export const MONO = "'JetBrains Mono', 'Courier New', monospace";
+
+import { textScaleValue } from "./game/save";
+
+/** Scale a font size by the player's text-size setting. Use everywhere instead
+ * of a raw "Npx" literal, so the whole UI grows for distance viewing. */
+export function fs(px: number): string {
+  return `${Math.round(px * textScaleValue())}px`;
+}
+
+/** The active text scale — for callers that also need to grow line spacing,
+ * fixed offsets, or wrap widths alongside the font. */
+export function uiScale(): number {
+  return textScaleValue();
+}

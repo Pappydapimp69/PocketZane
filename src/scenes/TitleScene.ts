@@ -1,10 +1,10 @@
 import Phaser from "phaser";
 import { GAME_WIDTH, GAME_HEIGHT } from "../dimensions";
-import { COLORS, CSS, DISPLAY, BODY, MONO } from "../theme";
+import { COLORS, CSS, DISPLAY, BODY, MONO, fs } from "../theme";
 import { Button } from "../ui";
 import { addAtmosphere, addRain } from "../game/textures";
 import { startAmbience, isMuted, toggleMute, SFX, stopSpeech } from "../game/audio";
-import { getReduceMotion, toggleReduceMotion, getNarration, toggleNarration, getDifficulty, cycleDifficulty, DIFFS, getWeirdness, cycleWeirdness, WEIRDS } from "../game/save";
+import { getReduceMotion, toggleReduceMotion, getNarration, toggleNarration, getDifficulty, cycleDifficulty, DIFFS, getWeirdness, cycleWeirdness, WEIRDS, getTextSize, cycleTextSize, TEXT_SIZES } from "../game/save";
 import { getDeepest, hasSeenIntro, markSeenIntro, getTotalBreaks, rankFor, getBest } from "../game/save";
 import { generateMergedCase } from "../game/generateweb";
 import { dailySeed, DAILY_OPTS } from "../game/ladder";
@@ -39,12 +39,12 @@ export class TitleScene extends Phaser.Scene {
 
     // Faint offset echo behind the title, for depth.
     this.add
-      .text(GAME_WIDTH / 2 + 3, 253, "AGAIN", { fontFamily: DISPLAY, fontSize: "76px", color: "#000000" })
+      .text(GAME_WIDTH / 2 + 3, 253, "AGAIN", { fontFamily: DISPLAY, fontSize: fs(76), color: "#000000" })
       .setOrigin(0.5)
       .setLetterSpacing(14)
       .setAlpha(0.5);
     const title = this.add
-      .text(GAME_WIDTH / 2, 250, "AGAIN", { fontFamily: DISPLAY, fontSize: "76px", color: CSS.ink })
+      .text(GAME_WIDTH / 2, 250, "AGAIN", { fontFamily: DISPLAY, fontSize: fs(76), color: CSS.ink })
       .setOrigin(0.5)
       .setLetterSpacing(14);
     this.tweens.add({ targets: title, alpha: { from: 0, to: 1 }, duration: 1400 });
@@ -52,7 +52,7 @@ export class TitleScene extends Phaser.Scene {
     this.add
       .text(GAME_WIDTH / 2, 320, "a cross-examination", {
         fontFamily: DISPLAY,
-        fontSize: "16px",
+        fontSize: fs(16),
         color: CSS.amber,
         fontStyle: "italic",
       })
@@ -63,7 +63,7 @@ export class TitleScene extends Phaser.Scene {
       startAmbience();
       this.scene.start("CaseRun", { mode: "daily" });
     };
-    this.add.text(GAME_WIDTH / 2, 358, "» today's subject «", { fontFamily: MONO, fontSize: "12px", color: CSS.slate }).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, 358, "» today's subject «", { fontFamily: MONO, fontSize: fs(12), color: CSS.slate }).setOrigin(0.5);
     this.add.rectangle(GAME_WIDTH / 2, 358, 220, 26, 0x000000, 0).setInteractive({ useHandCursor: true }).on("pointerup", daily);
     this.input.keyboard?.on("keydown-T", daily);
 
@@ -74,12 +74,12 @@ export class TitleScene extends Phaser.Scene {
       const par = Math.max(2, c.phases.length * 2 + verifyWeb(c.web, c.web.startEvidence).order.length);
       const best = getBest(`daily-${todayStamp()}`);
       const status = best != null ? `solved in ${best}  ·  par ${par}${best <= par ? "  ✦" : ""}` : `unbroken  ·  par ${par}`;
-      this.add.text(GAME_WIDTH / 2, 374, status, { fontFamily: MONO, fontSize: "10px", color: best != null && best <= par ? CSS.amber : CSS.faint }).setOrigin(0.5);
+      this.add.text(GAME_WIDTH / 2, 374, status, { fontFamily: MONO, fontSize: fs(10), color: best != null && best <= par ? CSS.amber : CSS.faint }).setOrigin(0.5);
     } catch {
       /* generation guard — skip the status line */
     }
 
-    this.add.text(GAME_WIDTH / 2, 392, "» the record «", { fontFamily: MONO, fontSize: "11px", color: CSS.faint }).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, 392, "» the record «", { fontFamily: MONO, fontSize: fs(11), color: CSS.faint }).setOrigin(0.5);
     this.add.rectangle(GAME_WIDTH / 2, 392, 180, 24, 0x000000, 0).setInteractive({ useHandCursor: true }).on("pointerup", () => this.scene.start("Stats"));
     this.input.keyboard?.on("keydown-R", () => this.scene.start("Stats"));
 
@@ -100,7 +100,7 @@ export class TitleScene extends Phaser.Scene {
         "The truth holds still.\nA lie cannot tell itself the same way twice.\n\nAsk them to tell it again. Watch what moves.\nPin what won't hold its shape.",
         {
           fontFamily: BODY,
-          fontSize: "16px",
+          fontSize: fs(16),
           color: CSS.muted,
           align: "center",
           lineSpacing: 7,
@@ -171,24 +171,24 @@ export class TitleScene extends Phaser.Scene {
     this.add
       .text(GAME_WIDTH / 2, 738, "touch · gamepad · keyboard", {
         fontFamily: MONO,
-        fontSize: "10px",
+        fontSize: fs(10),
         color: CSS.faint,
       })
       .setOrigin(0.5);
 
     // How-it-works, top-left (auto-opens on first ever launch).
     const help = this.add
-      .text(16, 22, "?  how it works", { fontFamily: MONO, fontSize: "11px", color: CSS.faint })
+      .text(16, 22, "?  how it works", { fontFamily: MONO, fontSize: fs(11), color: CSS.faint })
       .setOrigin(0, 0)
       .setInteractive({ useHandCursor: true });
     help.on("pointerup", () => this.showHelp());
 
     // Fullscreen — the readable way to play on desktop.
-    const fs = this.add
-      .text(16, 42, "⛶  fullscreen", { fontFamily: MONO, fontSize: "11px", color: CSS.faint })
+    const fsLink = this.add
+      .text(16, 42, "⛶  fullscreen", { fontFamily: MONO, fontSize: fs(11), color: CSS.faint })
       .setOrigin(0, 0)
       .setInteractive({ useHandCursor: true });
-    fs.on("pointerup", () => this.scale.toggleFullscreen());
+    fsLink.on("pointerup", () => this.scale.toggleFullscreen());
     this.input.keyboard?.on("keydown-F", () => this.scale.toggleFullscreen());
 
     if (!hasSeenIntro()) {
@@ -198,7 +198,7 @@ export class TitleScene extends Phaser.Scene {
 
     // Settings, consolidated behind one link (top-right).
     const settings = this.add
-      .text(GAME_WIDTH - 16, 22, "settings  ⚙", { fontFamily: MONO, fontSize: "11px", color: CSS.faint })
+      .text(GAME_WIDTH - 16, 22, "settings  ⚙", { fontFamily: MONO, fontSize: fs(11), color: CSS.faint })
       .setOrigin(1, 0)
       .setInteractive({ useHandCursor: true });
     settings.on("pointerup", () => this.showSettings());
@@ -211,14 +211,14 @@ export class TitleScene extends Phaser.Scene {
     if (deepest > 0) lines.push(`deepest ${deepest}`);
     if (lines.length > 0) {
       this.add
-        .text(GAME_WIDTH / 2, 762, lines.join("   ·   "), { fontFamily: MONO, fontSize: "11px", color: CSS.amber })
+        .text(GAME_WIDTH / 2, 762, lines.join("   ·   "), { fontFamily: MONO, fontSize: fs(11), color: CSS.amber })
         .setOrigin(0.5);
     }
 
     this.add
       .text(GAME_WIDTH / 2, 800, "an arrow travels in only one direction", {
         fontFamily: MONO,
-        fontSize: "11px",
+        fontSize: fs(11),
         color: CSS.faint,
       })
       .setOrigin(0.5);
@@ -230,7 +230,7 @@ export class TitleScene extends Phaser.Scene {
     c.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.96));
     c.add(
       this.add
-        .text(GAME_WIDTH / 2, 180, "settings", { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" })
+        .text(GAME_WIDTH / 2, 180, "settings", { fontFamily: DISPLAY, fontSize: fs(26), color: CSS.amber, fontStyle: "italic" })
         .setOrigin(0.5),
     );
 
@@ -240,11 +240,12 @@ export class TitleScene extends Phaser.Scene {
       { label: () => `narration    ${getNarration() ? "on" : "off"}`, act: () => void toggleNarration() },
       { label: () => `difficulty   ${DIFFS[getDifficulty()].label}`, act: () => void cycleDifficulty() },
       { label: () => `weirdness    ${WEIRDS[getWeirdness()].label}`, act: () => void cycleWeirdness() },
+      { label: () => `text size    ${TEXT_SIZES[getTextSize()].label}`, act: () => void cycleTextSize() },
     ];
     let y = 270;
     for (const r of rows) {
       const t = this.add
-        .text(GAME_WIDTH / 2, y, r.label(), { fontFamily: MONO, fontSize: "16px", color: CSS.ink })
+        .text(GAME_WIDTH / 2, y, r.label(), { fontFamily: MONO, fontSize: fs(16), color: CSS.ink })
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true });
       t.on("pointerup", () => {
@@ -259,6 +260,7 @@ export class TitleScene extends Phaser.Scene {
     const close = () => {
       c.destroy();
       this.overlayClose = null;
+      this.scene.restart(); // re-render the title at any newly-chosen text size
     };
     this.overlayClose = close;
     c.add(new Button(this, GAME_WIDTH / 2, y + 24, { w: 200, h: 48, label: "DONE", accent: COLORS.crimson, onClick: close }));
@@ -270,7 +272,7 @@ export class TitleScene extends Phaser.Scene {
     c.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.96));
     c.add(
       this.add
-        .text(GAME_WIDTH / 2, 150, "how it works", { fontFamily: DISPLAY, fontSize: "26px", color: CSS.amber, fontStyle: "italic" })
+        .text(GAME_WIDTH / 2, 150, "how it works", { fontFamily: DISPLAY, fontSize: fs(26), color: CSS.amber, fontStyle: "italic" })
         .setOrigin(0.5),
     );
     c.add(
@@ -279,7 +281,7 @@ export class TitleScene extends Phaser.Scene {
           GAME_WIDTH / 2,
           200,
           "A subject tells their story. The truth holds still — but a lie cannot tell itself the same way twice.\n\nFIRST, you question them point by point:\n• QUESTION — make them say a line again. A lie shifts; the truth doesn't move.\n• PIN — accuse a line you've caught shifting, and it becomes a lead. Pin the truth and that's a strike; three closes the point — but you keep the leads you have.\n\nTHEN comes the confrontation — the whole alibi at once:\n• PRESS him with a lead. A head-on hit just deflects: the lie hides behind a supporting lie, so break that prop first, then the lie above it.\n• One lie may be holding up all the others. Find that keystone and the whole story caves at once.",
-          { fontFamily: BODY, fontSize: "15px", color: CSS.ink, align: "left", wordWrap: { width: 400 }, lineSpacing: 6 },
+          { fontFamily: BODY, fontSize: fs(15), color: CSS.ink, align: "left", wordWrap: { width: 400 }, lineSpacing: 6 },
         )
         .setOrigin(0.5, 0),
     );

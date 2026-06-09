@@ -123,6 +123,40 @@ export function rankFor(total: number): string {
   return title;
 }
 
+const TEXT_KEY = "again:textSize";
+
+/** Global text-size scale — for reading at distance (e.g. on a projector). */
+export const TEXT_SIZES = [
+  { label: "standard", scale: 1 },
+  { label: "large", scale: 1.25 },
+  { label: "huge", scale: 1.5 },
+  { label: "giant", scale: 1.8 },
+];
+
+export function getTextSize(): number {
+  try {
+    const v = parseInt(localStorage.getItem(TEXT_KEY) ?? "1", 10);
+    return v >= 0 && v < TEXT_SIZES.length ? v : 1;
+  } catch {
+    return 1;
+  }
+}
+
+export function cycleTextSize(): number {
+  const next = (getTextSize() + 1) % TEXT_SIZES.length;
+  try {
+    localStorage.setItem(TEXT_KEY, String(next));
+  } catch {
+    /* ignore */
+  }
+  return next;
+}
+
+/** The current text scale multiplier. */
+export function textScaleValue(): number {
+  return TEXT_SIZES[getTextSize()].scale;
+}
+
 const MOTION_KEY = "again:reduceMotion";
 
 export function getReduceMotion(): boolean {
