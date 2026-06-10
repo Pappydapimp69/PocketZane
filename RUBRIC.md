@@ -1,4 +1,4 @@
-# LOCKED RUBRIC (loop 4)
+# LOCKED RUBRIC (loop 5)
 
 The testable interpretation of the locked goal. Each criterion is judged by
 **observable behavior of the build** — by playing/testing it or by running its
@@ -35,6 +35,19 @@ evidence, the test performed, and the failure mode if any.
 10. **Generativity + keystone + "a lie can't tell itself the same way twice"**
     are preserved: keystone cases occur and cascade; deflection/claim phrasing
     is seeded and does not repeat verbatim across uses.
+
+## Ratchet criterion (loop 5)
+
+14. **The interview composition varies across cases.** Judged observably:
+    a. **Contradiction retained:** every case still carries ≥1 self-contradiction
+       (criterion 11 holds).
+    b. **Varies:** across a sample of seeds, both shapes occur — cases with a
+       SECOND own-words contradiction (≥2 tell questions) and cases with a
+       record/lever pair instead — so it is not a fixed template (≥2 distinct
+       compositions, neither rare).
+    c. **Tell count varies:** the number of "tell" questions per case is not
+       constant across seeds (some 1, some ≥2).
+    d. **Sound:** all cases remain solvable and criteria 1–13 still hold.
 
 ## Ratchet criterion (loop 2 — retained)
 

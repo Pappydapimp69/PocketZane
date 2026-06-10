@@ -1,4 +1,4 @@
-# LOCKED GOAL (loop 4)
+# LOCKED GOAL (loop 5)
 
 Fixed end-state specification for AGAIN. The only bar the independent checker
 measures against. Not edited during the loop. Amended between loops by the
@@ -29,11 +29,18 @@ notice the conflict and act. The system still stores it and keeps it usable, and
 the case stays winnable for a player who never notices. Only the lowest (lenient)
 difficulty names the conflict and what to do.
 
-## Ratchet amendment (loop 4)
+## Ratchet amendment (loop 4 — met, retained)
 
-**The keystone must reach Act 1. In a keystone case the interview must let the
-player surface a SUSPICION about the corroborating witness from the suspect's own
-answers — and that suspicion must carry into the confrontation as a steer toward
-the keystone. It must NOT pre-break the keystone or spoil the cascade; the
-collapse is still earned in Act 2. Non-keystone cases must show no such false
-suspicion.**
+The keystone must reach Act 1: in a keystone case the interview lets the player
+surface a suspicion about the corroborating witness from his own answers, carried
+into the confrontation as a steer — without pre-breaking it or spoiling the
+cascade. Non-keystone cases show no such suspicion.
+
+## Ratchet amendment (loop 5)
+
+**The interview must not play the same shape every case. Beyond the one
+guaranteed self-contradiction, the composition of the remaining questions must
+VARY by seed — some cases give a second own-words contradiction, others a record
+(lever) to work with — so the right line of questioning differs case to case.
+Every case still carries at least one self-contradiction, and every case stays
+solvable.**
