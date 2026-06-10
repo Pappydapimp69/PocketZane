@@ -80,15 +80,45 @@ for (let seed = 1; seed <= 200; seed++) {
 // determinism
 if (JSON.stringify(generateMergedCase(7).questions) !== JSON.stringify(generateMergedCase(7).questions)) fail("questions non-deterministic");
 
-// a lie cannot be pressed without its lever
+// a lie cannot be pressed without its lever (find a seed whose interview has one)
 {
-  const c = generateMergedCase(3, { supports: 2, herring: true });
-  const a = new Interview(c.questions!, c.rounds);
-  const lever = c.questions!.find((q) => q.kind === "lever")!;
-  const lie = c.questions!.find((q) => q.kind === "lie" && q.leverId === lever.evId)!;
-  a.ask(lie.id); // asked, but no lever held and no contradiction surfaced
-  if (a.canPress(lie.id)) fail("pressed a lie with no lever and no contradiction");
-  if (a.press(lie.id).kind !== "blocked") fail("press not blocked without leverage");
+  let tested = false;
+  for (let seed = 1; seed <= 50 && !tested; seed++) {
+    const c = generateMergedCase(seed, { supports: 2, herring: true });
+    const lever = c.questions!.find((q) => q.kind === "lever");
+    if (!lever) continue;
+    const lie = c.questions!.find((q) => q.kind === "lie" && q.leverId === lever.evId);
+    if (!lie) continue;
+    const a = new Interview(c.questions!, c.rounds);
+    a.ask(lie.id); // asked, but no lever held and no contradiction surfaced
+    if (a.canPress(lie.id)) fail("pressed a lie with no lever and no contradiction");
+    if (a.press(lie.id).kind !== "blocked") fail("press not blocked without leverage");
+    tested = true;
+  }
+  if (!tested) fail("no lever-bearing case found to test lever-gating");
+}
+
+// CRITERION 14: the interview composition varies across cases.
+{
+  const compositions = new Set<string>();
+  const tellCounts = new Set<number>();
+  let twoContradictions = 0;
+  let leverShape = 0;
+  for (let seed = 1; seed <= 200; seed++) {
+    const qs = generateMergedCase(seed, { supports: 2, depth: 1, weirdness: 0.1, herring: true }).questions!;
+    const kinds = qs.map((q) => q.kind).sort();
+    compositions.add(kinds.join(","));
+    const tells = qs.filter((q) => q.kind === "tell").length;
+    tellCounts.add(tells);
+    if (tells >= 2) twoContradictions++;
+    if (qs.some((q) => q.kind === "lever")) leverShape++;
+  }
+  if (compositions.size < 2) fail(`interview shape is a fixed template (${compositions.size} compositions)`);
+  else console.log(`✓ interview composition varies (${compositions.size} distinct shapes across 200 seeds)`);
+  if (tellCounts.size < 2) fail(`tell count is constant (${[...tellCounts].join("/")})`);
+  else console.log(`✓ tell count varies (${[...tellCounts].sort().join("/")} per case)`);
+  if (twoContradictions < 20 || leverShape < 20) fail(`one shape is rare (2-contradiction ${twoContradictions}, lever ${leverShape})`);
+  else console.log(`✓ both shapes common — second contradiction ${twoContradictions}/200, lever ${leverShape}/200`);
 }
 
 // CRITERION 11: a contradiction from his OWN answers, before external evidence.

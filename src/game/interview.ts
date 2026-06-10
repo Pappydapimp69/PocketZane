@@ -63,14 +63,25 @@ export function buildQuestions(web: WebCase, rng: () => number): Question[] {
     out.push({ id: "L0", kind: "lie", ask: questionLie(cs), answer: claimOf(cs), seg: cs, leverId: cleanBreaker(cs)?.id, patch: patchLine(cs) });
     out.push({ id: "T0", kind: "tell", ask: tellQuestion(cs), answer: tellAnswer(cs), seg: cs, clash: tellClash(cs) });
   }
-  // a LEVER pair: a different prop that HAS a clean record, plus that record.
-  const ls = leverProps.find((p) => p.seg !== cs);
-  if (ls) {
-    out.push({ id: "L1", kind: "lie", ask: questionLie(ls.seg), answer: claimOf(ls.seg), seg: ls.seg, leverId: ls.lever.id, patch: patchLine(ls.seg) });
-    out.push({ id: "V1", kind: "lever", ask: questionLever(ls.seg), answer: leverReaction(ls.seg, rng), evId: ls.lever.id });
+  // The SECOND pair varies by seed, so two cases don't play the same: either a
+  // second own-words contradiction (another support + its tell) or a record
+  // (lever) pair. A second support is needed for the contradiction option.
+  const cs2 = supports.find((s) => s !== cs);
+  let usedSeg: string | undefined;
+  if (cs2 && rng() < 0.45) {
+    out.push({ id: "La", kind: "lie", ask: questionLie(cs2), answer: claimOf(cs2), seg: cs2, leverId: cleanBreaker(cs2)?.id, patch: patchLine(cs2) });
+    out.push({ id: "Ta", kind: "tell", ask: tellQuestion(cs2), answer: tellAnswer(cs2), seg: cs2, clash: tellClash(cs2) });
+    usedSeg = cs2;
+  } else {
+    const ls = leverProps.find((p) => p.seg !== cs);
+    if (ls) {
+      out.push({ id: "L1", kind: "lie", ask: questionLie(ls.seg), answer: claimOf(ls.seg), seg: ls.seg, leverId: ls.lever.id, patch: patchLine(ls.seg) });
+      out.push({ id: "V1", kind: "lever", ask: questionLever(ls.seg), answer: leverReaction(ls.seg, rng), evId: ls.lever.id });
+      usedSeg = ls.seg;
+    }
   }
   // a third prop as a lie with no lever offered, else a dud — to reach five
-  const extra = leverProps.find((p) => p.seg !== cs && p.seg !== ls?.seg);
+  const extra = leverProps.find((p) => p.seg !== cs && p.seg !== usedSeg);
   if (out.length < 5 && extra) {
     out.push({ id: "L2", kind: "lie", ask: questionLie(extra.seg), answer: claimOf(extra.seg), seg: extra.seg, leverId: extra.lever.id, patch: patchLine(extra.seg) });
   }
