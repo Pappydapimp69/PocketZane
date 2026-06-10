@@ -1,4 +1,4 @@
-# LOCKED RUBRIC (loop 3)
+# LOCKED RUBRIC (loop 4)
 
 The testable interpretation of the locked goal. Each criterion is judged by
 **observable behavior of the build** — by playing/testing it or by running its
@@ -53,7 +53,23 @@ evidence, the test performed, and the failure mode if any.
     e. **Not the lever path:** this is distinct from the existing lever→lie
        mechanic; the conflict comes from two of his own statements.
 
-## Ratchet criterion (loop 3)
+## Ratchet criterion (loop 4)
+
+13. **The keystone reaches Act 1.** Judged observably (keystone cases unless noted):
+    a. **Surfaced:** a keystone case's interview includes a question whose answer
+       is his corroborating witness (the keystone claim), askable in Act 1; it has
+       no lever and no tell, so it cannot be broken in the interview.
+    b. **Suspicion from his own words:** asking it (no external evidence) registers
+       a stored, queryable suspicion about the witness.
+    c. **Carries as a steer:** in the confrontation, the keystone segment is
+       observably steered toward (a cue shown only when the suspicion was raised),
+       not shown for an un-suspected keystone.
+    d. **Not pre-broken, cascade intact:** the keystone is NOT broken or cascaded
+       by Act 1; breaking it in Act 2 still cascades everything leaning on it.
+    e. **No false positives:** non-keystone cases register no keystone suspicion
+       and show no such steer.
+
+## Ratchet criterion (loop 3 — retained)
 
 12. **The contradiction is the player's to discover.** Judged observably at the
     DEFAULT (standard) difficulty unless noted:

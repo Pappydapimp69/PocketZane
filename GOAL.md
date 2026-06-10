@@ -1,4 +1,4 @@
-# LOCKED GOAL (loop 3)
+# LOCKED GOAL (loop 4)
 
 Fixed end-state specification for AGAIN. The only bar the independent checker
 measures against. Not edited during the loop. Amended between loops by the
@@ -21,11 +21,19 @@ from the suspect's OWN answers before external evidence is introduced. That
 instability must be stored by the system and usable later as interrogation
 leverage.
 
-## Ratchet amendment (loop 3)
+## Ratchet amendment (loop 3 — met, retained)
 
-**The contradiction must be the player's to DISCOVER. At standard difficulty the
+The contradiction must be the player's to DISCOVER. At standard difficulty the
 game must NOT announce it — it presents his answers plainly and the player must
 notice the conflict and act. The system still stores it and keeps it usable, and
-the case stays winnable for a player who never notices (it carries to the
-confrontation). Only at the lowest (lenient) difficulty does the game name the
-conflict and what to do about it.**
+the case stays winnable for a player who never notices. Only the lowest (lenient)
+difficulty names the conflict and what to do.
+
+## Ratchet amendment (loop 4)
+
+**The keystone must reach Act 1. In a keystone case the interview must let the
+player surface a SUSPICION about the corroborating witness from the suspect's own
+answers — and that suspicion must carry into the confrontation as a steer toward
+the keystone. It must NOT pre-break the keystone or spoil the cascade; the
+collapse is still earned in Act 2. Non-keystone cases must show no such false
+suspicion.**
