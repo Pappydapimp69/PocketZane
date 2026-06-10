@@ -1,4 +1,4 @@
-# LOCKED RUBRIC (loop 2)
+# LOCKED RUBRIC (loop 3)
 
 The testable interpretation of the locked goal. Each criterion is judged by
 **observable behavior of the build** — by playing/testing it or by running its
@@ -36,18 +36,36 @@ evidence, the test performed, and the failure mode if any.
     are preserved: keystone cases occur and cascade; deflection/claim phrasing
     is seeded and does not repeat verbatim across uses.
 
-## Ratchet criterion (loop 2)
+## Ratchet criterion (loop 2 — retained)
 
 11. **Self-incriminating instability from his own answers, before evidence.**
     Judged observably:
     a. **Generated:** a case's interview contains ≥1 pair of the suspect's own
        answers that conflict — derivable from the answers alone, with no lever,
        record, or external evidence presented.
-    b. **Visible:** once the player has heard both conflicting answers, the game
-       surfaces the conflict to the player (an in-play cue, not buried).
+    b. **His answers are plainly readable:** both conflicting answers are shown
+       to the player verbatim (a transcript), so the conflict is *available* to
+       notice.
     c. **Stored:** the system records the contradiction as queryable state.
     d. **Usable as leverage:** the stored contradiction can be spent later — to
        crack a lie and/or in the confrontation — functioning as leverage
        *without* an external lever.
-    e. **Not rote / not the lever path:** this is distinct from the existing
-       lever→lie mechanic; the conflict comes from two of his own statements.
+    e. **Not the lever path:** this is distinct from the existing lever→lie
+       mechanic; the conflict comes from two of his own statements.
+
+## Ratchet criterion (loop 3)
+
+12. **The contradiction is the player's to discover.** Judged observably at the
+    DEFAULT (standard) difficulty unless noted:
+    a. **Not announced:** after both conflicting answers are heard at standard,
+       the game does NOT fire a cue that declares the contradiction or identifies
+       which claim it breaks (no "his own words don't square" / "press that lie"
+       message). The player is not told.
+    b. **Available:** the information needed is plainly on screen — his two
+       answers are both shown verbatim in the transcript.
+    c. **Actable:** once the player notices, they can act — the contradicted lie
+       is selectable and pressing it (with the contradiction held) catches it.
+    d. **Lenient teaches:** at the lowest difficulty the game DOES name the
+       conflict and what to do, so the mechanic is learnable.
+    e. **Winnable if missed:** a player who never notices still wins — the prop
+       carries to the confrontation and is breakable there.
