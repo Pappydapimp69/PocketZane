@@ -663,7 +663,9 @@ export class CaseRunScene extends Phaser.Scene {
           SFX.break();
           this.shake(320, 0.008);
           this.flash(COLORS.crimson, 0.32);
-          this.setStatus("It evaporates — there was never a floor under it. Everything leaning on it comes down at once.", CSS.crimsonBright);
+          // if the player came to doubt this witness back in the interview, pay that off
+          const foresaw = r.target === this.interview.suspectedKeystone();
+          this.setStatus(foresaw ? "You doubted his witness from the first — and you were right. There was never a floor under it; it all comes down at once." : "It evaporates — there was never a floor under it. Everything leaning on it comes down at once.", CSS.crimsonBright);
         } else {
           this.setStatus(r.solved ? "It caves — and the whole story with it." : this.showHints ? `${this.web!.segmentName(r.target)} collapses. Whatever it covered is exposed now — press it.` : `${this.web!.segmentName(r.target)} collapses.`, CSS.crimsonBright);
         }
