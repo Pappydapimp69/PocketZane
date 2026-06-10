@@ -58,7 +58,9 @@ export function buildQuestions(web: WebCase, rng: () => number): Question[] {
   // The CONTRADICTION pair: his lie + a "tell" he gives elsewhere that conflicts.
   // No record needed — the only way to catch it in the interview is to connect
   // his own two answers. This is the self-incriminating instability the goal wants.
-  const cs = supports[0];
+  // WHICH support carries it is seeded, so the unstable prop — and thus the line
+  // of questioning that cracks the case — isn't always the same one.
+  const cs = supports.length ? supports[Math.floor(rng() * supports.length)] : undefined;
   if (cs) {
     out.push({ id: "L0", kind: "lie", ask: questionLie(cs), answer: claimOf(cs), seg: cs, leverId: cleanBreaker(cs)?.id, patch: patchLine(cs) });
     const t0 = tellFor(cs, rng);
@@ -67,7 +69,8 @@ export function buildQuestions(web: WebCase, rng: () => number): Question[] {
   // The SECOND pair varies by seed, so two cases don't play the same: either a
   // second own-words contradiction (another support + its tell) or a record
   // (lever) pair. A second support is needed for the contradiction option.
-  const cs2 = supports.find((s) => s !== cs);
+  const others = supports.filter((s) => s !== cs);
+  const cs2 = others.length ? others[Math.floor(rng() * others.length)] : undefined;
   let usedSeg: string | undefined;
   if (cs2 && rng() < 0.45) {
     out.push({ id: "La", kind: "lie", ask: questionLie(cs2), answer: claimOf(cs2), seg: cs2, leverId: cleanBreaker(cs2)?.id, patch: patchLine(cs2) });
