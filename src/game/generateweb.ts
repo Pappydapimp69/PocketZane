@@ -277,7 +277,7 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
 function shipsSolvable(web: WebCase): boolean {
   if (!verifyWeb(web, web.startEvidence).solvable) return false;
   const p = verifyWebPatched(web, web.startEvidence);
-  return p.solvable && p.terminates;
+  return p.solvable && p.terminates && p.bounded;
 }
 
 /** Build a verified-solvable web from a seed (confrontation only). */

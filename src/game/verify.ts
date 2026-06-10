@@ -65,12 +65,21 @@ export function verifyWeb(web: WebCase, startLeads: string[]): VerifyResult {
 export interface PatchedVerifyResult {
   solvable: boolean;
   terminates: boolean;
+  bounded: boolean; // patches stayed within the structural maximum (no runaway)
   patches: number; // how many fresh lies he threw on the way down
+}
+
+/** The structural ceiling on patches: each prop patches at most once and a patch
+ *  never re-patches, so at most one fresh lie per non-key authored segment. This
+ *  makes termination a property of the graph, not of a generous iteration cap. */
+export function patchBound(web: WebCase): number {
+  return web.segments.filter((s) => !s.key).length;
 }
 
 export function verifyWebPatched(web: WebCase, startLeads: string[], initialBroken: string[] = []): PatchedVerifyResult {
   const inq = new WebInquiry(web, 1, startLeads, initialBroken, true);
   const cap = (web.segments.length + 4) * (web.evidence.length + 4) + 200;
+  const maxPatches = patchBound(web);
   let patches = 0;
   let changed = true;
   let iters = 0;
@@ -84,6 +93,7 @@ export function verifyWebPatched(web: WebCase, startLeads: string[], initialBrok
       if (inq.solved) break;
     }
   }
-  // terminated cleanly if we reached a stable state (or a win) under the cap
-  return { solvable: inq.solved, terminates: iters < cap, patches };
+  // terminated cleanly if we reached a stable state (or a win) under the cap, and
+  // the patching stayed within its structural ceiling — a provable bound, not luck
+  return { solvable: inq.solved, terminates: iters < cap, bounded: patches <= maxPatches, patches };
 }

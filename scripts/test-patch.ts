@@ -7,7 +7,7 @@
  */
 import { WebCase, WebInquiry } from "../src/game/web";
 import { generateMergedCase } from "../src/game/generateweb";
-import { verifyWebPatched } from "../src/game/verify";
+import { verifyWebPatched, patchBound } from "../src/game/verify";
 import { Interview } from "../src/game/interview";
 
 let ok = true;
@@ -149,6 +149,18 @@ const solveWithPatch = (web: WebCase, seed: number) => {
   }
   if (gateFails !== 0) fail(`shipped cases fail the patched gate (${gateFails}/150)`);
   else console.log("✓ every shipped case clears the patch-live gate (150/150)");
+
+  // termination is structural, not luck: patches never exceed one per non-key prop
+  let unbounded = 0;
+  let maxSeen = 0;
+  for (let seed = 1; seed <= 150; seed++) {
+    const web = generateMergedCase(seed, { supports: 3, depth: 2, weirdness: 0.8, herring: true }).web;
+    const r = verifyWebPatched(web, web.startEvidence);
+    if (!r.bounded || r.patches > patchBound(web)) unbounded++;
+    maxSeen = Math.max(maxSeen, r.patches);
+  }
+  if (unbounded !== 0) fail(`patch count exceeded its structural bound (${unbounded}/150)`);
+  else console.log(`✓ patches structurally bounded — at most one per prop (max seen ${maxSeen})`);
 }
 
 // VERIFIED AS PLAYED: not just the minimum hand — every confrontation the
