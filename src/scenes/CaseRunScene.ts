@@ -245,7 +245,7 @@ export class CaseRunScene extends Phaser.Scene {
       }
     } else {
       this.title.setText("The Interview");
-      this.prompt.setText("Three questions — two he'll never answer. Make them count.");
+      this.prompt.setText("Three questions of five. Read his answers — where two don't square, press the lie.");
       this.btnR.setLabel("THE FILE  (X)");
       this.renderInterview();
     }
@@ -367,10 +367,13 @@ export class CaseRunScene extends Phaser.Scene {
     // it, so the player can re-read his own words and spot what doesn't square.
     for (const q of this.interview.questions) {
       const asked = this.interview.isAsked(q.id);
-      const caught = this.interview.isCaught(q.id);
+      const caught = q.kind === "lie" && this.interview.isCaught(q.id);
       const pressable = this.interview.canPress(q.id);
       const locked = !asked && this.interview.roundsLeft <= 0;
-      const selectable = (!asked && this.interview.roundsLeft > 0) || pressable;
+      // an asked lie can always be *challenged* (the press only lands if you're
+      // right); unasked questions can be asked while rounds remain.
+      const challengeable = asked && q.kind === "lie" && !caught;
+      const selectable = (!asked && this.interview.roundsLeft > 0) || challengeable;
       const top = y;
 
       let prefix = "▸ ";
@@ -382,7 +385,8 @@ export class CaseRunScene extends Phaser.Scene {
       } else if (asked) {
         prefix = "· ";
         qColor = CSS.muted;
-        // only lenient names the slip outright; otherwise it's the player's to spot
+        // only lenient names the slip and what to do; at standard the player must
+        // notice the conflict in the transcript and challenge the right claim.
         if (pressable && this.showHints) {
           prefix = "‣ ";
           qColor = CSS.amber;
@@ -461,17 +465,28 @@ export class CaseRunScene extends Phaser.Scene {
 
   private doAct(): void {
     if (this.busy) return;
-    if (this.interviewExhausted()) {
-      this.startConfront();
-      return;
-    }
     const sel = this.selected ?? this.interviewSelectable()[0];
     if (!sel) {
       this.startConfront();
       return;
     }
+    if (!this.interview.isAsked(sel)) {
+      this.doAsk(sel);
+      return;
+    }
+    // an already-asked claim: a challenge. It only lands if his words back it up.
     if (this.interview.canPress(sel)) this.doPress(sel);
-    else this.doAsk(sel);
+    else this.doWrongPress(sel);
+  }
+
+  /** Challenging a claim his own answers do NOT actually undercut — he rebuffs it.
+   *  No catch, no cost: the interview is a place to test your reading, not a trap. */
+  private doWrongPress(id: string): void {
+    const q = this.interview.questions.find((x) => x.id === id);
+    if (!q || q.kind !== "lie") return;
+    SFX.deny();
+    this.setMood("neutral");
+    this.setStatus("His answers square well enough there. Nothing to break — find where they don't.", CSS.slate);
   }
 
   private doAsk(id: string): void {
@@ -495,20 +510,21 @@ export class CaseRunScene extends Phaser.Scene {
     } else if (r.kind === "tell") {
       this.setMood("neutral");
       this.renderInterview();
-      this.setStatus("Mark that — it may not square with something else he's said.", CSS.amber);
+      // lenient nudges toward the mechanic; standard just records his answer
+      this.setStatus(this.showHints ? "Mark that — weigh it against the rest of what he's said." : "He offers that without prompting.", CSS.muted);
     } else {
       this.setMood("neutral");
       this.renderInterview();
       this.setStatus("Nothing in that. A round spent.", CSS.slate);
     }
-    // The moment two of his own answers collide, surface the conflict (always —
-    // the goal requires it visible). Naming what to *do* about it is lenient-only.
+    // When two of his own answers collide, ONLY lenient announces it. At standard
+    // the conflict is the player's to spot in the transcript — the game says nothing.
     const fresh = this.interview.contradictions();
-    if (fresh.length > before) {
+    if (this.showHints && fresh.length > before) {
       const c = fresh[fresh.length - 1];
       this.shake(120, 0.003);
       this.time.delayedCall(r.kind === "lever" ? 1500 : 550, () => this.centerToast("His own words don't square — " + (c.tell.clash ?? "two answers collide")));
-      this.setStatus(this.showHints ? "His own words don't square. No record needed — press that lie." : "His own words don't square. There's a lie in there to break.", CSS.crimsonBright);
+      this.setStatus("His own words don't square. No record needed — press that lie.", CSS.crimsonBright);
     }
     this.updateHud();
   }
