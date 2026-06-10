@@ -125,6 +125,43 @@ if (JSON.stringify(generateMergedCase(7).questions) !== JSON.stringify(generateM
   else console.log(`✓ each crackable by his own words, no lever (${crackedByOwnWords}/${withContradiction})`);
 }
 
+// CRITERION 13: the keystone reaches Act 1 (suspicion only — no Act-1 break).
+{
+  let keystoneCases = 0;
+  let suspicionWorks = 0;
+  let falsePos = 0;
+  for (let seed = 1; seed <= 250; seed++) {
+    const c = generateMergedCase(seed, { weirdness: 0.95, herring: true });
+    const ks = c.web.segments.find((s) => s.keystone);
+    if (ks) {
+      keystoneCases++;
+      const kq = c.questions!.find((q) => q.kind === "keystone");
+      if (!kq) {
+        fail(`seed ${seed}: keystone case has no keystone question`);
+        continue;
+      }
+      const a = new Interview(c.questions!, c.rounds);
+      if (a.canPress(kq.id)) fail(`seed ${seed}: keystone question is breakable in Act 1`); // 13a
+      a.ask(kq.id);
+      if (a.suspectedKeystone() !== ks.id) fail(`seed ${seed}: suspicion not stored`); // 13b
+      if (a.caughtSegments().includes(ks.id)) fail(`seed ${seed}: keystone pre-broken by Act 1`); // 13d
+      const inq = a.toWeb(c.web, seed);
+      if (inq.segments().find((s) => s.id === ks.id)?.broken) fail(`seed ${seed}: keystone arrives already broken`); // 13d
+      suspicionWorks++;
+    } else {
+      const a = new Interview(c.questions!, c.rounds);
+      c.questions!.forEach((q) => a.ask(q.id));
+      if (a.suspectedKeystone()) falsePos++; // 13e
+    }
+  }
+  if (keystoneCases < 40) fail(`too few keystone cases sampled (${keystoneCases})`);
+  else console.log(`✓ keystone cases sampled (${keystoneCases})`);
+  if (suspicionWorks !== keystoneCases) fail(`keystone Act-1 wiring off (${suspicionWorks}/${keystoneCases})`);
+  else console.log(`✓ keystone surfaced, askable, suspicion stored, not pre-broken (${suspicionWorks}/${keystoneCases})`);
+  if (falsePos !== 0) fail(`false keystone suspicion in non-keystone cases (${falsePos})`);
+  else console.log(`✓ no false keystone suspicion in non-keystone cases`);
+}
+
 console.log(`\nplayed ${n} interviews`);
 console.log(ok ? "Interview OK — five/three, lever-gated, winnable played or skipped." : "INTERVIEW BROKEN.");
 process.exit(ok ? 0 : 1);

@@ -17,7 +17,7 @@ import { questionLie, questionLever, leverReaction, patchLine, dudExchange, tell
  * having toppled (caught props). Deterministic.
  */
 
-export type QuestionKind = "lie" | "lever" | "tell" | "dud";
+export type QuestionKind = "lie" | "lever" | "tell" | "dud" | "keystone";
 
 export interface Question {
   id: string;
@@ -70,6 +70,14 @@ export function buildQuestions(web: WebCase, rng: () => number): Question[] {
   if (out.length < 5 && extra) {
     out.push({ id: "L2", kind: "lie", ask: questionLie(extra.seg), answer: claimOf(extra.seg), seg: extra.seg, leverId: extra.lever.id, patch: patchLine(extra.seg) });
   }
+
+  // In a keystone case, one slot asks who vouches for him — his corroborator,
+  // the bluff the whole story rests on. It can't be broken here (no lever, no
+  // tell); asking it only plants a suspicion to carry into the confrontation.
+  const keystone = web.segments.find((s) => s.keystone);
+  if (out.length < 5 && keystone) {
+    out.push({ id: "K", kind: "keystone", ask: "Who can vouch for where you were?", answer: claimOf(keystone.id), seg: keystone.id });
+  }
   // pad to five with duds (distinct); the first names the victim, for weight
   let guard = 0;
   if (out.length < 5 && web.victim) {
@@ -89,7 +97,7 @@ export function buildQuestions(web: WebCase, rng: () => number): Question[] {
   return out.slice(0, 5);
 }
 
-export type AskResult = { kind: "lie" | "lever" | "tell" | "dud"; q: Question } | { kind: "none" };
+export type AskResult = { kind: "lie" | "lever" | "tell" | "dud" | "keystone"; q: Question } | { kind: "none" };
 export type PressResult = { kind: "caught"; q: Question; patch: string } | { kind: "blocked" };
 
 export class Interview {
@@ -98,6 +106,7 @@ export class Interview {
   private asked = new Set<string>();
   private held = new Set<string>(); // levers gathered
   private caught = new Set<string>(); // prop segments pre-broken
+  private suspected: string | null = null; // the keystone the player has come to doubt
   private roundsUsed = 0;
 
   constructor(questions: Question[], rounds = ROUNDS) {
@@ -134,7 +143,15 @@ export class Interview {
     this.asked.add(id);
     this.roundsUsed += 1;
     if (q.kind === "lever" && q.evId) this.held.add(q.evId);
+    // asking who vouches for him plants a doubt about that witness — the keystone
+    if (q.kind === "keystone" && q.seg) this.suspected = q.seg;
     return { kind: q.kind, q };
+  }
+
+  /** The keystone the player has come to doubt (by asking about his witness),
+   *  carried into the confrontation as a steer. Null if never raised. */
+  suspectedKeystone(): string | null {
+    return this.suspected;
   }
 
   /** A tell he's already given that contradicts this lie's prop (his own words). */

@@ -512,6 +512,11 @@ export class CaseRunScene extends Phaser.Scene {
       this.renderInterview();
       // lenient nudges toward the mechanic; standard just records his answer
       this.setStatus(this.showHints ? "Mark that — weigh it against the rest of what he's said." : "He offers that without prompting.", CSS.muted);
+    } else if (r.kind === "keystone") {
+      this.setMood("evasive");
+      this.renderInterview();
+      const name = this.theCase.web.segments.find((sg) => sg.id === r.q.seg)?.name ?? "his witness";
+      this.setStatus(`His whole story leans on ${name}. You can't touch it here — but you'll test it when he gives you the lot.`, CSS.amber);
     } else {
       this.setMood("neutral");
       this.renderInterview();
@@ -610,6 +615,12 @@ export class CaseRunScene extends Phaser.Scene {
         cy += note.height + 2;
       } else if (this.showHints && s.propsUp.length > 0) {
         const note = this.add.text(LEFT + 12, cy, `↑ this is holding up ${s.propsUp.map((p) => this.web!.segmentName(p)).join(", ")}`, { fontFamily: MONO, fontSize: fs(11), color: CSS.amber }).setDepth(6);
+        this.blocks.push(note);
+        cy += note.height + 2;
+      }
+      // a steer the player earned in the interview: the witness he came to doubt
+      if (!s.broken && s.id === this.interview.suspectedKeystone()) {
+        const note = this.add.text(LEFT + 12, cy, "↟ his whole story hangs on this — test it", { fontFamily: MONO, fontSize: fs(11), color: CSS.crimsonBright }).setDepth(6);
         this.blocks.push(note);
         cy += note.height + 2;
       }
