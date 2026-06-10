@@ -75,6 +75,7 @@ export class CaseRunScene extends Phaser.Scene {
   private playerIdx = 0;
   private scores: number[] = [];
   private moves = 0;
+  private patchCount = 0; // fresh lies he threw — par is forgiven for each
   private coopTurn = 0;
   private matchBanner?: Phaser.GameObjects.Text;
 
@@ -569,7 +570,7 @@ export class CaseRunScene extends Phaser.Scene {
 
   private startConfront(): void {
     this.busy = true;
-    this.web = this.interview.toWeb(this.theCase.web, this.seedVal);
+    this.web = this.interview.toWeb(this.theCase.web, this.seedVal, true);
     this.coveredSegs = new Set(this.interview.coveredDoors().map((d) => d.seg));
     // a stable, seeded phrasing per closed door so re-renders don't flicker and
     // two doors in one case don't read the same way
@@ -693,6 +694,18 @@ export class CaseRunScene extends Phaser.Scene {
           this.setStatus(`The door you never opened — and it gives anyway. ${this.web!.segmentName(r.target)} collapses.`, CSS.crimsonBright);
         } else {
           this.setStatus(r.solved ? "It caves — and the whole story with it." : this.showHints ? `${this.web!.segmentName(r.target)} collapses. Whatever it covered is exposed now — press it.` : `${this.web!.segmentName(r.target)} collapses.`, CSS.crimsonBright);
+        }
+        // cornered, he scrambles — a fresh lie slides in to re-cover the hole
+        if (r.patched) {
+          this.patchCount += 1; // his doing, not your inefficiency — par forgives it
+          SFX.murmur(this.seedVal ^ 0xa7);
+          this.setMood("evasive");
+          this.shake(180, 0.004);
+          this.time.delayedCall(820, () => {
+            this.say(r.patched!.claim);
+            this.centerToast("He scrambles — a new story:  " + r.patched!.name);
+            this.setStatus(this.showHints ? `He patches the hole — “${r.patched!.name}” now covers it. Take that apart too (${r.patched!.breakerLabel}).` : `He patches the hole — “${r.patched!.name}” now covers it.`, CSS.amber);
+          });
         }
         if (r.solved) {
           this.flash(COLORS.amber, 0.22);
@@ -904,7 +917,9 @@ export class CaseRunScene extends Phaser.Scene {
    * number of lies that had to fall. Records a personal best for repeatable cases. */
   private gradeRun(): { par: number; rating: string; best: number | null; clean: boolean } {
     const order = verifyWeb(this.theCase.web, this.theCase.web.startEvidence).order;
-    const par = Math.max(2, (this.theCase.rounds ?? 3) + 0 + order.length);
+    // each fresh lie he threw demands two more moves (break the patch, re-land the
+    // attack) — forgive them in par so good play isn't punished for his scrambling
+    const par = Math.max(2, (this.theCase.rounds ?? 3) + order.length + this.patchCount * 2);
     const ratio = this.moves / par;
     const clean = this.moves <= par; // at or under the solver's par
     const rating = clean ? "a clean break  ✦" : ratio <= 1.5 ? "workmanlike" : ratio <= 2.1 ? "the long way round" : "you got there in the end";

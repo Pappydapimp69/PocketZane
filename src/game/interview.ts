@@ -241,9 +241,10 @@ export class Interview {
   }
 
   /** Hand off to the confrontation: carry the case's starting attack plus every
-   *  lever gathered, and arrive with the caught props already toppled. */
-  toWeb(web: WebCase, seed: number): WebInquiry {
+   *  lever gathered, and arrive with the caught props already toppled. With
+   *  `patch`, the suspect invents fresh lies under pressure in the confrontation. */
+  toWeb(web: WebCase, seed: number, patch = false): WebInquiry {
     const held = [...new Set([...web.startEvidence, ...this.held])];
-    return new WebInquiry(web, seed, held, [...this.caught]);
+    return new WebInquiry(web, seed, held, [...this.caught], patch);
   }
 }
