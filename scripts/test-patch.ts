@@ -106,8 +106,12 @@ const solveWithPatch = (web: WebCase, seed: number) => {
   else console.log("✓ patching always terminates (no runaways)");
   if (casesPatched < 40) fail(`the patch rarely fires (${casesPatched}/400)`);
   else console.log(`✓ cornered-and-patches actually happens in play (${casesPatched}/400 cases)`);
-  if (claims.size < 3) fail(`patch phrasing barely varies (${claims.size} distinct)`);
+  if (claims.size < 30) fail(`patch phrasing barely varies (${claims.size} distinct)`);
   else console.log(`✓ patch phrasing is seeded and varies (${claims.size} distinct claims)`);
+  // the fresh lie should react to the prop that fell — themed, not always generic
+  const themed = [...claims].some((c) => /reading|telephone|lamp|visitor|poured|errand|bath|water/i.test(c));
+  if (!themed) fail("patch never themed to the broken prop (only generic scrambles)");
+  else console.log("✓ the new lie reacts to the prop that just fell (themed patches fire)");
 }
 
 // determinism: same seed → same patch behavior

@@ -81,6 +81,17 @@ const PATCH_CLAIMS = [
   "Then someone moved it. I never touched it after supper, I swear it.",
   "Fine — I wasn't where I said. But I was with {who} the whole while.",
 ];
+// Themed patches: the fresh lie reacts to the very prop that just fell, so being
+// cornered on his sleep reads differently from being cornered on the errand.
+const PATCH_BY: Record<string, string[]> = {
+  sleep: ["I wasn't asleep, no — I was up reading. {who} saw my light.", "All right, I woke once. Stepped out for air, that's all — {who} can say so."],
+  porch: ["I wasn't on the porch. I'd gone in to telephone {who} — ask them the hour.", "The porch — that was the night before. {who} will tell you I was in."],
+  dark: ["The lamp WAS lit, now I think — I'd turned it for {who} coming by.", "I never needed a light. I know that house blind; {who} can vouch I was there."],
+  visitor: ["No visitor — that was {who}, and they left well before.", "He came, yes, but to the wrong door. {who} turned him away, not me."],
+  drink: ["I'd barely touched it. {who} poured and can tell you I was clear-headed.", "The drink was hours earlier. By then I was sober as {who}."],
+  errand: ["The errand ran long — I was with {who} the whole stretch of it.", "I never made that errand. {who} went in my place; ask them."],
+  bath: ["I drew no bath that late. I was sat with {who}, dry as you like.", "The water? That was the morning. {who} can fix the time for you."],
+};
 const PATCH_WHO = ["my brother", "the landlady", "a man at the bar", "my sister", "the night porter", "an old friend"];
 const PATCH_SEAMS = [
   "the times don't line up",
@@ -220,7 +231,8 @@ export class WebInquiry {
     const segId = `patch_${brokenId}`;
     const breakerId = `pe_${brokenId}`;
     const who = PATCH_WHO[Math.floor(this.rng() * PATCH_WHO.length)];
-    const claim = PATCH_CLAIMS[Math.floor(this.rng() * PATCH_CLAIMS.length)].replace("{who}", who);
+    const claimPool = PATCH_BY[brokenId] ?? PATCH_CLAIMS; // themed to the prop that fell, else generic
+    const claim = claimPool[Math.floor(this.rng() * claimPool.length)].replace("{who}", who);
     const name = PATCH_NAMES[Math.floor(this.rng() * PATCH_NAMES.length)];
     const breakerLabel = PATCH_SEAMS[Math.floor(this.rng() * PATCH_SEAMS.length)];
 
