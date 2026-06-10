@@ -32,6 +32,39 @@ for (const [name, data] of modes) {
   await page.evaluate(() => window.__game.scene.getScene("CaseRun").scene.start("TitleScene"));
   await w(400);
 }
+// the earned-seam patch flow must reach a win through the LIVE confrontation web,
+// not just the engine unit test — guards against a dead-end where his invented lie
+// can't be cracked. Drive the real scene's WebInquiry (patch live) to solved.
+{
+  const r = await page.evaluate(async () => {
+    const G = window.__game; const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+    for (let seed = 1; seed <= 30; seed++) {
+      G.scene.getScene("TitleScene").scene.start("CaseRun", { generate: true, seed, supports: 3, depth: 2, weirdness: 0.8, herring: true });
+      await sleep(180);
+      const s = G.scene.getScene("CaseRun");
+      if (!s || !s.interview) continue;
+      const web = s.interview.toWeb(s.theCase.web, seed, true); // exactly as startConfront ships it
+      let patched = false, guard = 0;
+      while (!web.solved && guard++ < 150) {
+        let acted = false;
+        for (const e of web.heldEvidence()) {
+          const res = web.present(e.id);
+          if (res.kind === "break" && res.patched) patched = true;
+          if (res.kind !== "nomatch" && res.kind !== "already") acted = true;
+          if (web.solved) break;
+        }
+        if (!acted) break;
+      }
+      if (patched) return { seed, solved: web.solved };
+    }
+    return { seed: -1, solved: false };
+  });
+  if (!r.solved) { ok = false; console.log(`✗ patched confrontation did not solve through the live web (seed ${r.seed})`); }
+  else console.log(`✓ earned-seam patch solves through the live web (seed ${r.seed})`);
+  await page.evaluate(() => window.__game.scene.getScene("CaseRun").scene.start("TitleScene"));
+  await w(400);
+}
+
 for (const sc of ["Stats", "CaseSelect"]) {
   await page.evaluate((s) => window.__game.scene.getScene("TitleScene").scene.start(s), sc);
   await w(800);
