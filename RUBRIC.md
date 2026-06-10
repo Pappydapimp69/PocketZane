@@ -1,4 +1,4 @@
-# LOCKED RUBRIC (loop 5)
+# LOCKED RUBRIC (loop 6)
 
 The testable interpretation of the locked goal. Each criterion is judged by
 **observable behavior of the build** — by playing/testing it or by running its
@@ -36,7 +36,27 @@ evidence, the test performed, and the failure mode if any.
     are preserved: keystone cases occur and cascade; deflection/claim phrasing
     is seeded and does not repeat verbatim across uses.
 
-## Ratchet criterion (loop 5)
+## Ratchet criterion (loop 6)
+
+15. **The two unasked questions surface in the confrontation as his cover.**
+    Judged observably:
+    a. **Revealed:** entering the confrontation, the game names the two questions
+       that went unasked (identifiable verbatim from their text), shown to the
+       player as a distinct beat — not left silent.
+    b. **Cover surfaced:** for an unasked PRODUCTIVE question (lie / lever / tell /
+       keystone), the confrontation presents a steer toward the prop it concerned
+       — a cue tied to that specific segment — distinct from the leads already
+       held and from the keystone-suspicion steer.
+    c. **Not a free break:** the steer does not break or pre-topple the prop. The
+       segment is NOT `broken` on arrival merely because its question went
+       unasked; it must still be attacked through the web (criterion 7 holds).
+    d. **Dramatized:** the reveal is a code-generated beat (sting / motion /
+       toast), present at all difficulties (it is the structural payoff of the
+       five-for-three split, not a lenient-only hint).
+    e. **Sound & winnable:** every case stays solvable whichever two questions go
+       unasked; criteria 1–14 still hold.
+
+## Ratchet criterion (loop 5 — retained)
 
 14. **The interview composition varies across cases.** Judged observably:
     a. **Contradiction retained:** every case still carries ≥1 self-contradiction

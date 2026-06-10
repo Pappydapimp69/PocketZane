@@ -192,6 +192,63 @@ if (JSON.stringify(generateMergedCase(7).questions) !== JSON.stringify(generateM
   else console.log(`✓ no false keystone suspicion in non-keystone cases`);
 }
 
+// CRITERION 15: the two unasked questions surface in the confrontation as cover.
+{
+  let casesWithCover = 0;
+  let everPreBroken = 0;
+  let notWinnable = 0;
+  let skipPathCover = 0;
+  for (let seed = 1; seed <= 200; seed++) {
+    const c = generateMergedCase(seed, { supports: 2, depth: 1, herring: true });
+    // play three rounds, deliberately leaving the productive lies for last so
+    // some go unasked — the realistic "ran out of rounds on the good ones" case
+    const a = new Interview(c.questions!, c.rounds);
+    const order = [...c.questions!].sort((p, q) => (p.kind === "lie" ? 1 : 0) - (q.kind === "lie" ? 1 : 0));
+    for (const q of order) {
+      if (a.done) break;
+      a.ask(q.id);
+    }
+    // 15a: exactly two doors left closed, each identifiable by its text
+    const unasked = a.unaskedQuestions();
+    if (unasked.length !== 2) fail(`seed ${seed}: ${unasked.length} unasked (want 2)`);
+    if (unasked.some((q) => !q.ask)) fail(`seed ${seed}: an unasked door has no text to reveal`);
+    // 15b: covered doors are unasked, productive, carry the prop they concerned
+    const doors = a.coveredDoors();
+    const segIds = new Set(c.web.segments.map((s) => s.id));
+    for (const d of doors) {
+      if (d.kind === "dud") fail(`seed ${seed}: a dud counted as cover`);
+      if (!segIds.has(d.seg)) fail(`seed ${seed}: covered door names no real segment`);
+      if (!unasked.some((u) => u.ask === d.ask)) fail(`seed ${seed}: covered door wasn't actually unasked`);
+    }
+    if (doors.length) casesWithCover++;
+    // 15c: a closed door is NOT a free break — its prop arrives standing
+    const inq = a.toWeb(c.web, seed);
+    for (const d of doors) {
+      if (inq.segments().find((s) => s.id === d.seg)?.broken) everPreBroken++;
+    }
+    // 15e: winnable whichever two went unasked
+    if (!winnable(c.web, a, seed)) notWinnable++;
+
+    // the pure skip path (only duds, or rounds spent badly): cover still surfaces
+    const b = new Interview(c.questions!, c.rounds);
+    const duds = c.questions!.filter((q) => q.kind === "dud");
+    for (const q of [...duds, ...c.questions!]) {
+      if (b.done) break;
+      b.ask(q.id);
+    }
+    const bInq = b.toWeb(c.web, seed);
+    for (const d of b.coveredDoors()) if (bInq.segments().find((s) => s.id === d.seg)?.broken) everPreBroken++;
+    if (b.coveredDoors().length) skipPathCover++;
+    if (!winnable(c.web, b, seed)) notWinnable++;
+  }
+  if (casesWithCover < 100) fail(`cover rarely surfaces (${casesWithCover}/200 cases had a closed productive door)`);
+  else console.log(`✓ unasked productive questions surface as cover (${casesWithCover}/200 + ${skipPathCover}/200 skip-path)`);
+  if (everPreBroken !== 0) fail(`a closed door pre-broke its prop — free break (${everPreBroken})`);
+  else console.log(`✓ a closed door is a steer, never a free break (0 pre-broken props)`);
+  if (notWinnable !== 0) fail(`unwinnable whichever two went unasked (${notWinnable})`);
+  else console.log(`✓ winnable whichever two questions go unasked`);
+}
+
 console.log(`\nplayed ${n} interviews`);
 console.log(ok ? "Interview OK — five/three, lever-gated, winnable played or skipped." : "INTERVIEW BROKEN.");
 process.exit(ok ? 0 : 1);

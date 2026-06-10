@@ -26,6 +26,7 @@ export class CaseRunScene extends Phaser.Scene {
   private interview!: Interview;
   private web?: WebInquiry;
   private confronting = false;
+  private coveredSegs = new Set<string>(); // props behind the doors left unasked
   private title!: Phaser.GameObjects.Text;
   private prompt!: Phaser.GameObjects.Text;
   private hud!: Phaser.GameObjects.Text;
@@ -567,6 +568,7 @@ export class CaseRunScene extends Phaser.Scene {
   private startConfront(): void {
     this.busy = true;
     this.web = this.interview.toWeb(this.theCase.web, this.seedVal);
+    this.coveredSegs = new Set(this.interview.coveredDoors().map((d) => d.seg));
     const o = this.add.container(0, 0).setDepth(110);
     o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.9));
     o.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 20, "— he gives you the whole of it —", { fontFamily: DISPLAY, fontSize: fs(20), color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
@@ -576,6 +578,13 @@ export class CaseRunScene extends Phaser.Scene {
       this.busy = false;
       this.confronting = true;
       this.enterMode();
+      // reveal the two doors you left closed — the questions you never put to him.
+      // those gaps are his cover now; the productive ones get a steer in the web.
+      const unasked = this.interview.unaskedQuestions();
+      if (unasked.length) {
+        const doors = unasked.map((q) => `“${q.ask}”`).join("   ·   ");
+        this.time.delayedCall(420, () => this.centerToast("Two doors you left closed —  " + doors));
+      }
     });
   }
 
@@ -621,6 +630,12 @@ export class CaseRunScene extends Phaser.Scene {
       // a steer the player earned in the interview: the witness he came to doubt
       if (!s.broken && s.id === this.interview.suspectedKeystone()) {
         const note = this.add.text(LEFT + 12, cy, "↟ his whole story hangs on this — test it", { fontFamily: MONO, fontSize: fs(11), color: CSS.crimsonBright }).setDepth(6);
+        this.blocks.push(note);
+        cy += note.height + 2;
+      } else if (!s.broken && this.coveredSegs.has(s.id)) {
+        // a door you left closed in the interview — ground he was relieved you
+        // never walked. A steer toward it, not a free break: still work the web.
+        const note = this.add.text(LEFT + 12, cy, "↬ the question you never asked — he rests easy here", { fontFamily: MONO, fontSize: fs(11), color: CSS.amber }).setDepth(6);
         this.blocks.push(note);
         cy += note.height + 2;
       }

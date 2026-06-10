@@ -81,7 +81,7 @@ export function buildQuestions(web: WebCase, rng: () => number): Question[] {
     const ls = leverProps.find((p) => p.seg !== cs);
     if (ls) {
       out.push({ id: "L1", kind: "lie", ask: questionLie(ls.seg), answer: claimOf(ls.seg), seg: ls.seg, leverId: ls.lever.id, patch: patchLine(ls.seg) });
-      out.push({ id: "V1", kind: "lever", ask: questionLever(ls.seg), answer: leverReaction(ls.seg, rng), evId: ls.lever.id });
+      out.push({ id: "V1", kind: "lever", ask: questionLever(ls.seg), answer: leverReaction(ls.seg, rng), seg: ls.seg, evId: ls.lever.id });
       usedSeg = ls.seg;
     }
   }
@@ -172,6 +172,29 @@ export class Interview {
    *  carried into the confrontation as a steer. Null if never raised. */
   suspectedKeystone(): string | null {
     return this.suspected;
+  }
+
+  /** The questions that went unasked when the rounds ran out — the two doors the
+   *  detective left closed. Their text is revealed in the confrontation. */
+  unaskedQuestions(): Question[] {
+    return this.questions.filter((q) => !this.asked.has(q.id));
+  }
+
+  /** The unasked PRODUCTIVE questions, mapped to the prop each concerned — the
+   *  ground he was relieved you never walked. These surface in the confrontation
+   *  as steers (toward the segment), never as a free break: the prop must still
+   *  be worked through the web. A door is only "covered" if its prop is still
+   *  standing (not already caught in the interview). The asked keystone has its
+   *  own suspicion steer, so an unasked keystone is the only keystone door here. */
+  coveredDoors(): { seg: string; ask: string; kind: QuestionKind }[] {
+    const out: { seg: string; ask: string; kind: QuestionKind }[] = [];
+    for (const q of this.questions) {
+      if (this.asked.has(q.id) || !q.seg) continue;
+      if (q.kind === "dud") continue;
+      if (this.caught.has(q.seg)) continue;
+      out.push({ seg: q.seg, ask: q.ask, kind: q.kind });
+    }
+    return out;
   }
 
   /** A tell he's already given that contradicts this lie's prop (his own words). */
