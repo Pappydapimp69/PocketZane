@@ -58,7 +58,8 @@ export interface SegmentView {
 }
 
 /** A fresh lie spun the moment a prop is broken — a new segment that re-covers
- *  the hole and must itself be broken. Self-revealing: its seam is handed over. */
+ *  the hole and must itself be broken. Its seam is earned, not gifted: pressing
+ *  the key attack into the patch reveals the breaker through the recovery chain. */
 export interface Patch {
   seg: string; // the new segment's id
   name: string; // its short label
@@ -213,8 +214,9 @@ export class WebInquiry {
 
   /** When a support that was covering a key attack breaks, the suspect scrambles:
    *  he spins a fresh claim that slides in to re-cover that same attack. The new
-   *  claim is a real segment with its own (immediately handed-over) seam, so the
-   *  player must break it too before the key concedes. Bounded — a prop patches at
+   *  claim is a real segment with its own seam — earned, not gifted: pressing the
+   *  key attack into it reveals the breaker through the ordinary recovery chain, so
+   *  the player must work it like any other before the key concedes. Bounded — a prop patches at
    *  most once, and a patch's own segment never patches — so it always terminates. */
   private tryPatch(brokenId: string): Patch | undefined {
     if (!this.patchOn) return undefined;
