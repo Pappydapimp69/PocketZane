@@ -68,8 +68,8 @@ export interface PatchedVerifyResult {
   patches: number; // how many fresh lies he threw on the way down
 }
 
-export function verifyWebPatched(web: WebCase, startLeads: string[]): PatchedVerifyResult {
-  const inq = new WebInquiry(web, 1, startLeads, [], true);
+export function verifyWebPatched(web: WebCase, startLeads: string[], initialBroken: string[] = []): PatchedVerifyResult {
+  const inq = new WebInquiry(web, 1, startLeads, initialBroken, true);
   const cap = (web.segments.length + 4) * (web.evidence.length + 4) + 200;
   let patches = 0;
   let changed = true;

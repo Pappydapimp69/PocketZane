@@ -8,6 +8,7 @@
 import { WebCase, WebInquiry } from "../src/game/web";
 import { generateMergedCase } from "../src/game/generateweb";
 import { verifyWebPatched } from "../src/game/verify";
+import { Interview } from "../src/game/interview";
 
 let ok = true;
 const fail = (m: string) => {
@@ -148,6 +149,39 @@ const solveWithPatch = (web: WebCase, seed: number) => {
   }
   if (gateFails !== 0) fail(`shipped cases fail the patched gate (${gateFails}/150)`);
   else console.log("✓ every shipped case clears the patch-live gate (150/150)");
+}
+
+// VERIFIED AS PLAYED: not just the minimum hand — every confrontation the
+// interview can actually hand off (caught props pre-broken, levers gathered) must
+// also be solvable + terminating with the patch live. This closes the gap between
+// "verified from nothing" and "verified from the hands real play produces."
+{
+  let handoffs = 0;
+  let bad = 0;
+  for (let seed = 1; seed <= 120; seed++) {
+    const c = generateMergedCase(seed, { supports: 2, depth: 1, herring: true });
+    // a few representative ways to play the interview
+    const plays: ((iv: Interview) => void)[] = [
+      () => {}, // skipped entirely
+      (iv) => { for (const q of c.questions!.filter((q) => q.kind === "lever")) iv.ask(q.id); for (const q of c.questions!.filter((q) => q.kind === "lie")) if (iv.canPress(q.id)) iv.press(q.id); },
+      (iv) => { for (const q of c.questions!) { if (iv.done) break; iv.ask(q.id); } for (const q of c.questions!.filter((q) => q.kind === "lie")) if (iv.canPress(q.id)) iv.press(q.id); },
+    ];
+    for (const play of plays) {
+      const iv = new Interview(c.questions!, c.rounds);
+      // play levers first so contradictions/levers can be spent, then run the line
+      for (const q of c.questions!.filter((q) => q.kind === "tell")) { if (!iv.done) iv.ask(q.id); }
+      play(iv);
+      const inq = iv.toWeb(c.web, seed, true);
+      // re-derive the handoff state and verify it under patch
+      const held = inq.heldEvidence().map((e) => e.id);
+      const broken = inq.segments().filter((s) => s.broken).map((s) => s.id);
+      const r = verifyWebPatched(c.web, held, broken);
+      handoffs++;
+      if (!r.solvable || !r.terminates) bad++;
+    }
+  }
+  if (bad !== 0) fail(`some real interview handoffs aren't solvable under patch (${bad}/${handoffs})`);
+  else console.log(`✓ every interview handoff is solvable under patch as played (${handoffs} handoffs)`);
 }
 
 // determinism: same seed → same patch behavior
