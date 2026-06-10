@@ -704,7 +704,9 @@ export class CaseRunScene extends Phaser.Scene {
           this.time.delayedCall(820, () => {
             this.say(r.patched!.claim);
             this.centerToast("He scrambles — a new story:  " + r.patched!.name);
-            this.setStatus(this.showHints ? `He patches the hole — “${r.patched!.name}” now covers it. Take that apart too (${r.patched!.breakerLabel}).` : `He patches the hole — “${r.patched!.name}” now covers it.`, CSS.amber);
+            // its seam isn't in your file yet — press the same attack again and the
+            // new lie will give up where it frays (lenient names the frayed edge)
+            this.setStatus(this.showHints ? `He patches the hole — “${r.patched!.name}” now covers it. Press the same point again; it’ll fray (${r.patched!.breakerLabel}).` : `He patches the hole — “${r.patched!.name}” now covers it. Press it again and see where it frays.`, CSS.amber);
           });
         }
         if (r.solved) {
@@ -986,6 +988,11 @@ export class CaseRunScene extends Phaser.Scene {
     // Efficiency grade: the player's moves against the solver's par.
     reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 176, `broke it in ${this.moves}  ·  par ${grade.par}${grade.best != null ? `  ·  best ${grade.best}` : ""}`, { fontFamily: MONO, fontSize: fs(12), color: CSS.ink }).setOrigin(0.5));
     reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 158, grade.rating, { fontFamily: DISPLAY, fontSize: fs(15), color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
+    // make the patches legible in the payoff: the new lies he was forced to spin
+    // (endless owns this row with its standing line, so only outside endless)
+    if (this.patchCount > 0 && this.mode !== "endless") {
+      reso.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 140, this.patchCount === 1 ? "he spun one fresh lie before the end — and it frayed too" : `he spun ${this.patchCount} fresh lies before the end — every one frayed`, { fontFamily: MONO, fontSize: fs(11), color: CSS.faint }).setOrigin(0.5));
+    }
     if (this.mode === "endless") {
       const dots = "◆".repeat(Math.max(0, this.standing)) + "◇".repeat(Math.max(0, 3 - this.standing));
       const tail = runOver ? `the run ends at night ${this.night}` : `night ${this.night} closed  ·  standing ${dots}`;
