@@ -35,6 +35,7 @@ export interface WebCase {
   weirdness: number;
   title: string;
   subject: string;
+  victim?: string; // the victim's short name, for in-character references
   brief: { what: string; where: string; when: string; why: string; goal: string };
   segments: WebSegment[];
   evidence: WebEvidence[];

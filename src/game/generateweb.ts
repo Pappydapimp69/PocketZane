@@ -154,6 +154,7 @@ function buildKeystone(seed: number, rng: () => number, opts: GenOpts): { web: W
     weirdness: opts.weirdness ?? 0.6,
     title: caseTitle(place),
     subject,
+    victim: victimShort,
     brief: {
       ...pr,
       where: locWhere(place),
@@ -251,6 +252,7 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
       weirdness: opts.weirdness ?? 0.1,
       title: caseTitle(place),
       subject: `${subject}`,
+      victim: victimShort,
       brief: {
         ...pr,
         where: locWhere(place),

@@ -70,8 +70,11 @@ export function buildQuestions(web: WebCase, rng: () => number): Question[] {
   if (out.length < 5 && extra) {
     out.push({ id: "L2", kind: "lie", ask: questionLie(extra.seg), answer: claimOf(extra.seg), seg: extra.seg, leverId: extra.lever.id, patch: patchLine(extra.seg) });
   }
-  // pad to five with duds (distinct)
+  // pad to five with duds (distinct); the first names the victim, for weight
   let guard = 0;
+  if (out.length < 5 && web.victim) {
+    out.push({ id: `D${out.length}`, kind: "dud", ask: "What sort of man was he?", answer: `${web.victim}? Quiet. Kept to himself, paid on time. I'd no quarrel with him.` });
+  }
   while (out.length < 5 && guard++ < 20) {
     const d = dudExchange(rng);
     if (out.some((q) => q.ask === d.ask)) continue;
