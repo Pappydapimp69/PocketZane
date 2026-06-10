@@ -14,7 +14,8 @@ import { addAtmosphere, addRain } from "../game/textures";
 import { paintPortrait, suspectName, temperament, Mood, Temperament } from "../game/portrait";
 import { paintScene } from "../game/scenery";
 import { verifyWeb } from "../game/verify";
-import { todayStamp } from "../game/rng";
+import { todayStamp, mulberry32 } from "../game/rng";
+import { coverSteer } from "../game/phrasing";
 import { PAD } from "../input";
 
 const LEFT = 30;
@@ -27,6 +28,7 @@ export class CaseRunScene extends Phaser.Scene {
   private web?: WebInquiry;
   private confronting = false;
   private coveredSegs = new Set<string>(); // props behind the doors left unasked
+  private coverNotes = new Map<string, string>(); // stable steer phrasing per closed door
   private title!: Phaser.GameObjects.Text;
   private prompt!: Phaser.GameObjects.Text;
   private hud!: Phaser.GameObjects.Text;
@@ -569,6 +571,10 @@ export class CaseRunScene extends Phaser.Scene {
     this.busy = true;
     this.web = this.interview.toWeb(this.theCase.web, this.seedVal);
     this.coveredSegs = new Set(this.interview.coveredDoors().map((d) => d.seg));
+    // a stable, seeded phrasing per closed door so re-renders don't flicker and
+    // two doors in one case don't read the same way
+    const steerRng = mulberry32((this.seedVal ^ 0x4d2c0f3b) >>> 0);
+    this.coverNotes = new Map([...this.coveredSegs].map((seg) => [seg, coverSteer(steerRng)]));
     const o = this.add.container(0, 0).setDepth(110);
     o.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.bg, 0.9));
     o.add(this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 20, "— he gives you the whole of it —", { fontFamily: DISPLAY, fontSize: fs(20), color: CSS.amber, fontStyle: "italic" }).setOrigin(0.5));
@@ -635,7 +641,7 @@ export class CaseRunScene extends Phaser.Scene {
       } else if (!s.broken && this.coveredSegs.has(s.id)) {
         // a door you left closed in the interview — ground he was relieved you
         // never walked. A steer toward it, not a free break: still work the web.
-        const note = this.add.text(LEFT + 12, cy, "↬ the question you never asked — he rests easy here", { fontFamily: MONO, fontSize: fs(11), color: CSS.amber }).setDepth(6);
+        const note = this.add.text(LEFT + 12, cy, this.coverNotes.get(s.id) ?? "↬ the question you never asked", { fontFamily: MONO, fontSize: fs(11), color: CSS.amber }).setDepth(6);
         this.blocks.push(note);
         cy += note.height + 2;
       }

@@ -167,6 +167,19 @@ export function tellFor(id: string, rng: () => number): Tell {
   return pick(TELLS[id] ?? [TELL_FALLBACK], rng);
 }
 
+// The steer for a door you left unasked — the ground he was relieved you skipped.
+// Several phrasings so two closed doors in one case don't read identically.
+const COVER_STEER = [
+  "the question you never asked — he rests easy here",
+  "you never opened this door — and he knows it",
+  "the ground you left unwalked — he's comfortable on it",
+  "you let this one lie in the interview — he's counting on that",
+  "a question you never put to him — his footing's surest here",
+];
+export function coverSteer(rng: () => number): string {
+  return "↬ " + pick(COVER_STEER, rng);
+}
+
 export function deflectionLine(supportId: string, attackShort: string, rng: () => number): string {
   const assert = pick(ASSERT[supportId] ?? ["I had my reasons"], rng);
   const dismiss = pick(DISMISS, rng).replace("{a}", attackShort);
