@@ -280,7 +280,7 @@ export class TitleScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           200,
-          "A subject tells their story. The truth holds still — but a lie cannot tell itself the same way twice.\n\nFIRST, you question them point by point:\n• QUESTION — make them say a line again. A lie shifts; the truth doesn't move.\n• PIN — accuse a line you've caught shifting, and it becomes a lead. Pin the truth and that's a strike; three closes the point — but you keep the leads you have.\n\nTHEN comes the confrontation — the whole alibi at once:\n• PRESS him with a lead. A head-on hit just deflects: the lie hides behind a supporting lie, so break that prop first, then the lie above it.\n• One lie may be holding up all the others. Find that keystone and the whole story caves at once.",
+          "A suspect lies to cover the night. A lie cannot tell itself the same way twice — and a liar forgets what he's already said.\n\nFIRST, the interview — five questions, but only three rounds. Two go unasked.\n• Some answers are LEVERS — a record that breaks one of his claims.\n• Some are LIES — and somewhere his own answers don't square. Read them; press the lie his own words undercut, and you catch it before he's even confronted.\n• Choose well: what you skip becomes his cover.\n\nTHEN the confrontation — the whole alibi at once.\n• PRESS him with what you hold. A head-on hit just deflects: the lie hides behind a supporting lie, so break that prop first, then the lie above it.\n• One lie may hold up all the others. Find that keystone and the whole story caves at once.",
           { fontFamily: BODY, fontSize: fs(15), color: CSS.ink, align: "left", wordWrap: { width: 400 }, lineSpacing: 6 },
         )
         .setOrigin(0.5, 0),
