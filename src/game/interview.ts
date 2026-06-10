@@ -1,15 +1,19 @@
 import { WebCase, WebInquiry, WebEvidence } from "./web";
-import { questionLie, questionLever, leverReaction, patchLine, dudExchange, tellQuestion, tellAnswer, tellClash } from "./phrasing";
+import { questionLie, questionLever, leverReaction, patchLine, dudExchange, tellQuestion, tellAnswer, tellClash, keystoneQuestion } from "./phrasing";
 
 /**
  * The interview (Act 1), the new front half of the game. The detective is given
  * FIVE questions but only THREE rounds — two questions always go unasked, and
  * those gaps become the suspect's cover in the confrontation. Each question is
  * one of:
- *   - a LIE: he tells a propping claim. You can only crack it by holding the
- *     LEVER for it (a fact gathered from a different round), and cracking it
- *     pre-breaks that prop and makes him patch the hole with a fresh lie.
+ *   - a LIE: he tells a propping claim. You crack it by holding the LEVER for it,
+ *     or by a TELL that contradicts it — and cracking it pre-breaks that prop and
+ *     makes him patch the hole with a fresh lie.
  *   - a LEVER: he lets slip a record that breaks one of his lies — your ammo.
+ *   - a TELL: an innocuous answer that conflicts with one of his lies (his own
+ *     words); connect the two to crack the lie with no record.
+ *   - a KEYSTONE: in a keystone case, who vouches for him — unbreakable here;
+ *     asking it plants a suspicion that carries into the confrontation.
  *   - a DUD: character, no purchase. Spend a round on it and you've wasted it.
  *
  * The web is still generated and verified solvable; the interview only changes
@@ -76,7 +80,7 @@ export function buildQuestions(web: WebCase, rng: () => number): Question[] {
   // tell); asking it only plants a suspicion to carry into the confrontation.
   const keystone = web.segments.find((s) => s.keystone);
   if (out.length < 5 && keystone) {
-    out.push({ id: "K", kind: "keystone", ask: "Who can vouch for where you were?", answer: claimOf(keystone.id), seg: keystone.id });
+    out.push({ id: "K", kind: "keystone", ask: keystoneQuestion(rng), answer: claimOf(keystone.id), seg: keystone.id });
   }
   // pad to five with duds (distinct); the first names the victim, for weight
   let guard = 0;

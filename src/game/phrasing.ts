@@ -116,6 +116,12 @@ export function dudExchange(rng: () => number): { ask: string; answer: string } 
   return pick(DUDS, rng);
 }
 
+// The question that asks after his corroborating witness (the keystone).
+const K_ASK = ["Who can vouch for where you were?", "Who'll swear to where you were that night?", "Is there anyone who'll confirm your story?", "Who was with you — someone you'd put forward?"];
+export function keystoneQuestion(rng: () => number): string {
+  return pick(K_ASK, rng);
+}
+
 // A "tell": an innocuous-sounding answer to a different question that quietly
 // contradicts one of his lies. The player must connect the two — no record
 // needed. Keyed by the support whose lie it conflicts with.
