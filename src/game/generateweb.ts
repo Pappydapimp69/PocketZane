@@ -1,6 +1,6 @@
 import { WebCase, WebSegment, WebEvidence } from "./web";
 import { MergedCase, Phase, PhaseStatement } from "./merged";
-import { verifyWeb } from "./verify";
+import { verifyWeb, verifyWebPatched } from "./verify";
 import { deflectionPool, claimLine, concessionLine, coreClaim, coreConcession, motivePick, shiftTriple, phaseTruths, premise, whyLine, goalLine, weirdDetail } from "./phrasing";
 import { buildQuestions, ROUNDS } from "./interview";
 import { mulberry32 } from "./rng";
@@ -178,7 +178,7 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
     const keystone = opts.keystone ?? rng() < (opts.weirdness ?? 0);
     if (keystone) {
       const r = buildKeystone(seed + attempt, rng, opts);
-      if (verifyWeb(r.web, r.web.startEvidence).solvable) return r;
+      if (shipsSolvable(r.web)) return r;
       continue;
     }
     const leadable: string[] = [];
@@ -267,9 +267,17 @@ function composeWeb(seed: number, opts: GenOpts = {}): { web: WebCase; leadable:
       resolution: `It came apart from the bottom. ${supports[0].name[0].toUpperCase() + supports[0].name.slice(1)} was the floor under the rest; once it went, ${attacks[0].short} had nothing to stand on.\n\nHe went up that night. What he gave you wasn't an alibi — it was one lie holding up another, and you took out the bottom one.`,
     };
 
-    if (verifyWeb(web, web.startEvidence).solvable) return { web, leadable };
+    if (shipsSolvable(web)) return { web, leadable };
   }
   throw new Error(`composeWeb: could not produce a solvable case for seed ${seed}`);
+}
+
+/** The gate every shipped case must clear: solvable as a static web AND solvable
+ *  and terminating with the patch mechanic LIVE — the configuration it ships in. */
+function shipsSolvable(web: WebCase): boolean {
+  if (!verifyWeb(web, web.startEvidence).solvable) return false;
+  const p = verifyWebPatched(web, web.startEvidence);
+  return p.solvable && p.terminates;
 }
 
 /** Build a verified-solvable web from a seed (confrontation only). */

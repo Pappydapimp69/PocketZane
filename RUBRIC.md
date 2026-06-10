@@ -1,4 +1,4 @@
-# LOCKED RUBRIC (loop 7)
+# LOCKED RUBRIC (loop 8)
 
 The testable interpretation of the locked goal. Each criterion is judged by
 **observable behavior of the build** — by playing/testing it or by running its
@@ -36,7 +36,22 @@ evidence, the test performed, and the failure mode if any.
     are preserved: keystone cases occur and cascade; deflection/claim phrasing
     is seeded and does not repeat verbatim across uses.
 
-## Ratchet criterion (loop 7)
+## Ratchet criterion (loop 8)
+
+17. **Solvability is verified in the shipped (patch-live) configuration.**
+    Judged observably:
+    a. **A patch-aware verifier exists** that drives the REAL confrontation engine
+       (the actual `WebInquiry` with patch on, not a parallel re-implementation) to
+       a fixpoint under a bound, reporting solvable AND terminates.
+    b. **The generator gates on it:** every shipped case must clear both the static
+       verifier AND the patch-live verifier (solvable + terminating) before it is
+       returned; a case that cannot is rejected/regenerated.
+    c. **It has teeth:** a web that is unsolvable under the patch is reported
+       unsolvable (the gate would reject it), demonstrably — not a rubber stamp.
+    d. **All shipped cases pass & sound:** across a seed sample every generated
+       case clears the patch-live gate, and criteria 1–16 still hold.
+
+## Ratchet criterion (loop 7 — retained)
 
 16. **Cornered, he invents a new lie — a real attackable patch, not flavor.**
     Judged observably (with the patch mechanic live):

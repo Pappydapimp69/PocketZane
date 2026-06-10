@@ -7,6 +7,7 @@
  */
 import { WebCase, WebInquiry } from "../src/game/web";
 import { generateMergedCase } from "../src/game/generateweb";
+import { verifyWebPatched } from "../src/game/verify";
 
 let ok = true;
 const fail = (m: string) => {
@@ -112,6 +113,41 @@ const solveWithPatch = (web: WebCase, seed: number) => {
   const themed = [...claims].some((c) => /reading|telephone|lamp|visitor|poured|errand|bath|water/i.test(c));
   if (!themed) fail("patch never themed to the broken prop (only generic scrambles)");
   else console.log("✓ the new lie reacts to the prop that just fell (themed patches fire)");
+}
+
+// the SHIPPED gate models the patch: verifyWebPatched proves the live config.
+{
+  // the hand web above is solvable; with the patch live it must verify solvable + terminating
+  const v = verifyWebPatched(mini, mini.startEvidence);
+  if (!v.solvable || !v.terminates) fail("patched verifier fails a solvable web");
+  else console.log("✓ patched verifier passes a solvable web (live config proven)");
+
+  // teeth: a web whose key hides behind a support with no breaker is unsolvable —
+  // the gate that runs on every shipped case must reject it, patch live
+  const trap: WebCase = {
+    ...mini,
+    segments: [
+      { id: "k", name: "the alibi", base: "x", key: true },
+      { id: "s", name: "the cover", base: "y" }, // no evidence targets s → never breakable
+    ],
+    evidence: [{ id: "ek", label: "", targets: "k", deflectableBy: ["s"] }],
+    startEvidence: ["ek"],
+    deflections: {},
+    concessions: {},
+  };
+  const t = verifyWebPatched(trap, trap.startEvidence);
+  if (t.solvable) fail("patched verifier passes an unsolvable web — gate has no teeth");
+  else console.log("✓ patched verifier rejects an unsolvable web (gate has teeth)");
+
+  // every generated (shipped) case clears the patched gate
+  let gateFails = 0;
+  for (let seed = 1; seed <= 150; seed++) {
+    const web = generateMergedCase(seed, { supports: 3, depth: 2, weirdness: 0.8, herring: true }).web;
+    const r = verifyWebPatched(web, web.startEvidence);
+    if (!r.solvable || !r.terminates) gateFails++;
+  }
+  if (gateFails !== 0) fail(`shipped cases fail the patched gate (${gateFails}/150)`);
+  else console.log("✓ every shipped case clears the patch-live gate (150/150)");
 }
 
 // determinism: same seed → same patch behavior

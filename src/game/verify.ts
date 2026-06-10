@@ -1,4 +1,4 @@
-import { WebCase } from "./web";
+import { WebCase, WebInquiry } from "./web";
 
 /**
  * Solvability verifier for the constraint web. The confrontation is monotone:
@@ -48,4 +48,42 @@ export function verifyWeb(web: WebCase, startLeads: string[]): VerifyResult {
 
   const keys = web.segments.filter((s) => s.key).map((s) => s.id);
   return { solvable: keys.every((k) => broken.has(k)), order };
+}
+
+/**
+ * Patch-aware verification: the static fixpoint above proves the *unpatched* web,
+ * but the game ships with the patch mechanic LIVE in the confrontation — cornered,
+ * the suspect spins fresh lies that re-cover the hole. This drives the real
+ * `WebInquiry` with `patch` on, exactly as the confrontation does, and confirms
+ * the case still (a) terminates — the patching is bounded, no infinite scramble —
+ * and (b) solves. So the configuration that actually ships is the one we gate on.
+ *
+ * Patch structure is deterministic (only the claim *text* is seeded), so
+ * solvability is seed-independent; we drive one run with a fixed seed. The cap is
+ * generous — far above any legitimate playthrough — so blowing it means a trap.
+ */
+export interface PatchedVerifyResult {
+  solvable: boolean;
+  terminates: boolean;
+  patches: number; // how many fresh lies he threw on the way down
+}
+
+export function verifyWebPatched(web: WebCase, startLeads: string[]): PatchedVerifyResult {
+  const inq = new WebInquiry(web, 1, startLeads, [], true);
+  const cap = (web.segments.length + 4) * (web.evidence.length + 4) + 200;
+  let patches = 0;
+  let changed = true;
+  let iters = 0;
+  while (!inq.solved && changed && iters < cap) {
+    changed = false;
+    for (const e of inq.heldEvidence()) {
+      const r = inq.present(e.id);
+      if (r.kind === "deflect" || r.kind === "break") changed = true;
+      if (r.kind === "break" && r.patched) patches += 1;
+      iters += 1;
+      if (inq.solved) break;
+    }
+  }
+  // terminated cleanly if we reached a stable state (or a win) under the cap
+  return { solvable: inq.solved, terminates: iters < cap, patches };
 }

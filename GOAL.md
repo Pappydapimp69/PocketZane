@@ -1,4 +1,4 @@
-# LOCKED GOAL (loop 7)
+# LOCKED GOAL (loop 8)
 
 Fixed end-state specification for AGAIN. The only bar the independent checker
 measures against. Not edited during the loop. Amended between loops by the
@@ -53,7 +53,17 @@ that were productive, presents that closed door as a steer toward the prop it
 concerned. A revealed beat, not silent bookkeeping; not a free break; the case
 stays winnable whichever two go unasked.
 
-## Ratchet amendment (loop 7)
+## Ratchet amendment (loop 8)
+
+**"Verified solvable" must mean verified in the configuration that actually
+ships. The confrontation runs with the patch mechanic LIVE, so the generator's
+solvability gate must verify each case WITH the patch on — proving it both solves
+AND terminates under patching, by driving the real confrontation engine, not a
+re-implementation. No case ships unless the patch-live configuration is
+machine-checked winnable and bounded. The case that ships is the case that's
+verified.**
+
+## Ratchet amendment (loop 7 — met, retained)
 
 **When the suspect is cornered, he must invent a NEW lie — not just flavor text.
 Catching a lie or breaking the prop it leaned on must let him spin a fresh claim
