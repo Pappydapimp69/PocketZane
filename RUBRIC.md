@@ -1,4 +1,4 @@
-# LOCKED RUBRIC (loop 6)
+# LOCKED RUBRIC (loop 7)
 
 The testable interpretation of the locked goal. Each criterion is judged by
 **observable behavior of the build** — by playing/testing it or by running its
@@ -36,7 +36,27 @@ evidence, the test performed, and the failure mode if any.
     are preserved: keystone cases occur and cascade; deflection/claim phrasing
     is seeded and does not repeat verbatim across uses.
 
-## Ratchet criterion (loop 6)
+## Ratchet criterion (loop 7)
+
+16. **Cornered, he invents a new lie — a real attackable patch, not flavor.**
+    Judged observably (with the patch mechanic live):
+    a. **A new claim appears:** being cornered (a prop he leaned on breaks, or his
+       lie is caught) can produce a segment that did NOT exist in the base case —
+       observable as a new segment id in the live web that isn't in the static
+       case definition.
+    b. **It re-covers the hole:** after the patch, the attack the broken prop was
+       covering no longer lands directly — it now deflects through the new claim,
+       so the new claim must be dealt with to make progress.
+    c. **It is itself breakable:** the patch segment has a reachable seam — a lead
+       that breaks it is held/revealed — and presenting that lead breaks it.
+    d. **Bounded / terminates:** patching is finite (a prop patches at most once;
+       patch segments do not themselves spawn unbounded patches); a mechanical
+       playthrough always reaches `solved` — no infinite loop.
+    e. **Still solvable & sound:** across a seed sample with the patch live, every
+       case is winnable, and criteria 1–15 still hold. The patch phrasing is
+       seeded (does not read identically every time).
+
+## Ratchet criterion (loop 6 — retained)
 
 15. **The two unasked questions surface in the confrontation as his cover.**
     Judged observably:

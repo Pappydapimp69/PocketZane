@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "for t in web merged verify generate keystone merged-gen phrasing ladder content; do npx tsx scripts/test-$t.ts || exit 1; done"
+    "test": "for t in web merged verify generate keystone merged-gen phrasing ladder content interview patch; do npx tsx scripts/test-$t.ts || exit 1; done"
   },
   "dependencies": {
     "phaser": "^3.88.2"
