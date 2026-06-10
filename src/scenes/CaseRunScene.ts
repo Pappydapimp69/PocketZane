@@ -681,6 +681,10 @@ export class CaseRunScene extends Phaser.Scene {
           // if the player came to doubt this witness back in the interview, pay that off
           const foresaw = r.target === this.interview.suspectedKeystone();
           this.setStatus(foresaw ? "You doubted his witness from the first — and you were right. There was never a floor under it; it all comes down at once." : "It evaporates — there was never a floor under it. Everything leaning on it comes down at once.", CSS.crimsonBright);
+        } else if (!r.solved && this.coveredSegs.has(r.target)) {
+          // a prop behind a door you'd left shut in the interview — walked through anyway
+          this.coveredSegs.delete(r.target);
+          this.setStatus(`The door you never opened — and it gives anyway. ${this.web!.segmentName(r.target)} collapses.`, CSS.crimsonBright);
         } else {
           this.setStatus(r.solved ? "It caves — and the whole story with it." : this.showHints ? `${this.web!.segmentName(r.target)} collapses. Whatever it covered is exposed now — press it.` : `${this.web!.segmentName(r.target)} collapses.`, CSS.crimsonBright);
         }
