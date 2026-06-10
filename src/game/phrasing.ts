@@ -124,43 +124,47 @@ export function keystoneQuestion(rng: () => number): string {
 
 // A "tell": an innocuous-sounding answer to a different question that quietly
 // contradicts one of his lies. The player must connect the two — no record
-// needed. Keyed by the support whose lie it conflicts with.
-const TELL_ASK: Record<string, string> = {
-  sleep: "How did you pass the evening?",
-  porch: "Did you go anywhere in the building at all?",
-  dark: "How did you spend the hours before bed?",
-  visitor: "Did you see anyone the whole night?",
-  drink: "How did you get yourself home?",
-  errand: "So you stepped out for cigarettes?",
-  bath: "What were you doing just before bed?",
-};
-const TELL_ANS: Record<string, string> = {
-  sleep: "Quietly. I sat up with the wireless till the small hours.",
-  porch: "Only up to his door, earlier — to return a tool. Nothing after.",
-  dark: "Reading, mostly. By the lamp out on the landing.",
-  visitor: "Not a soul. I kept to myself, like always.",
-  drink: "Walked it, steady enough. I always walk home.",
-  errand: "No need to — I keep a carton in the desk drawer.",
-  bath: "Just sitting. Still had my coat on, truth be told.",
-};
-// the short reason the two answers don't square, for the player-facing cue
-const TELL_CLASH: Record<string, string> = {
-  sleep: "he says he was asleep by ten — yet up with the wireless till late",
-  porch: "he says only the porch — yet admits going up to the door",
-  dark: "he says the stair was pitch dark — yet read by the landing lamp",
-  visitor: "he says a friend was with him — yet says he saw no one",
-  drink: "he says he was too drunk to recall — yet walked home steady",
-  errand: "he says he was out for cigarettes — yet keeps a carton in the drawer",
-  bath: "he says he was in the bath — yet sat in his coat instead",
-};
-export function tellQuestion(id: string): string {
-  return TELL_ASK[id] ?? "Walk me through your evening.";
+// needed. Two per support, so two cases on the same support don't read the same.
+interface Tell {
+  ask: string; // the detective's question
+  answer: string; // his innocuous reply
+  clash: string; // why the two answers don't square (player-facing cue)
 }
-export function tellAnswer(id: string): string {
-  return TELL_ANS[id] ?? "Nothing worth telling. A quiet night.";
-}
-export function tellClash(id: string): string {
-  return TELL_CLASH[id] ?? "two of his own answers don't square";
+const TELLS: Record<string, Tell[]> = {
+  sleep: [
+    { ask: "How did you pass the evening?", answer: "Quietly. I sat up with the wireless till the small hours.", clash: "he says he was asleep by ten — yet up with the wireless till late" },
+    { ask: "Did anything wake you in the night?", answer: "I don't sleep deep. I heard the rain start near midnight.", clash: "he says he was asleep by ten — yet heard the midnight rain" },
+  ],
+  porch: [
+    { ask: "Did you go anywhere in the building at all?", answer: "Only up to his door, earlier — to return a tool. Nothing after.", clash: "he says only the porch — yet admits going up to his door" },
+    { ask: "Were your shoes wet when they brought you in?", answer: "A little. I was up and down the front step a few times.", clash: "he says only the porch once — yet up and down the step all night" },
+  ],
+  dark: [
+    { ask: "How did you spend the hours before bed?", answer: "Reading, mostly. By the lamp out on the landing.", clash: "he says the stair was pitch dark — yet read by the landing lamp" },
+    { ask: "Could you make out the stair clock?", answer: "Half eleven, near enough — I caught it on the way past.", clash: "he says the stair was pitch dark — yet read the stair clock" },
+  ],
+  visitor: [
+    { ask: "Did you see anyone the whole night?", answer: "Not a soul. I kept to myself, like always.", clash: "he says a friend was with him — yet says he saw no one" },
+    { ask: "What did the two of you talk about?", answer: "Nothing much — I was on my own, as I said.", clash: "he says a friend kept him company — yet says he was on his own" },
+  ],
+  drink: [
+    { ask: "How did you get yourself home?", answer: "Walked it, steady enough. I always walk home.", clash: "he says he was too drunk to recall — yet walked home steady" },
+    { ask: "What did you have, exactly?", answer: "Two ales, no more. I even recall the barman's joke.", clash: "he says he was too drunk to recall — yet remembers the barman's joke" },
+  ],
+  errand: [
+    { ask: "So you stepped out for cigarettes?", answer: "No need — I keep a carton in the desk drawer.", clash: "he says he was out for cigarettes — yet keeps a carton in the drawer" },
+    { ask: "Which shop did you go to?", answer: "I didn't, in the end. The rain put me off going out.", clash: "he says he went out for cigarettes — yet the rain kept him in" },
+  ],
+  bath: [
+    { ask: "What were you doing just before bed?", answer: "Just sitting. Still had my coat on, truth be told.", clash: "he says he was in the bath — yet sat in his coat instead" },
+    { ask: "Did you hear the pipes that night?", answer: "Quiet as anything. I never ran a tap.", clash: "he says he was in the bath — yet never ran a tap" },
+  ],
+};
+const TELL_FALLBACK: Tell = { ask: "Walk me through your evening.", answer: "Nothing worth telling. A quiet night.", clash: "two of his own answers don't square" };
+
+/** One coherent tell for a support — ask/answer/clash chosen together. */
+export function tellFor(id: string, rng: () => number): Tell {
+  return pick(TELLS[id] ?? [TELL_FALLBACK], rng);
 }
 
 export function deflectionLine(supportId: string, attackShort: string, rng: () => number): string {

@@ -1,5 +1,5 @@
 import { WebCase, WebInquiry, WebEvidence } from "./web";
-import { questionLie, questionLever, leverReaction, patchLine, dudExchange, tellQuestion, tellAnswer, tellClash, keystoneQuestion } from "./phrasing";
+import { questionLie, questionLever, leverReaction, patchLine, dudExchange, tellFor, keystoneQuestion } from "./phrasing";
 
 /**
  * The interview (Act 1), the new front half of the game. The detective is given
@@ -61,7 +61,8 @@ export function buildQuestions(web: WebCase, rng: () => number): Question[] {
   const cs = supports[0];
   if (cs) {
     out.push({ id: "L0", kind: "lie", ask: questionLie(cs), answer: claimOf(cs), seg: cs, leverId: cleanBreaker(cs)?.id, patch: patchLine(cs) });
-    out.push({ id: "T0", kind: "tell", ask: tellQuestion(cs), answer: tellAnswer(cs), seg: cs, clash: tellClash(cs) });
+    const t0 = tellFor(cs, rng);
+    out.push({ id: "T0", kind: "tell", ask: t0.ask, answer: t0.answer, seg: cs, clash: t0.clash });
   }
   // The SECOND pair varies by seed, so two cases don't play the same: either a
   // second own-words contradiction (another support + its tell) or a record
@@ -70,7 +71,8 @@ export function buildQuestions(web: WebCase, rng: () => number): Question[] {
   let usedSeg: string | undefined;
   if (cs2 && rng() < 0.45) {
     out.push({ id: "La", kind: "lie", ask: questionLie(cs2), answer: claimOf(cs2), seg: cs2, leverId: cleanBreaker(cs2)?.id, patch: patchLine(cs2) });
-    out.push({ id: "Ta", kind: "tell", ask: tellQuestion(cs2), answer: tellAnswer(cs2), seg: cs2, clash: tellClash(cs2) });
+    const ta = tellFor(cs2, rng);
+    out.push({ id: "Ta", kind: "tell", ask: ta.ask, answer: ta.answer, seg: cs2, clash: ta.clash });
     usedSeg = cs2;
   } else {
     const ls = leverProps.find((p) => p.seg !== cs);
