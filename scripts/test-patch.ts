@@ -48,14 +48,22 @@ const mini: WebCase = {
   const baseIds = new Set(mini.segments.map((s) => s.id));
   if (baseIds.has(patch.seg)) fail("mini: patch segment is not new");
   else console.log("✓ cornered, a brand-new lie appears (16a):", JSON.stringify(patch.claim));
-  // 16b: the key attack no longer lands — it now deflects through the new claim
+  // 18a: NO free break — the moment the patch appears, you do not hold its seam
+  if (inq.heldEvidence().some((e) => e.id === patch.breaker)) fail("mini: patch breaker handed for free (18a)");
+  else console.log("✓ the patch's seam is not handed for free (18a)");
+  // 18a cont.: you can't break the patch yet — you haven't pressed into it
+  if (inq.present(patch.breaker).kind === "break") fail("mini: patch broke without earning its seam (18a)");
+  // 16b/18b: pressing the (now patch-covered) key deflects through the new claim
+  // AND reveals its seam via the ordinary recovery chain — earned, not gifted
   const after = inq.present("ek");
   if (after.kind !== "deflect" || after.via !== patch.seg) fail("mini: patch did not re-cover the key attack");
   else console.log("✓ the new lie re-covers the hole (16b)");
-  // 16c: the patch's seam was handed over and breaks it
-  if (!inq.heldEvidence().some((e) => e.id === patch.breaker)) fail("mini: patch breaker not held/revealed");
+  if (after.kind === "deflect" && after.revealed?.id !== patch.breaker) fail("mini: pressing the patch did not reveal its seam (18b)");
+  else console.log("✓ pressing into the new lie earns its seam (18b)");
+  // 16c/18c: now revealed, the seam breaks the patch
+  if (!inq.heldEvidence().some((e) => e.id === patch.breaker)) fail("mini: patch breaker not revealed after pressing in");
   if (inq.present(patch.breaker).kind !== "break") fail("mini: patch segment is not breakable");
-  else console.log("✓ the new lie is itself breakable (16c)");
+  else console.log("✓ the new lie is itself breakable, once earned (16c/18c)");
   // now the key has nothing left — it concedes, case solved (16d terminates)
   const fin = inq.present("ek");
   if (fin.kind !== "break" || !inq.solved) fail("mini: case did not solve after the patch was broken");

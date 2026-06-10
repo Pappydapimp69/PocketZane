@@ -1,4 +1,4 @@
-# LOCKED GOAL (loop 8)
+# LOCKED GOAL (loop 9)
 
 Fixed end-state specification for AGAIN. The only bar the independent checker
 measures against. Not edited during the loop. Amended between loops by the
@@ -53,7 +53,16 @@ that were productive, presents that closed door as a steer toward the prop it
 concerned. A revealed beat, not silent bookkeeping; not a free break; the case
 stays winnable whichever two go unasked.
 
-## Ratchet amendment (loop 8)
+## Ratchet amendment (loop 9)
+
+**The lie he invents must obey the same rule as every other claim: no free break.
+The patch's seam must be EARNED — revealed by pressing into the new lie through
+the ordinary recovery chain, not handed over the instant it appears — consistent
+with "you cannot press without evidence." The seam must always become reachable
+by pressing the patch, so the case stays verified solvable, terminating, and
+bounded with the patch live.**
+
+## Ratchet amendment (loop 8 — met, retained)
 
 **"Verified solvable" must mean verified in the configuration that actually
 ships. The confrontation runs with the patch mechanic LIVE, so the generator's

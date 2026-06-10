@@ -1,4 +1,4 @@
-# LOCKED RUBRIC (loop 8)
+# LOCKED RUBRIC (loop 9)
 
 The testable interpretation of the locked goal. Each criterion is judged by
 **observable behavior of the build** — by playing/testing it or by running its
@@ -36,7 +36,23 @@ evidence, the test performed, and the failure mode if any.
     are preserved: keystone cases occur and cascade; deflection/claim phrasing
     is seeded and does not repeat verbatim across uses.
 
-## Ratchet criterion (loop 8)
+## Ratchet criterion (loop 9)
+
+18. **The invented lie obeys "no free break" — its seam is earned.**
+    Judged observably (patch live):
+    a. **Not gifted:** the instant a patch spawns, the player does NOT hold its
+       breaker and cannot break the patch — pressing the seam before earning it
+       does nothing.
+    b. **Earned via the recovery chain:** presenting the (now patch-covered) key
+       attack deflects through the patch AND reveals the patch's seam, the same
+       recovery mechanic authored supports use (a `revealed` lead on the deflect).
+    c. **Then breakable, still solvable:** once revealed, presenting the seam
+       breaks the patch and the case proceeds to solved.
+    d. **Soundness preserved:** with this change the case is still verified
+       solvable, terminating, and bounded under the patch (criterion 17 holds),
+       and criteria 1–16 still hold.
+
+## Ratchet criterion (loop 8 — retained)
 
 17. **Solvability is verified in the shipped (patch-live) configuration.**
     Judged observably:

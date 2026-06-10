@@ -240,9 +240,10 @@ export class WebInquiry {
     this.text.set(segId, claim);
     // the new claim slides in to re-cover the key attack
     this.deflOverride.set(ke.id, [...this.effectiveDefl(ke).filter((d) => d !== brokenId), segId]);
-    // and its seam is reachable straight away — you hold the lead that breaks it
+    // its seam exists but is NOT handed to you — like every other support, you earn
+    // it by pressing into the new lie: leaning the key attack on the patch reveals
+    // the breaker through the ordinary recovery chain. No free break.
     this.extraEv.push({ id: breakerId, label: breakerLabel, targets: segId, deflectableBy: [] });
-    this.held.add(breakerId);
 
     return { seg: segId, name, claim, breaker: breakerId, breakerLabel };
   }
