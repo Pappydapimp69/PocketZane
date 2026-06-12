@@ -151,6 +151,9 @@ def main() -> int:
     ap.add_argument("--sample", type=int, default=None,
                     help="Randomly sample N videos from the full channel")
     ap.add_argument("--seed", type=int, default=None, help="Random seed for --sample")
+    ap.add_argument("--ids", default=None,
+                    help="Comma-separated video IDs or watch URLs. Skips Data API enumeration "
+                         "entirely (only a Gemini key is then needed).")
     ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--delay", type=float, default=1.0)
     ap.add_argument("--retries", type=int, default=4)
@@ -161,13 +164,22 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     fail_path = out_dir / "failures.jsonl"
 
-    print("[*] Enumerating channel via YouTube Data API…", file=sys.stderr)
-    uploads = get_uploads_playlist(key)
-    # --sample draws from the full list; --limit caps at enumeration time.
-    videos = list_uploads(key, uploads, None if args.sample else args.limit)
-    if args.sample:
-        videos = random.Random(args.seed).sample(videos, min(args.sample, len(videos)))
-        print(f"[*] Randomly sampled {len(videos)} of channel", file=sys.stderr)
+    if args.ids:
+        def _vid(tok: str) -> str:
+            tok = tok.strip()
+            m = re.search(r"(?:v=|youtu\.be/|/watch\?.*v=)([\w-]{11})", tok)
+            return m.group(1) if m else tok
+        videos = [{"id": _vid(t), "title": _vid(t), "published_at": ""}
+                  for t in args.ids.split(",") if t.strip()]
+        print(f"[*] {len(videos)} videos from --ids (no enumeration)", file=sys.stderr)
+    else:
+        print("[*] Enumerating channel via YouTube Data API…", file=sys.stderr)
+        uploads = get_uploads_playlist(key)
+        # --sample draws from the full list; --limit caps at enumeration time.
+        videos = list_uploads(key, uploads, None if args.sample else args.limit)
+        if args.sample:
+            videos = random.Random(args.seed).sample(videos, min(args.sample, len(videos)))
+            print(f"[*] Randomly sampled {len(videos)} of channel", file=sys.stderr)
     print(f"[*] {len(videos)} videos", file=sys.stderr)
 
     ok = skipped = failed = 0
