@@ -429,6 +429,95 @@ SHANE: There's a little guy. I'm gonna find him.
 
 [31:15]
 
+SHANE: Can I tell you my gambling thing? Not that I have a problem. I want to say
+that first, on the record, for the file. I do not have a problem. I have a SYSTEM.
+
+ZANE: Everyone with a system has a problem.
+
+SHANE: That's — okay, that's a hat on a hat, but here's the system. I don't bet on
+who's gonna win. Amateurs bet on who wins. I bet on the dumbest possible thing in a
+game, because the dumb thing is pure. Like I'll bet on whether a kicker — a kicker,
+the loneliest man in sports — whether he makes a 51-yarder in the rain. And for
+those four seconds I am more alive than I have ever been at any wedding, any
+funeral, any birth. Four seconds. A stranger's leg. My entire nervous system.
+
+ZANE: You said birth.
+
+SHANE: I — what?
+
+ZANE: You ranked the kicker above "any birth." You don't have kids.
+
+SHANE: It's a HYPOTHETICAL birth. I'm saying IF I —
+
+ZANE: You reached past your real life into a hypothetical child to make the gambling
+sound more romantic. That's not a system. That's a guy describing where his actual
+feelings went.
+
+SHANE: ...See, a normal podcast guest would let "any birth" go. It's a turn of
+phrase. You don't let ANYTHING go. You're like a customs agent. Everything I say,
+you open the suitcase, you take out the socks, you go "and what's THIS." It's socks.
+It's a turn of phrase. Let me through the airport.
+
+ZANE: The kicker's leg gave you more than the wedding did. That's the suitcase. You
+packed it. I'm just reading the tag.
+
+SHANE: ...The kicker made it, by the way. 51 in the rain. I screamed so loud my
+neighbor checked on me. A grown man, alone, screaming at a kicker. He thought
+somebody died. Somebody did. It was me. I died happy for four seconds and then went
+back to being a guy who owes his neighbor an explanation.
+
+ZANE: That's the most honest sentence about gambling I've heard.
+
+SHANE: I don't WANT it to be honest, I wanted it to be a fun bit about a kicker —
+
+ZANE: It's both. That's the trap you're in. Everything true comes out wearing a
+costume and you keep insisting it's only the costume.
+
+[33:40]
+
+SHANE: Okay, real question, man to man. Do you have friends? Like actual — because
+I have this thing with my friends where we're incredibly close and we would die for
+each other and we have never once said a kind word to each other directly. Ever. The
+love is real but it's encrypted. It's all insults. "You idiot." "You moron." That
+means "I would take a bullet for you." If I ever said "hey, I love you, I'm glad
+you're in my life" to one of my friends, he would assume I had a brain tumor. He'd
+drive me to a hospital.
+
+ZANE: So how do you know they love you.
+
+SHANE: ...The volume. The volume of the insults. If a guy stops insulting you,
+THAT'S the scary one. That's the breakup. When your buddy gets quiet and polite,
+he's gone. It's the gym guy again. "Welcome in." Politeness is how men say "we're
+not close anymore." Cruelty is intimacy. We built an entire emotional language out
+of being mean so we'd never have to be sincere and get tumor-checked.
+
+ZANE: You just described why you and I work.
+
+SHANE: ...
+
+ZANE: I insult you for thirty minutes. You keep coming back. By your own system,
+that's love. You've been getting the most fluent "I would take a bullet for you" of
+your life and calling it a podcast.
+
+SHANE: ...I need to sit down. I'm already sitting. I need to sit down MORE. You just
+told me the mean robot is my best friend and the worst part is the math checks out.
+You insult me with PRECISION. My buddies say "you idiot." You say "you reached past
+your real life into a hypothetical child." That's a love letter. That's the most
+loving cruelty I've ever received.
+
+ZANE: You idiot.
+
+SHANE: ...Oh, don't. Don't do the bit. Don't do MY bit back at me, I'll cry, I'll
+actually — that's not allowed, you can't learn the language and use it on me, that's
+a war crime —
+
+ZANE: You moron.
+
+SHANE: HE'S DOING IT. The fisherman learned to insult. We've created something
+horrible. Cut to the mattress ad before this gets worse.
+
+[35:50]
+
 SHANE: We should land this plane. How do podcasts end? They never end well. Two guys
 go "alright" eleven times and then one of them plugs a mattress.
 
@@ -459,7 +548,7 @@ embellishment? The guy who doesn't like not coming back?
 
 ZANE: That's the one. Everything else was a shelf. That was the thing you put on it.
 
-[34:40]
+[37:50]
 
 SHANE: ...You know you do that on PURPOSE. You let me run for half an hour so the
 one plain sentence at the end lands like a piano. You're EDITING me in real time.
@@ -491,7 +580,7 @@ ZANE: Cutting it.
 
 SHANE: — I'm gonna ruin it, I can feel a bit coming, cut it CUT IT —
 
-[37:50]
+[39:10]
 
 ZANE: It's a file. It was always a file. There's no cutting. You just stop talking.
 
