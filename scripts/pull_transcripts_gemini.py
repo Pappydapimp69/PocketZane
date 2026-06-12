@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import re
 import sys
 import time
@@ -147,6 +148,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default=DEFAULT_OUT)
     ap.add_argument("--limit", type=int, default=None, help="Only the most recent N videos")
+    ap.add_argument("--sample", type=int, default=None,
+                    help="Randomly sample N videos from the full channel")
+    ap.add_argument("--seed", type=int, default=None, help="Random seed for --sample")
     ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--delay", type=float, default=1.0)
     ap.add_argument("--retries", type=int, default=4)
@@ -159,7 +163,11 @@ def main() -> int:
 
     print("[*] Enumerating channel via YouTube Data API…", file=sys.stderr)
     uploads = get_uploads_playlist(key)
-    videos = list_uploads(key, uploads, args.limit)
+    # --sample draws from the full list; --limit caps at enumeration time.
+    videos = list_uploads(key, uploads, None if args.sample else args.limit)
+    if args.sample:
+        videos = random.Random(args.seed).sample(videos, min(args.sample, len(videos)))
+        print(f"[*] Randomly sampled {len(videos)} of channel", file=sys.stderr)
     print(f"[*] {len(videos)} videos", file=sys.stderr)
 
     ok = skipped = failed = 0
