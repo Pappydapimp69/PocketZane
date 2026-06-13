@@ -1,0 +1,26 @@
+{
+  "model_id": "eleven_v3",
+  "settings": {
+    "stability": 0.5,
+    "use_speaker_boost": true
+  },
+  "inputs": [
+    { "voice_id": "RJwtYukAuPwrUokQAElu", "text": "[deadpan] …so that's the whole pitch. You rent a conference room — nothing fancy, a Marriott ballroom, some folding chairs — and it's a workshop for English speakers who are dead serious about improving their Japanese accents." },
+    { "voice_id": "QEbcuZBRYsFsyfw9rHq3", "text": "[confused] Improving their— [laughs] their Japanese accents?" },
+    { "voice_id": "RJwtYukAuPwrUokQAElu", "text": "[matter-of-fact] Serious people only. No tourists." },
+    { "voice_id": "QEbcuZBRYsFsyfw9rHq3", "text": "Zane, buddy… [hesitant] this sounds — and I wanna be careful here — this sounds a little offensive." },
+    { "voice_id": "RJwtYukAuPwrUokQAElu", "text": "[dryly] See, that's exactly why it's for serious people only." },
+    { "voice_id": "QEbcuZBRYsFsyfw9rHq3", "text": "[skeptical] How does that fix it?" },
+    { "voice_id": "RJwtYukAuPwrUokQAElu", "text": "Because if anybody laughs, [firmly] they're out. Escorted from the building. This is academic." },
+    { "voice_id": "QEbcuZBRYsFsyfw9rHq3", "text": "[laughs] Okay, so picture the instructor up front. [doing a Japanese accent] \"Okay everyone, prease repeat after me. Wercome to da conference, dis way to da seminar.\" And nobody's allowed to crack up?" },
+    { "voice_id": "RJwtYukAuPwrUokQAElu", "text": "[deadpan] Stone faces. Clipboards out. [doing a Japanese accent] \"Berry good. Now we order da chicken teriyaki, prease. Extra rice.\"" },
+    { "voice_id": "QEbcuZBRYsFsyfw9rHq3", "text": "[bursts out laughing] You just laughed at your own —" },
+    { "voice_id": "RJwtYukAuPwrUokQAElu", "text": "[interrupting, flat] I'm the instructor. I'm allowed. [beat] You, though — you'd be ejected." },
+    { "voice_id": "QEbcuZBRYsFsyfw9rHq3", "text": "[incredulous] What's the certificate even say?" },
+    { "voice_id": "RJwtYukAuPwrUokQAElu", "text": "[proudly] \"Certified. Eight-week program.\" There's a final exam, too. You gotta order a full meal — [doing a Japanese accent] \"I rike da ramen, extra noodo, no onion, sankyu\" — without one single witness smiling." },
+    { "voice_id": "QEbcuZBRYsFsyfw9rHq3", "text": "[sighs] And if one guy in the back giggles?" },
+    { "voice_id": "RJwtYukAuPwrUokQAElu", "text": "[flatly] Whole class fails. Everybody pays again." },
+    { "voice_id": "QEbcuZBRYsFsyfw9rHq3", "text": "[laughs] Dude, you've built a scam." },
+    { "voice_id": "RJwtYukAuPwrUokQAElu", "text": "[deadpan] I've built a school." }
+  ]
+}
