@@ -43,3 +43,17 @@ Subtle flat Mid-Atlantic accent, measured wry cadence; shape tone and pronunciat
 | Zane fallback  | Brian | `nPczCjzI2devNBz1zQrb` |
 
 > Verify any ID in your account (My Voices → ⋮ → Copy Voice ID) before a real run.
+
+---
+
+## Accent-comedy voice (session update)
+
+For the tag-driven exaggerated-accent scripts in `accent-scripts/`, Zane was
+switched to a different voice during the session:
+
+- **Zane (accent work):** `ONYZZkijU95tbm0jlDBZ`
+- **Shane (unchanged):** `QEbcuZBRYsFsyfw9rHq3`
+
+Unlike the designed voices above, these scripts drive the accent **per line via
+tags** (`[thick exaggerated Japanese accent]` / `[normal voice]`), not baked-in.
+See `ACCENT_RULES.md` for the full phonetic + grammar + tag system.
