@@ -13,7 +13,7 @@ ElevenLabs → **Voice Design** → generate previews → Save to My Voices → 
 
 ## Shane — designed voice (Mechanicsburg, south-central PA)
 
-- **voice_id:** `TBD`
+- **voice_id:** `QEbcuZBRYsFsyfw9rHq3`
 - Voice Design prompt:
 
 ```
@@ -24,7 +24,7 @@ Plain flat American accent, lazy casual cadence; shape tone and pronunciation on
 
 ## Zane — designed voice (Allentown, eastern PA)
 
-- **voice_id:** `TBD`
+- **voice_id:** `RJwtYukAuPwrUokQAElu`
 - Voice Design prompt:
 
 ```
