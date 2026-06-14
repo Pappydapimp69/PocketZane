@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ElevenLabs Studio — Label Voice Assigner
 // @namespace    https://github.com/pappydapimp69/pocketzane
-// @version      0.1.0
+// @version      0.2.0
 // @description  Paste labeled, header-mapped text into ElevenLabs Studio; strip the labels, insert the clean text, and bulk-assign voices per role (voice-by-voice multi-select).
 // @match        https://elevenlabs.io/app/studio/*
 // @run-at       document-idle
@@ -98,6 +98,8 @@
     log: [],          // [{ t, level, msg }]
     report: null,     // structured summary of the latest run
     pickerSnapshot: null,
+    lastIndicatorHTML: null,      // last voice-indicator we clicked (capture-on-failure)
+    lastPopoverCandidates: null,  // visible popover-like nodes after a failed open
     lastPlan: null,
     lastLabelVoice: null,
     maxLog: 3000,
@@ -175,6 +177,25 @@
       cur = cur.firstElementChild;
     }
     return cur || el;
+  }
+
+  // Compact, log-friendly description of an element: tag, role, data-* and a
+  // short HTML preview. Used to surface picker markup even when detection fails.
+  function describeEl(el, htmlChars = 200) {
+    if (!el) return '(null)';
+    const attrs = [];
+    for (const a of el.attributes || []) {
+      if (a.name === 'role' || a.name === 'class' || a.name.startsWith('data-') || a.name.startsWith('aria-')) {
+        attrs.push(`${a.name}="${(a.value || '').slice(0, 60)}"`);
+      }
+    }
+    const html = (el.outerHTML || '').replace(/\s+/g, ' ').trim().slice(0, htmlChars);
+    return `<${el.tagName.toLowerCase()} ${attrs.join(' ')}> visible=${isVisible(el)} | ${html}`;
+  }
+
+  // All elements currently matching the broad picker-container selectors.
+  function allPickerContainers() {
+    return [...document.querySelectorAll(CONFIG.pickerContainerSelectors.join(','))];
   }
 
   // ----------------------------------------------------------------------------
@@ -290,6 +311,19 @@
     return [...seen.values()];
   }
 
+  // A voice token the user clearly didn't fill in: bracket/brace/angle-wrapped
+  // (`[voice]`, `<name>`, `{x}`) or a bare placeholder word. We must NOT trust
+  // these — feeding them to the picker is what crashed a prior run. Treat them
+  // as "needs a real choice" and route to the fixup dropdown.
+  function isPlaceholderVoice(v) {
+    const s = (v || '').trim();
+    if (!s) return true;
+    if (/^[[({<].*[\])}>]$/.test(s)) return true;       // wrapped in brackets
+    if (/[[\]{}<>]/.test(s)) return true;               // stray bracket chars
+    if (/^(voice|voicename|name|tbd|todo|xxx+|\?+)$/i.test(s)) return true;
+    return false;
+  }
+
   // Resolve a header voice name against a list of {name} voices.
   // Returns { status: 'ok'|'none'|'ambiguous', match?, candidates? }.
   function resolveVoiceName(name, voices) {
@@ -321,6 +355,18 @@
     return [...list];
   }
 
+  // Nodes aligned to the plan. If the editor holds MORE nodes than the plan
+  // (e.g. a stale node survived the clear), the ones our paste created are the
+  // TRAILING `planLength` nodes — so we drive/verify those, not the leading
+  // residue, keeping plan[i] ↔ node[i] aligned.
+  function getPlanNodes(planLength) {
+    const nodes = getNodes();
+    if (planLength > 0 && nodes.length > planLength) {
+      return nodes.slice(nodes.length - planLength);
+    }
+    return nodes;
+  }
+
   async function insertIntoEditor(text) {
     const editor = getEditor();
     if (!editor) {
@@ -328,13 +374,19 @@
       return false;
     }
     editor.focus();
-    // Clear existing content.
-    try {
-      document.execCommand('selectAll', false, null);
-      document.execCommand('delete', false, null);
-    } catch (_) {}
+    // Clear existing content. Retry once — a single selectAll+delete sometimes
+    // leaves residual default nodes, which would shift node↔plan alignment.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        document.execCommand('selectAll', false, null);
+        document.execCommand('delete', false, null);
+      } catch (_) {}
+      await sleep(80);
+      if (countNodes() === 0) break;
+    }
 
     const before = countNodes();
+    if (before > 0) log('clear: editor still has', before, 'node(s) after clear; will align to trailing nodes');
 
     // Primary: synthetic paste, so we reuse Studio's own paragraph-splitting.
     let pasted = false;
@@ -390,20 +442,38 @@
       warn('no voice indicator found to open the picker');
       return null;
     }
-    const known = new Set([...document.querySelectorAll(CONFIG.pickerContainerSelectors.join(','))]);
+    log('picker: using indicator', describeEl(indicator, 0));
+
+    // Track VISIBILITY, not mere existence: Radix/ElevenLabs popovers are often
+    // pre-rendered hidden and just toggled visible, so a container that existed
+    // (hidden) before the click is still the freshly-opened picker. We snapshot
+    // which containers were *visible* before, then accept any that became visible.
+    const visibleBefore = new Set(allPickerContainers().filter(isVisible));
+    log('picker: containers before click —', `total=${allPickerContainers().length}`, `visible=${visibleBefore.size}`);
+
     await realClick(indicator);
+
     const container = await waitFor(
       () => {
-        const all = [...document.querySelectorAll(CONFIG.pickerContainerSelectors.join(','))];
-        const fresh = all.filter((el) => isVisible(el) && !known.has(el));
+        const fresh = allPickerContainers().filter((el) => isVisible(el) && !visibleBefore.has(el));
         return fresh.length ? fresh[fresh.length - 1] : null;
       },
       { timeout: CONFIG.pickerOpenTimeout, poll: CONFIG.pickerPoll }
     );
+
     if (!container) {
-      warn('picker did not open / not detected');
+      // Capture-on-failure: dump whatever popover-like markup is visible now so
+      // the next debug blob carries actionable picker DOM even though detection
+      // missed it. (See snapshotPickerDOM for the persisted version.)
+      const after = allPickerContainers();
+      const visibleNow = after.filter(isVisible);
+      warn('picker did not open / not detected;', `containers now total=${after.length} visible=${visibleNow.length}`);
+      visibleNow.slice(-5).forEach((el, i) => warn(`  candidate[${i}]`, describeEl(el)));
+      RUN.lastIndicatorHTML = indicator.outerHTML;
+      RUN.lastPopoverCandidates = visibleNow.slice(-5).map((el) => el.outerHTML);
       return null;
     }
+    log('picker: opened', describeEl(container, 0));
     return container;
   }
 
@@ -487,9 +557,10 @@
   }
 
   async function runAssignment(plan, labelVoice) {
-    const nodes = getNodes();
-    if (nodes.length !== plan.length) {
-      warn(`node count (${nodes.length}) != plan length (${plan.length}); proceeding on the overlap`);
+    const total = getNodes().length;
+    const nodes = getPlanNodes(plan.length);
+    if (total !== plan.length) {
+      warn(`node count (${total}) != plan length (${plan.length}); aligning to ${nodes.length} trailing node(s)`);
     }
     // Group node indices by resolved voice name.
     const groups = new Map(); // voiceName -> [nodeEl]
@@ -529,7 +600,8 @@
   // when we don't know the target voiceIds: checks per-group uniformity and
   // cross-group distinctness; checks exact id when the name is known on a node.
   function verifyAssignment(plan, labelVoice) {
-    const nodes = getNodes();
+    const totalNodes = getNodes().length;
+    const nodes = getPlanNodes(plan.length); // verify the nodes we actually drove
     const ids = nodes.map((nd) => nd.getAttribute('data-voiceid') || null);
     const n = Math.min(nodes.length, plan.length);
     const nameId = voiceIdByNameFromNodes();
@@ -559,9 +631,10 @@
     const distinctAcrossGroups = new Set(groupIds).size === groupIds.length;
 
     return {
-      nodeCount: nodes.length,
+      nodeCount: totalNodes,
+      alignedNodeCount: nodes.length,
       planLength: plan.length,
-      countsMatch: nodes.length === plan.length,
+      countsMatch: totalNodes === plan.length,
       distinctVoiceIds: [...new Set(ids.filter(Boolean))],
       perGroup,
       distinctAcrossGroups,
@@ -576,12 +649,27 @@
     const nodes = getNodes();
     if (!nodes.length) { warn('snapshot: no nodes to open a picker from'); return null; }
     const container = await openPickerFor(nodes[0]);
-    if (!container) { warn('snapshot: picker did not open'); return null; }
+    if (!container) {
+      // Capture-on-failure: openPickerFor stashed the indicator + visible
+      // popover candidates. Persist them so Copy debug still carries markup.
+      warn('snapshot: picker did not open — capturing indicator + visible candidates instead');
+      const candidates = RUN.lastPopoverCandidates || [];
+      RUN.pickerSnapshot = {
+        opened: false,
+        rows: [],
+        indicatorHTML: RUN.lastIndicatorHTML || null,
+        candidates,
+        html: candidates.join('\n\n---\n\n'),
+      };
+      await closePicker();
+      refreshDebugTab();
+      return RUN.pickerSnapshot;
+    }
     const rows = scrapePickerRows(container);
     const html = container.outerHTML;
     log('PICKER SNAPSHOT rows:', rows.map((r) => r.name));
     log('PICKER SNAPSHOT html length:', html.length);
-    RUN.pickerSnapshot = { rows: rows.map((r) => r.name), html };
+    RUN.pickerSnapshot = { opened: true, rows: rows.map((r) => r.name), html };
     await closePicker();
     refreshDebugTab();
     return RUN.pickerSnapshot;
@@ -597,11 +685,19 @@
     lines.push('--- run report ---');
     lines.push(JSON.stringify(RUN.report, null, 2));
     if (RUN.pickerSnapshot) {
+      const snap = RUN.pickerSnapshot;
       lines.push('');
-      lines.push('--- picker snapshot: row names ---');
-      lines.push(JSON.stringify(RUN.pickerSnapshot.rows, null, 2));
-      lines.push('--- picker snapshot: outerHTML ---');
-      lines.push(RUN.pickerSnapshot.html);
+      lines.push('--- picker snapshot (opened: ' + (snap.opened !== false) + ') ---');
+      lines.push('row names: ' + JSON.stringify(snap.rows || [], null, 2));
+      if (snap.opened === false) {
+        lines.push('--- picker snapshot: indicator outerHTML (open FAILED) ---');
+        lines.push(snap.indicatorHTML || '(none captured)');
+        lines.push('--- picker snapshot: visible popover candidates (open FAILED) ---');
+        lines.push((snap.candidates && snap.candidates.length) ? snap.html : '(none captured)');
+      } else {
+        lines.push('--- picker snapshot: outerHTML ---');
+        lines.push(snap.html);
+      }
     }
     lines.push('');
     lines.push('--- log (' + RUN.log.length + ' entries) ---');
@@ -661,7 +757,15 @@
   }
 
   function openModal() {
-    closeModal();
+    // If a (possibly minimized) modal already exists, just re-show it with all
+    // state intact — clicking off minimizes, it does not reset.
+    const existing = document.getElementById('elab-va-overlay');
+    if (existing) {
+      existing.style.display = 'flex';
+      const inp = existing.querySelector('#elab-va-input');
+      if (inp) inp.focus();
+      return;
+    }
     const overlay = el('div', {
       id: 'elab-va-overlay',
       style: {
@@ -670,7 +774,8 @@
         alignItems: 'center', justifyContent: 'center',
       },
     });
-    overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) closeModal(); });
+    // Click-off → minimize (keep state), not close+reset.
+    overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) minimizeModal(); });
 
     const panel = el('div', {
       style: {
@@ -722,9 +827,11 @@
     const goBtn = el('button', { style: { ...baseBtn } }, 'Insert + Assign');
     const insertBtn = el('button', { style: { ...baseBtn, background: '#fff', color: '#111' } }, 'Insert clean text only');
     const copyBtn = el('button', { style: { ...baseBtn, background: '#fff', color: '#111' } }, 'Copy clean text');
-    const closeBtn = el('button', { style: { ...baseBtn, background: '#fff', color: '#111' } }, 'Close');
-    row.append(goBtn, insertBtn, copyBtn, closeBtn);
+    const minBtn = el('button', { style: { ...baseBtn, background: '#fff', color: '#111' } }, 'Minimize');
+    const closeBtn = el('button', { style: { ...baseBtn, background: '#fff', color: '#111' }, title: 'Close and reset' }, 'Close');
+    row.append(goBtn, insertBtn, copyBtn, minBtn, closeBtn);
 
+    minBtn.addEventListener('click', minimizeModal);
     closeBtn.addEventListener('click', closeModal);
     copyBtn.addEventListener('click', () => {
       const { cleanText } = computeFromInput(ta.value, status);
@@ -740,7 +847,14 @@
       await insertIntoEditor(parsed.cleanText);
       setStatus(status, `Inserted. ${countNodes()} node(s) in the editor.`);
     });
-    goBtn.addEventListener('click', () => runFlow(ta.value, status, fixup));
+    goBtn.addEventListener('click', async () => {
+      try {
+        await runFlow(ta.value, status, fixup);
+      } catch (e) {
+        warn('runFlow threw:', e && e.message ? e.message : String(e));
+        setStatus(status, `✗ FAILED — ${e && e.message ? e.message : String(e)}. Debug tab → Copy debug.`);
+      }
+    });
 
     runView.append(help, ta, row, status, fixup);
 
@@ -773,9 +887,20 @@
       setStatus(dStatus, `Copied ${blob.length} chars to clipboard.`);
     });
     dSnap.addEventListener('click', async () => {
-      setStatus(dStatus, 'Opening picker to snapshot…');
-      const snap = await snapshotPickerDOM();
-      setStatus(dStatus, snap ? `Captured picker (${snap.rows.length} rows, ${snap.html.length} chars).` : 'Could not capture picker (see log).');
+      try {
+        setStatus(dStatus, 'Opening picker to snapshot…');
+        const snap = await snapshotPickerDOM();
+        if (!snap) {
+          setStatus(dStatus, 'Could not capture picker (no nodes / see log).');
+        } else if (snap.opened === false) {
+          setStatus(dStatus, `Picker did not open — captured indicator + ${snap.candidates.length} visible candidate(s) instead (see Copy debug).`);
+        } else {
+          setStatus(dStatus, `Captured picker (${snap.rows.length} rows, ${snap.html.length} chars).`);
+        }
+      } catch (e) {
+        warn('snapshot threw:', e && e.message ? e.message : String(e));
+        setStatus(dStatus, `Snapshot failed: ${e && e.message ? e.message : String(e)} (see log).`);
+      }
       refreshDebugTab();
     });
     dVerify.addEventListener('click', () => {
@@ -809,6 +934,13 @@
     };
   }
 
+  // Minimize: hide the modal but keep the element (and all its state — textarea,
+  // current tab, debug log) alive. Re-clicking the launcher re-shows it.
+  function minimizeModal() {
+    const o = document.getElementById('elab-va-overlay');
+    if (o) o.style.display = 'none';
+  }
+  // Close: fully tear down and reset (next open starts fresh).
   function closeModal() {
     const o = document.getElementById('elab-va-overlay');
     if (o) o.remove();
@@ -845,6 +977,23 @@
     RUN.lastPlan = plan;
     log('parse:', { roles: header.order.length, paragraphs: plan.length });
 
+    // Pre-flight: verify the parse before touching the editor. Surface flagged
+    // (placeholder) voice tokens so a malformed header is caught up front, not
+    // mid-assign.
+    const flagged = header.order
+      .map((label) => ({ label, ...header.map[label] }))
+      .filter((r) => r.voice && isPlaceholderVoice(r.voice));
+    RUN.report.preflight = {
+      roles: header.order.length,
+      paragraphs: plan.length,
+      flagged: flagged.map((r) => ({ label: r.label, title: r.title, token: r.voice })),
+    };
+    if (flagged.length) {
+      const list = flagged.map((r) => `“${r.voice}” (${r.title})`).join(', ');
+      log('preflight: ignoring invalid voice token(s):', list);
+      setStatus(status, `Heads up: ${flagged.length} invalid voice token(s) ignored — ${list}. You'll be asked to pick. Inserting…`);
+    }
+
     setStatus(status, 'Inserting clean text into the editor…');
     const nodesBefore = countNodes();
     const inserted = await insertIntoEditor(cleanText);
@@ -869,6 +1018,11 @@
       needFix.length = 0;
       for (const r of roles) {
         if (!r.voice) { needFix.push({ label: r.label, title: r.title, reason: 'no-voice' }); continue; }
+        if (isPlaceholderVoice(r.voice)) {
+          // Don't trust placeholder syntax; don't let it trigger a picker scrape.
+          needFix.push({ label: r.label, title: r.title, reason: 'placeholder', wanted: r.voice });
+          continue;
+        }
         const res = resolveVoiceName(r.voice, voices);
         if (res.status === 'ok') labelVoice.set(r.label, res.match.name);
         else needFix.push({ label: r.label, title: r.title, reason: res.status, wanted: r.voice });
@@ -882,7 +1036,9 @@
     tryResolveAll();
 
     // If anything failed to resolve, try a live picker scrape to widen the set.
-    if (needFix.some((f) => f.reason !== 'no-voice')) {
+    // 'no-voice' and 'placeholder' are intentional prompts, not lookup misses —
+    // they should NOT trigger a scrape.
+    if (needFix.some((f) => f.reason !== 'no-voice' && f.reason !== 'placeholder')) {
       setStatus(status, statusMsg + ' Scraping voice list…');
       const scraped = await scrapeAllVoicesViaPicker();
       RUN.report.voices.scraped = scraped.map((v) => v.name);
@@ -910,7 +1066,10 @@
     byTitle.forEach((info) => {
       const line = el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' } });
       const lab = el('div', { style: { minWidth: '160px' } },
-        `Pick a voice for “${info.title}”` + (info.reason === 'none' ? ` (no match for “${info.wanted}”)` : info.reason === 'ambiguous' ? ` (“${info.wanted}” was ambiguous)` : ''));
+        `Pick a voice for “${info.title}”` + (
+          info.reason === 'none' ? ` (no match for “${info.wanted}”)` :
+          info.reason === 'ambiguous' ? ` (“${info.wanted}” was ambiguous)` :
+          info.reason === 'placeholder' ? ` (ignored invalid “${info.wanted}”)` : ''));
       const sel = el('select', { style: { flex: '1', padding: '6px', borderRadius: '6px', border: '1px solid #ccc' } });
       sel.append(el('option', { value: '' }, '— choose —'));
       voices.forEach((v) => sel.append(el('option', { value: v.name }, v.name)));
@@ -934,16 +1093,25 @@
     });
 
     async function finishAssign() {
-      setStatus(status, 'Assigning voices…');
-      RUN.lastLabelVoice = labelVoice;
-      RUN.report.labelVoice = [...labelVoice.entries()].map(([label, voice]) => ({ label, voice }));
-      const res = await runAssignment(plan, labelVoice);
-      RUN.report.assign = res;
-      RUN.report.verify = verifyAssignment(plan, labelVoice);
-      RUN.report.finishedAt = new Date().toISOString();
-      refreshDebugTab();
-      const v = RUN.report.verify;
-      setStatus(status, `Done: assigned ${res.ok}/${res.groups} group(s); verify score ${v.score}. Open the Debug tab → Copy debug. Then save.`);
+      let terminal = '✗ FAILED — see Debug tab → Copy debug.';
+      try {
+        setStatus(status, 'Assigning voices…');
+        RUN.lastLabelVoice = labelVoice;
+        RUN.report.labelVoice = [...labelVoice.entries()].map(([label, voice]) => ({ label, voice }));
+        const res = await runAssignment(plan, labelVoice);
+        RUN.report.assign = res;
+        RUN.report.verify = verifyAssignment(plan, labelVoice);
+        const v = RUN.report.verify;
+        terminal = `✓ DONE — assigned ${res.ok}/${res.groups} group(s); verify ${v.score}. Debug tab → Copy debug, then save.`;
+      } catch (e) {
+        warn('assignment threw:', e && e.message ? e.message : String(e));
+        RUN.report.error = (e && e.stack) ? e.stack : String(e);
+        terminal = `✗ FAILED — ${e && e.message ? e.message : String(e)}. Debug tab → Copy debug.`;
+      } finally {
+        RUN.report.finishedAt = new Date().toISOString();
+        refreshDebugTab();
+        setStatus(status, terminal);
+      }
     }
   }
 
