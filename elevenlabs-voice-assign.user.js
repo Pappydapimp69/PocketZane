@@ -91,10 +91,36 @@
   window[SS] = true;
 
   // ----------------------------------------------------------------------------
+  // debug capture — every log is mirrored into a ring buffer + a structured
+  // run report, surfaced in the popup's Debug tab ("Copy debug" -> paste to me).
+  // ----------------------------------------------------------------------------
+  const RUN = {
+    log: [],          // [{ t, level, msg }]
+    report: null,     // structured summary of the latest run
+    pickerSnapshot: null,
+    lastPlan: null,
+    lastLabelVoice: null,
+    maxLog: 3000,
+  };
+  let dbgEl = null;   // the Debug tab <textarea>, when the modal is open
+  function refreshDebugTab() {
+    if (dbgEl && dbgEl.isConnected) dbgEl.value = buildDebugBlob();
+  }
+  function stringifyArg(a) {
+    if (typeof a === 'string') return a;
+    try { return JSON.stringify(a); } catch (_) { return String(a); }
+  }
+  function rec(level, args) {
+    RUN.log.push({ t: Date.now(), level, msg: args.map(stringifyArg).join(' ') });
+    if (RUN.log.length > RUN.maxLog) RUN.log.splice(0, RUN.log.length - RUN.maxLog);
+    refreshDebugTab();
+  }
+  const log = (...a) => { if (CONFIG.debug) console.log('[voice-assign]', ...a); rec('log', a); };
+  const warn = (...a) => { console.warn('[voice-assign]', ...a); rec('warn', a); };
+
+  // ----------------------------------------------------------------------------
   // small utils
   // ----------------------------------------------------------------------------
-  const log = (...a) => CONFIG.debug && console.log('[voice-assign]', ...a);
-  const warn = (...a) => console.warn('[voice-assign]', ...a);
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const norm = (s) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
@@ -485,6 +511,105 @@
   }
 
   // ----------------------------------------------------------------------------
+  // self-grading / verification
+  // ----------------------------------------------------------------------------
+
+  // name -> voiceId, derived from whatever voices are currently on nodes.
+  function voiceIdByNameFromNodes() {
+    const m = new Map();
+    document.querySelectorAll(CONFIG.voiceIndicatorAny).forEach((btn) => {
+      const id = (btn.getAttribute('data-agent-id') || '').replace(/^voice-indicator-(mobile-)?/, '');
+      const name = (btn.getAttribute('aria-label') || '').replace(/^\s*Select\s+/i, '').trim();
+      if (name && id && !m.has(norm(name))) m.set(norm(name), id);
+    });
+    return m;
+  }
+
+  // Re-read each node's data-voiceid and grade it against the plan. Works even
+  // when we don't know the target voiceIds: checks per-group uniformity and
+  // cross-group distinctness; checks exact id when the name is known on a node.
+  function verifyAssignment(plan, labelVoice) {
+    const nodes = getNodes();
+    const ids = nodes.map((nd) => nd.getAttribute('data-voiceid') || null);
+    const n = Math.min(nodes.length, plan.length);
+    const nameId = voiceIdByNameFromNodes();
+    const DEFAULT = '21m00Tcm4TlvDq8ikWAM'; // Rachel = Studio default
+
+    const groups = new Map(); // voiceName -> [nodeIndex]
+    for (let i = 0; i < n; i++) {
+      const v = labelVoice && labelVoice.get(plan[i].label);
+      if (!v) continue;
+      if (!groups.has(v)) groups.set(v, []);
+      groups.get(v).push(i);
+    }
+
+    const perGroup = [];
+    let pass = 0, total = 0;
+    for (const [voice, idxs] of groups) {
+      const got = idxs.map((i) => ids[i]);
+      const uniform = new Set(got).size === 1;
+      const expectedId = nameId.get(norm(voice)) || null;
+      const matchesId = expectedId ? got.every((g) => g === expectedId) : null;
+      const stillDefault = got.every((g) => g === DEFAULT);
+      const ok = uniform && matchesId !== false && !stillDefault;
+      perGroup.push({ voice, nodes: idxs.length, uniform, voiceId: got[0], expectedId, matchesId, stillDefault, ok });
+      total++; if (ok) pass++;
+    }
+    const groupIds = perGroup.map((g) => g.voiceId);
+    const distinctAcrossGroups = new Set(groupIds).size === groupIds.length;
+
+    return {
+      nodeCount: nodes.length,
+      planLength: plan.length,
+      countsMatch: nodes.length === plan.length,
+      distinctVoiceIds: [...new Set(ids.filter(Boolean))],
+      perGroup,
+      distinctAcrossGroups,
+      score: total ? `${pass}/${total}` : 'n/a',
+      pass, total,
+    };
+  }
+
+  // Open the voice picker, capture its container outerHTML + scraped rows, close
+  // it. Lets us grab the elusive picker markup with one click.
+  async function snapshotPickerDOM() {
+    const nodes = getNodes();
+    if (!nodes.length) { warn('snapshot: no nodes to open a picker from'); return null; }
+    const container = await openPickerFor(nodes[0]);
+    if (!container) { warn('snapshot: picker did not open'); return null; }
+    const rows = scrapePickerRows(container);
+    const html = container.outerHTML;
+    log('PICKER SNAPSHOT rows:', rows.map((r) => r.name));
+    log('PICKER SNAPSHOT html length:', html.length);
+    RUN.pickerSnapshot = { rows: rows.map((r) => r.name), html };
+    await closePicker();
+    refreshDebugTab();
+    return RUN.pickerSnapshot;
+  }
+
+  function buildDebugBlob() {
+    const lines = [];
+    lines.push('=== ElevenLabs Voice Assigner — debug ===');
+    lines.push('url: ' + location.href);
+    lines.push('time: ' + new Date().toISOString());
+    lines.push('userAgent: ' + navigator.userAgent);
+    lines.push('');
+    lines.push('--- run report ---');
+    lines.push(JSON.stringify(RUN.report, null, 2));
+    if (RUN.pickerSnapshot) {
+      lines.push('');
+      lines.push('--- picker snapshot: row names ---');
+      lines.push(JSON.stringify(RUN.pickerSnapshot.rows, null, 2));
+      lines.push('--- picker snapshot: outerHTML ---');
+      lines.push(RUN.pickerSnapshot.html);
+    }
+    lines.push('');
+    lines.push('--- log (' + RUN.log.length + ' entries) ---');
+    RUN.log.forEach((e) => lines.push(`[${e.level}] ${e.msg}`));
+    return lines.join('\n');
+  }
+
+  // ----------------------------------------------------------------------------
   // UI
   // ----------------------------------------------------------------------------
   const Z = 2147483000;
@@ -557,6 +682,24 @@
     });
 
     const title = el('div', { style: { font: '600 16px/1.2 Inter, system-ui, sans-serif', marginBottom: '6px' } }, 'Label Voice Assigner');
+
+    // tab bar
+    const tabRun = el('button', { style: tabStyle(true) }, 'Run');
+    const tabDbg = el('button', { style: tabStyle(false) }, 'Debug');
+    const tabs = el('div', { style: { display: 'flex', gap: '6px', margin: '4px 0 12px' } }, [tabRun, tabDbg]);
+    const runView = el('div', {});
+    const dbgView = el('div', { style: { display: 'none' } });
+    function showTab(which) {
+      const onRun = which === 'run';
+      runView.style.display = onRun ? '' : 'none';
+      dbgView.style.display = onRun ? 'none' : '';
+      Object.assign(tabRun.style, tabStyle(onRun));
+      Object.assign(tabDbg.style, tabStyle(!onRun));
+      if (!onRun) refreshDebugTab();
+    }
+    tabRun.addEventListener('click', () => showTab('run'));
+    tabDbg.addEventListener('click', () => showTab('debug'));
+
     const help = el('div', { style: { color: '#555', marginBottom: '10px' } },
       'Paste header + labeled text. Header lines: "1 = host, zane" (role, voice) or "3 = narrator" (role, voice prompted). Body paragraphs start with the label.');
 
@@ -599,15 +742,77 @@
     });
     goBtn.addEventListener('click', () => runFlow(ta.value, status, fixup));
 
-    panel.append(title, help, ta, row, status, fixup);
+    runView.append(help, ta, row, status, fixup);
+
+    // ---- Debug tab ----
+    const dbgHelp = el('div', { style: { color: '#555', marginBottom: '8px' } },
+      'Logs + a self-graded run report. After a run, click "Verify now" then "Copy debug" and paste it back to me. "Snapshot picker DOM" grabs the voice picker markup.');
+    dbgEl = el('textarea', {
+      readOnly: true,
+      style: {
+        width: '100%', height: '300px', boxSizing: 'border-box',
+        border: '1px solid #ddd', borderRadius: '8px', padding: '10px',
+        font: '400 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace',
+        whiteSpace: 'pre', resize: 'vertical',
+      },
+    });
+    const dRow = el('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' } });
+    const dRefresh = el('button', { style: { ...baseBtn, background: '#fff', color: '#111' } }, 'Refresh');
+    const dCopy = el('button', { style: { ...baseBtn } }, 'Copy debug');
+    const dSnap = el('button', { style: { ...baseBtn, background: '#fff', color: '#111' } }, 'Snapshot picker DOM');
+    const dVerify = el('button', { style: { ...baseBtn, background: '#fff', color: '#111' } }, 'Verify now');
+    const dClear = el('button', { style: { ...baseBtn, background: '#fff', color: '#111' } }, 'Clear log');
+    dRow.append(dRefresh, dCopy, dSnap, dVerify, dClear);
+    const dStatus = el('div', { style: { marginTop: '8px', minHeight: '18px', color: '#333' } });
+
+    dRefresh.addEventListener('click', refreshDebugTab);
+    dCopy.addEventListener('click', () => {
+      const blob = buildDebugBlob();
+      try { GM_setClipboard(blob, { type: 'text', mimetype: 'text/plain' }); }
+      catch (_) { navigator.clipboard && navigator.clipboard.writeText(blob); }
+      setStatus(dStatus, `Copied ${blob.length} chars to clipboard.`);
+    });
+    dSnap.addEventListener('click', async () => {
+      setStatus(dStatus, 'Opening picker to snapshot…');
+      const snap = await snapshotPickerDOM();
+      setStatus(dStatus, snap ? `Captured picker (${snap.rows.length} rows, ${snap.html.length} chars).` : 'Could not capture picker (see log).');
+      refreshDebugTab();
+    });
+    dVerify.addEventListener('click', () => {
+      if (!RUN.lastPlan || !RUN.lastLabelVoice) { setStatus(dStatus, 'Run "Insert + Assign" first, then verify.'); return; }
+      const v = verifyAssignment(RUN.lastPlan, RUN.lastLabelVoice);
+      RUN.report = RUN.report || {};
+      RUN.report.verify = v;
+      refreshDebugTab();
+      setStatus(dStatus, `Verify score ${v.score} (distinct across groups: ${v.distinctAcrossGroups}).`);
+    });
+    dClear.addEventListener('click', () => { RUN.log = []; refreshDebugTab(); });
+
+    dbgView.append(dbgHelp, dbgEl, dRow, dStatus);
+
+    panel.append(title, tabs, runView, dbgView);
     overlay.appendChild(panel);
     document.body.appendChild(overlay);
+    refreshDebugTab();
     ta.focus();
+  }
+
+  function tabStyle(active) {
+    return {
+      cursor: 'pointer',
+      border: '1px solid ' + (active ? '#111' : '#ddd'),
+      background: active ? '#111' : '#fff',
+      color: active ? '#fff' : '#444',
+      borderRadius: '8px',
+      padding: '6px 14px',
+      font: '600 13px/1.2 Inter, system-ui, sans-serif',
+    };
   }
 
   function closeModal() {
     const o = document.getElementById('elab-va-overlay');
     if (o) o.remove();
+    dbgEl = null;
   }
   function setStatus(node, msg) { if (node) node.textContent = msg; }
 
@@ -633,17 +838,27 @@
     if (!parsed) return;
     const { header, plan, cleanText } = parsed;
 
+    RUN.report = {
+      startedAt: new Date().toISOString(),
+      parse: { roles: header.order.length, paragraphs: plan.length, cleanChars: cleanText.length },
+    };
+    RUN.lastPlan = plan;
+    log('parse:', { roles: header.order.length, paragraphs: plan.length });
+
     setStatus(status, 'Inserting clean text into the editor…');
+    const nodesBefore = countNodes();
     const inserted = await insertIntoEditor(cleanText);
     if (!inserted) { setStatus(status, 'Could not insert text into the editor (is a Studio project open?).'); return; }
 
     const nodeCount = countNodes();
+    RUN.report.insert = { nodesBefore, nodesAfter: nodeCount, planLength: plan.length, countsMatch: nodeCount === plan.length };
     let statusMsg = `Inserted ${nodeCount} node(s).`;
     if (nodeCount !== plan.length) statusMsg += ` Note: plan has ${plan.length} paragraph(s) — counts differ, will assign on the overlap.`;
     setStatus(status, statusMsg + ' Discovering voices…');
 
     // Available voices: node seed, plus a picker scrape if some names don't resolve.
     let voices = await discoverVoices();
+    RUN.report.voices = { seed: voices.map((v) => v.name) };
 
     // Which roles need a voice? (header voice present and resolvable, or prompt)
     const roles = header.order.map((label) => ({ label, ...header.map[label] }));
@@ -658,6 +873,11 @@
         if (res.status === 'ok') labelVoice.set(r.label, res.match.name);
         else needFix.push({ label: r.label, title: r.title, reason: res.status, wanted: r.voice });
       }
+      RUN.report.resolve = roles.map((r) => ({
+        label: r.label, title: r.title, wanted: r.voice || null,
+        resolvedTo: labelVoice.get(r.label) || null,
+        needsFix: needFix.some((f) => f.label === r.label),
+      }));
     }
     tryResolveAll();
 
@@ -665,6 +885,7 @@
     if (needFix.some((f) => f.reason !== 'no-voice')) {
       setStatus(status, statusMsg + ' Scraping voice list…');
       const scraped = await scrapeAllVoicesViaPicker();
+      RUN.report.voices.scraped = scraped.map((v) => v.name);
       if (scraped.length) {
         const seen = new Set(voices.map((v) => norm(v.name)));
         scraped.forEach((v) => { if (!seen.has(norm(v.name))) voices.push(v); });
@@ -714,8 +935,15 @@
 
     async function finishAssign() {
       setStatus(status, 'Assigning voices…');
+      RUN.lastLabelVoice = labelVoice;
+      RUN.report.labelVoice = [...labelVoice.entries()].map(([label, voice]) => ({ label, voice }));
       const res = await runAssignment(plan, labelVoice);
-      setStatus(status, `Done: assigned ${res.ok}/${res.groups} voice group(s). Verify, then save.`);
+      RUN.report.assign = res;
+      RUN.report.verify = verifyAssignment(plan, labelVoice);
+      RUN.report.finishedAt = new Date().toISOString();
+      refreshDebugTab();
+      const v = RUN.report.verify;
+      setStatus(status, `Done: assigned ${res.ok}/${res.groups} group(s); verify score ${v.score}. Open the Debug tab → Copy debug. Then save.`);
     }
   }
 
