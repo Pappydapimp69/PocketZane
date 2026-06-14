@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         ElevenLabs Studio — Label Voice Assigner
 // @namespace    https://github.com/pappydapimp69/pocketzane
-// @version      0.2.0
+// @version      0.3.0
 // @description  Paste labeled, header-mapped text into ElevenLabs Studio; strip the labels, insert the clean text, and bulk-assign voices per role (voice-by-voice multi-select).
 // @match        https://elevenlabs.io/app/studio/*
 // @run-at       document-idle
 // @grant        GM_setClipboard
+// @grant        unsafeWindow
 // ==/UserScript==
 
 /*
@@ -145,6 +146,24 @@
     return st.visibility !== 'hidden' && st.display !== 'none' && st.opacity !== '0';
   }
 
+  // The page's REAL Window. Under a Tampermonkey @grant sandbox, the script's
+  // `window` is a wrapper that Chrome's PointerEvent constructor refuses to
+  // accept as `view` ("Failed to convert value to 'Window'"). unsafeWindow (or
+  // document.defaultView) is the genuine Window the event constructors expect.
+  const REAL_WINDOW =
+    (typeof unsafeWindow !== 'undefined' && unsafeWindow) || document.defaultView || window;
+
+  // Construct an event, falling back to omitting `view` if the constructor still
+  // rejects it — so a bad `view` can never kill the click sequence.
+  function mkEvent(Ctor, type, opts) {
+    try {
+      return new Ctor(type, opts);
+    } catch (_) {
+      const { view, ...rest } = opts;
+      return new Ctor(type, rest);
+    }
+  }
+
   // Dispatch a realistic click (optionally with the ctrl/cmd modifier for
   // multi-select). Some editors only honor the modifier on mousedown, so we set
   // it on the whole pointer/mouse sequence.
@@ -155,17 +174,17 @@
     const opts = {
       bubbles: true,
       cancelable: true,
-      view: window,
+      view: REAL_WINDOW,
       clientX: Math.floor(rect.left + rect.width / 2),
       clientY: Math.floor(rect.top + rect.height / 2),
       ctrlKey: multi,
       metaKey: multi,
     };
-    target.dispatchEvent(new PointerEvent('pointerdown', opts));
-    target.dispatchEvent(new MouseEvent('mousedown', opts));
-    target.dispatchEvent(new PointerEvent('pointerup', opts));
-    target.dispatchEvent(new MouseEvent('mouseup', opts));
-    target.dispatchEvent(new MouseEvent('click', opts));
+    target.dispatchEvent(mkEvent(PointerEvent, 'pointerdown', opts));
+    target.dispatchEvent(mkEvent(MouseEvent, 'mousedown', opts));
+    target.dispatchEvent(mkEvent(PointerEvent, 'pointerup', opts));
+    target.dispatchEvent(mkEvent(MouseEvent, 'mouseup', opts));
+    target.dispatchEvent(mkEvent(MouseEvent, 'click', opts));
     await sleep(CONFIG.betweenClicks);
     return true;
   }
@@ -887,21 +906,25 @@
       setStatus(dStatus, `Copied ${blob.length} chars to clipboard.`);
     });
     dSnap.addEventListener('click', async () => {
+      minimizeModal(); // un-obscure the page so the picker can render/open
+      let msg = 'Could not capture picker (no nodes / see log).';
       try {
-        setStatus(dStatus, 'Opening picker to snapshot…');
         const snap = await snapshotPickerDOM();
         if (!snap) {
-          setStatus(dStatus, 'Could not capture picker (no nodes / see log).');
+          msg = 'Could not capture picker (no nodes / see log).';
         } else if (snap.opened === false) {
-          setStatus(dStatus, `Picker did not open — captured indicator + ${snap.candidates.length} visible candidate(s) instead (see Copy debug).`);
+          msg = `Picker did not open — captured indicator + ${snap.candidates.length} visible candidate(s) instead (see Copy debug).`;
         } else {
-          setStatus(dStatus, `Captured picker (${snap.rows.length} rows, ${snap.html.length} chars).`);
+          msg = `Captured picker (${snap.rows.length} rows, ${snap.html.length} chars).`;
         }
       } catch (e) {
         warn('snapshot threw:', e && e.message ? e.message : String(e));
-        setStatus(dStatus, `Snapshot failed: ${e && e.message ? e.message : String(e)} (see log).`);
+        msg = `Snapshot failed: ${e && e.message ? e.message : String(e)} (see log).`;
+      } finally {
+        openModal(); // re-show with the result (state intact)
+        setStatus(dStatus, msg);
+        refreshDebugTab();
       }
-      refreshDebugTab();
     });
     dVerify.addEventListener('click', () => {
       if (!RUN.lastPlan || !RUN.lastLabelVoice) { setStatus(dStatus, 'Run "Insert + Assign" first, then verify.'); return; }
@@ -1094,8 +1117,10 @@
 
     async function finishAssign() {
       let terminal = '✗ FAILED — see Debug tab → Copy debug.';
+      // Hide our overlay while we drive the editor/picker so nothing is
+      // obscured and focus stays on the page; re-show with the result after.
+      minimizeModal();
       try {
-        setStatus(status, 'Assigning voices…');
         RUN.lastLabelVoice = labelVoice;
         RUN.report.labelVoice = [...labelVoice.entries()].map(([label, voice]) => ({ label, voice }));
         const res = await runAssignment(plan, labelVoice);
@@ -1109,6 +1134,7 @@
         terminal = `✗ FAILED — ${e && e.message ? e.message : String(e)}. Debug tab → Copy debug.`;
       } finally {
         RUN.report.finishedAt = new Date().toISOString();
+        openModal(); // re-show the modal (state intact) with the terminal status
         refreshDebugTab();
         setStatus(status, terminal);
       }
